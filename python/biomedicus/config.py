@@ -1,7 +1,5 @@
-import argparse
 import os
 from pathlib import Path
-from typing import Union
 
 
 def _collapse(d, path, v):
@@ -23,10 +21,10 @@ def _collapse(d, path, v):
 
 _DEFAULT_CONFIG = _collapse({}, None, {
     'sentences': {
-        'mode': 'deep',
+        'model': 'deep',
         'hparams_file': '${BIOMEDICUS_DATA}/sentences/hparams.yaml',
         'weights_file': '${BIOMEDICUS_DATA}/sentences/weights.h5',
-        'word_embeddings': '${BIOMEDICUS_DATA}/sentences/mimic.300.vec',
+        'words_list': '${BIOMEDICUS_DATA}/sentences/words.txt',
         'vocab_dir': '${BIOMEDICUS_DATA}/sentences/vocab/',
     }
 })

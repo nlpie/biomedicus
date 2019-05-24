@@ -1,132 +1,102 @@
-from typing import Optional, AnyStr, List, Union, Tuple, Iterable
+from argparse import ArgumentParser
+from typing import AnyStr, List, Union, Tuple, Iterable
 
 import numpy
 import tensorflow as tf
 
-from .base import SentenceModel, Main
-from .vocabulary import TokenSequenceGenerator, Vocabulary
-from ..tokenization import Token
-from ..utils import default_value, pad_to_length
+from biomedicus.sentences.vocabulary import TokenSequenceGenerator, Vocabulary
+from biomedicus.tokenization import Token
+from biomedicus.utils import pad_to_length
 
 
-class BiLSTMSentenceModel(SentenceModel):
+def deep_hparams_parser():
+    parser = ArgumentParser(add_help=False)
+    parser.add_argument('--sequence-length', type=int, default=32,
+                        help="number of words per sequence.")
+    parser.add_argument('--use-chars', type=bool, default=True,
+                        help="whether to use the character model.")
+    parser.add_argument('--word-length', type=int, default=32,
+                        help="number of characters per word.")
+    parser.add_argument('--dim-char', type=int, default=30,
+                        help="length of learned char embeddings.")
+    parser.add_argument('--use-token-boundaries', type=bool, default=True,
+                        help="whether to insert characters representing the begin and ends of "
+                             "words.")
+    parser.add_argument('--use-neighbor-boundaries', type=bool, default=True,
+                        help="whether to insert characters representing the end of the "
+                             "previous neighbor and the begin of the next neighbor token. ")
+    parser.add_argument('--use-sequence-boundaries', type=bool, default=True,
+                        help="whether to insert characters representing the begin of a "
+                             "segment (piece of text whose boundaries are guaranteed to "
+                             "not have a sentence spanning).")
+    parser.add_argument('--char-mode', choices=['cnn', 'lstm'], default='cnn',
+                        help="the method to use for character representations. either 'cnn' "
+                             "for convolutional neural networks or 'lstm' for a bidirectional "
+                             "lstm.")
+    parser.add_argument('--char-cnn-filters', type=int, default=100,
+                        help="the number of cnn character filters. if "
+                             "concatenate_words_chars = False then this"
+                             "parameter is ignored and dim_word is used.")
+    parser.add_argument('--char-cnn-kernel-size', type=int, default=4,
+                        help="the kernel size (number of character embeddings to look at). ")
+    parser.add_argument('--char-lstm-hidden-size', type=int, default=100,
+                        help="when using bi-lstm the output dimensionality of the bi-lstm.")
+    parser.add_argument('--use-words', type=bool, default=True,
+                        help="whether to use word embedding word representations.")
+    parser.add_argument('--lstm-hidden-size', type=int, default=300,
+                        help="the number of units in the bi-lstm character layer. if "
+                             "concatenate_word_chars = False then this parameter is ignored "
+                             "and dim_word is used.")
+    parser.add_argument('--dropout', type=float, default=.75,
+                        help="the input/output dropout for the bi-lstms in the network during "
+                             "training.")
+    parser.add_argument('--recurrent-dropout', type=float, default=.5,
+                        help="the recurrent dropout for the bi-lstms in the network.")
+    parser.add_argument('--concatenate-word-chars', type=bool, default=False,
+                        help="Whether to concatenate the word and character representations.")
+    return parser
+
+
+class BiLSTMSentenceModel:
     """A sentence detector that does sequence detection using a character representation of words
     and/or a word embeddings passed to a bidirectional LSTM, which creates a
     contextual word representation before passing it dense NN layer for prediction.
 
     """
 
-    def __init__(self,
-                 vocabulary: Vocabulary,
-                 dim_word: Optional[int] = None,
-                 sequence_length: Optional[int] = None,
-                 use_chars: Optional[bool] = None,
-                 word_length: Optional[int] = None,
-                 dim_char: Optional[int] = None,
-                 use_token_boundaries: Optional[bool] = None,
-                 use_neighbor_boundaries: Optional[bool] = None,
-                 use_sequence_boundaries: Optional[bool] = None,
-                 char_mode: Optional[str] = None,
-                 char_cnn_filters: Optional[int] = None,
-                 char_cnn_kernel_size: Optional[int] = None,
-                 char_lstm_hidden_size: Optional[int] = None,
-                 use_words: Optional[bool] = None,
-                 lstm_hidden_size: Optional[int] = None,
-                 dropout: Optional[float] = None,
-                 recurrent_dropout: Optional[float] = None,
-                 concatenate_words_chars: Optional[bool] = None,
-                 verbose: Optional[bool] = None,
-                 **_):
-        """
-
-        Parameters
-        ----------
-        vocabulary: Vocabulary
-            vocabulary object containing information about the labels, characters, and word
-            embeddings
-        dim_word: int
-            dimensionality of the word embeddings, by default gets from the vocabulary
-        sequence_length: int
-            length of sequences in number of words, by default uses 32
-        use_chars: bool
-            whether to augment word embeddings with character information
-        word_length: int
-            max length of words in number of characters, words longer than this are truncated.
-            default is 32.
-        dim_char: int
-            the dimensionality of learned character embeddings. default is 30
-        use_token_boundaries: bool
-            whether to add the boundaries of tokens as special symbols to the character information.
-            default is True
-        use_neighbor_boundaries: bool
-            whether to add the boundaries of neighbor tokens as special symbols to the character
-            information. default is True.
-        use_sequence_boundaries: bool
-            whether to add the boundaries of the text as special symbols to the character
-            information. default is True
-        char_mode: str
-            whether to use a bi-lstm ('lstm') or a cnn ('cnn') to create character representations.
-            default is 'cnn'
-        char_cnn_filters: int
-            the number of cnn character filters. if concatenate_words_chars = False then this
-            parameter is ignored and dim_word is used. default is 100.
-        char_cnn_kernel_size: int
-            the number of character embeddings each filter looks at. default is 4.
-        char_lstm_hidden_size: int
-            the number of units in the bi-lstm character layer. if concatenate_word_chars = False
-            then this parameter is ignored and dim_word is used. default is 25
-        use_words: bool
-            whether to use word embeddings. default is True
-        lstm_hidden_size: int
-            the number of units in the bi-lstm contextual word representation layer. default is 300.
-        dropout: float
-            the input/output dropout for the bi-lstms in the network during training.
-            default is .75.
-        recurrent_dropout: float
-            the recurrent dropout for the bi-lstms in the network. default is .5.
-        concatenate_words_chars: bool
-            Whether to concatenate the word and character representations.
-            default is False = add the word and character representations
-        verbose
-        _
-        """
-        del _
-
+    def __init__(self, vocabulary, args):
         self.vocabulary = vocabulary
-        self.labels = vocabulary.labels
-        self.chars = vocabulary.characters
+        self.labels = self.vocabulary.labels
+        self.chars = self.vocabulary.characters
 
-        self.words = vocabulary.words
-        self.word_embeddings = vocabulary._word_vectors
-        self.dim_word = dim_word or vocabulary.get_word_dimension()
+        self.words = self.vocabulary.words
+        self.word_embeddings = self.vocabulary._word_vectors
+        self.dim_word = args.dim_word or self.vocabulary.get_word_dimension()
 
-        self.sequence_length = default_value(sequence_length, 32)
+        self.sequence_length = args.sequence_length
 
-        self.use_chars = use_chars if use_chars is not None else True
+        self.use_chars = args.use_chars
 
-        self.word_length = default_value(word_length, 32)
-        self.dim_char = default_value(dim_char, 30)
+        self.word_length = args.word_length
+        self.dim_char = args.dim_char
 
-        self.use_token_boundaries = default_value(use_token_boundaries, True)
-        self.use_neighbor_boundaries = default_value(use_neighbor_boundaries, True)
-        self.use_sequence_boundaries = default_value(use_sequence_boundaries, True)
+        self.use_token_boundaries = args.use_token_boundaries
+        self.use_neighbor_boundaries = args.use_neighbor_boundaries
+        self.use_sequence_boundaries = args.use_sequence_boundaries
 
-        self.char_mode = default_value(char_mode, 'cnn')
+        self.char_mode = args.char_mode
+        self.char_cnn_filters = args.char_cnn_filters
+        self.char_cnn_kernel_size = args.char_cnn_kernel_size
+        self.char_lstm_hidden_size = args.char_lstm_hidden_size
 
-        self.char_cnn_filters = default_value(char_cnn_filters, 100)
-        self.char_cnn_kernel_size = default_value(char_cnn_kernel_size, 4)
+        self.use_words = args.use_words
 
-        self.char_lstm_hidden_size = default_value(char_lstm_hidden_size, 25)
+        self.lstm_hidden_size = args.lstm_hidden_size
 
-        self.use_words = default_value(use_words, True)
+        self.dropout = args.dropout
+        self.recurrent_dropout = args.recurrent_dropout
 
-        self.lstm_hidden_size = default_value(lstm_hidden_size, 300)
-
-        self.dropout = default_value(dropout, .75)
-        self.recurrent_dropout = default_value(recurrent_dropout, .5)
-        self.verbose = default_value(verbose, True)
-
-        self.concatenate_words_chars = default_value(concatenate_words_chars, False)
+        self.concatenate_words_chars = args.concatenate_word_chars
 
         self._model = self._build_model()
 
@@ -245,7 +215,8 @@ class BiLSTMSentenceModel(SentenceModel):
     def model(self) -> tf.keras.models.Model:
         return self._model
 
-    def compile_model(self, optimizer: Union[AnyStr, tf.keras.optimizers.Optimizer]):
+    def compile_model(self,
+                      optimizer: Union[AnyStr, tf.keras.optimizers.Optimizer]):
         self.model.compile(optimizer=optimizer,
                            sample_weight_mode='temporal',
                            loss={
@@ -346,7 +317,7 @@ class InputGenerator(TokenSequenceGenerator):
             self.segment_words.append(word_id)
 
         if self.include_labels:
-            label_id = self.vocabulary.get_label_id(self.current.label)
+            label_id = self.vocabulary._label_to_id[self.current.label]
             self.class_counts[self.current.label] += 1
             self.segment_labels.append(label_id)
             if self.current.label == 'O':
@@ -462,63 +433,3 @@ class InputGenerator(TokenSequenceGenerator):
 
         # TODO: Look into doing id lookup prior to appending rather than after
         return [self.vocabulary.get_character_id(i) for i in all_chars]
-
-
-class DeepMain(Main):
-    def add_args(self, parser):
-        parser.add_argument('--sequence-length', type=int,
-                            help="number of words per sequence. defaults to to 32.")
-        parser.add_argument('--use-chars', type=bool,
-                            help="whether to use the character model. defaults to True")
-        parser.add_argument('--word-length', type=int,
-                            help="number of characters per word. defaults to 32.")
-        parser.add_argument('--dim-char', type=int,
-                            help="length of learned char embeddings. default is 30.")
-        parser.add_argument('--use-token-boundaries', type=bool,
-                            help="whether to insert characters representing the begin and ends of "
-                                 "words. default is True")
-        parser.add_argument('--use-neighbor-boundaries', type=bool,
-                            help="whether to insert characters representing the end of the "
-                                 "previous neighbor and the begin of the next neighbor token. "
-                                 "default is True")
-        parser.add_argument('--use-sequence-boundaries', type=bool,
-                            help="whether to insert characters representing the begin of a "
-                                 "segment (piece of text whose boundaries are guaranteed to "
-                                 "not have a sentence spanning). default is True")
-        parser.add_argument('--char-mode', choices=['cnn', 'lstm'],
-                            help="the method to use for character representations. either 'cnn' "
-                                 "for convolutional neural networks or 'lstm' for a bidirectional "
-                                 "lstm. default is 'cnn'.")
-        parser.add_argument('--char-cnn-filters', type=int,
-                            help="the number of cnn character filters. if "
-                                 "concatenate_words_chars = False then this"
-                                 "parameter is ignored and dim_word is used. default is 100. ")
-        parser.add_argument('--char-cnn-kernel-size', type=int,
-                            help="the kernel size (number of character embeddings to look at). "
-                                 "default is 4.")
-        parser.add_argument('--char-lstm-hidden-size', type=int,
-                            help="when using bi-lstm the output dimensionality of the bi-lstm. "
-                                 "default is 25.")
-        parser.add_argument('--use-words', type=bool,
-                            help="whether to use word embedding word representations. default is "
-                                 "True.")
-        parser.add_argument('--lstm-hidden-size', type=int,
-                            help="the number of units in the bi-lstm character layer. if "
-                                 "concatenate_word_chars = False then this parameter is ignored "
-                                 "and dim_word is used. default is 25")
-        parser.add_argument('--dropout', type=float,
-                            help="the input/output dropout for the bi-lstms in the network during "
-                                 "training. default is .75.")
-        parser.add_argument('--recurrent-dropout', type=float,
-                            help="the recurrent dropout for the bi-lstms in the network. "
-                                 "default is .5.")
-        parser.add_argument('--concatenate-word-chars', type=bool,
-                            help="Whether to concatenate the word and character representations. "
-                                 "default is False = add the word and character representations ")
-
-    def get_model(self, vocabulary, **kwargs) -> 'SentenceModel':
-        return BiLSTMSentenceModel(vocabulary=vocabulary, **kwargs)
-
-
-if __name__ == '__main__':
-    DeepMain().main()

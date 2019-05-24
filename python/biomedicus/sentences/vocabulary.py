@@ -1,4 +1,5 @@
 import os
+import pathlib
 import re
 from abc import abstractmethod, ABC
 from typing import Optional, AnyStr, Iterable, Tuple, List
@@ -47,15 +48,15 @@ class Vocabulary(object):
         }
         self._word_vectors = None
 
-        from tensorflow.python.lib.io.file_io import FileIO
-        with FileIO(os.path.join(directory, 'characters.txt'), 'r') as f:
+        import tensorflow as tf
+        with tf.io.gfile.GFile(os.path.join(directory, 'characters.txt'), 'r') as f:
             for char in f:
                 self._character_to_id[char[:-1]] = len(self._character_to_id)
             self.characters = len(self._character_to_id)
 
         if words_model_file is not None:
             self._word_vectors = []
-            with FileIO(words_model_file, 'r') as f:
+            with tf.io.gfile.GFile(words_model_file, 'r') as f:
                 for line in f:
                     split = line.split()
                     if len(split) == 2:
@@ -69,7 +70,7 @@ class Vocabulary(object):
             self._word_vectors = np.vstack(self._word_vectors)
             self.words = self._word_vectors.shape[0]
         elif words_list is not None:
-            with FileIO(words_list, 'r') as f:
+            with tf.io.gfile.GFile(words_list, 'r') as f:
                 for identifier, line in enumerate(f, 1):
                     self._word_to_id[line[:-1]] = identifier
             self.words = len(self._word_to_id)
@@ -195,20 +196,24 @@ def directory_labels_generator(directory: AnyStr,
     :param repeat:
     :return:
     """
-    from tensorflow.python.lib.io import file_io
-    from tensorflow.python.lib.io.file_io import FileIO
+    import tensorflow as tf
     while True:
-        for doc in file_io.get_matching_files(os.path.join(directory, '*.txt')):
-            print("reading document {}".format(doc))
-            with FileIO(doc, 'r') as f:
-                txt = f.read()
+        for doc_dir, _, docs in tf.io.gfile.walk(directory):
+            for doc in docs:
+                if not doc.endswith('.txt'):
+                    continue
+                path = pathlib.PurePath(doc_dir, doc)
+                print("reading document {}".format(path))
+                with tf.io.gfile.GFile(str(path), 'r') as f:
+                    txt = f.read()
 
-            with FileIO(doc.replace('.txt', '.labels'), 'r') as f:
-                tokens = [_split_token_line(txt, x) for x in f]
-            if return_name:
-                yield txt, doc.split('/')[-1], tokens
-            else:
-                yield txt, tokens
+                labels_path = path.with_suffix('.labels')
+                with tf.io.gfile.GFile(str(labels_path), 'r') as f:
+                    tokens = [_split_token_line(txt, x) for x in f]
+                if return_name:
+                    yield txt, doc, tokens
+                else:
+                    yield txt, tokens
 
         if not repeat:
             break
