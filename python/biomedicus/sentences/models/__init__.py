@@ -1,16 +1,16 @@
 import os
-from argparse import ArgumentParser
-from typing import AnyStr, Optional, List, Dict
+from argparse import ArgumentParser, Namespace
+from typing import List
 
 import nlpnewt
-import numpy as np
 
 from biomedicus import config
 from biomedicus.sentences import vocabulary
+from biomedicus.sentences.models.base import SentenceModel
+from biomedicus.sentences.processor import SentenceProcessor
 from biomedicus.sentences.training import training_parser
 from biomedicus.sentences.utils import _print_metrics
 from biomedicus.sentences.vocabulary import directory_labels_generator, Vocabulary
-from biomedicus.tokenization import Token, tokenize
 
 
 def evaluate(sentence_model, vocabulary, evaluation_dir, batch_size):
@@ -21,73 +21,11 @@ def evaluate(sentence_model, vocabulary, evaluation_dir, batch_size):
     print(_print_metrics(prediction, targets, vocabulary, sample_weights=weights))
 
 
-def predict_txt(sentence_model,
-                txt: AnyStr,
-                batch_size: int,
-                tokens: Optional[List[Token]] = None,
-                include_tokens: bool = True) -> List[Dict]:
-    """Takes input text, tokenizes it, and then returns a list of tokens with labels
-
-    Attributes
-    ----------
-    txt : str
-        the text to predict sentences
-    tokens : iterable of Token
-        tokens if the text has already been tokenized
-    include_tokens : bool
-        whether the result sentences should include their tokens
-
-    Returns
-    -------
-    list
-        a list of lists of tokens with their sentence classifications. Each list is a sentence.
-    """
-    if tokens is None:
-        tokens = list(tokenize(txt))
-
-    if len(tokens) == 0:
-        return []
-
-    inputs, _, weights = sentence_model.map_input([(txt, tokens)], include_labels=False)
-
-    outputs, _ = sentence_model.model.predict(inputs, batch_size=batch_size)
-    outputs = np.rint(outputs)
-    not_padding = np.nonzero(weights)
-    outputs = ['B' if x == 1 else 'I' for x in outputs[not_padding]]
-
-    # construct results list
-    results = []
-    prev = None
-    sentence = None
-    for token, label in zip(tokens, outputs):
-        result_token = (token.begin, token.end, token.has_space_after)
-        if (label == 'B') or (label == 'O' and (prev is None or prev[1] != 'O')):
-            if sentence is not None:
-                sentence['end'] = prev[0].end  # prev token end
-                results.append(sentence)
-
-            sentence = {
-                'begin': token.begin,
-                'category': 'S' if label is 'B' else 'U'
-            }
-            if include_tokens:
-                sentence['tokens'] = []
-
-        if include_tokens:
-            sentence['tokens'].append(result_token)
-
-        prev = token, label
-
-    sentence['end'] = prev[0][2]  # prev token end
-    results.append(sentence)
-    return results
-
-
-def create_vocabulary(args):
+def create_vocabulary(args: Namespace):
     return Vocabulary(args.vocab_dir, args.word_embeddings, args.words_list)
 
 
-def create_model(vocab, args, additional_args):
+def create_model(vocab: Vocabulary, args: Namespace, additional_args: List[str]):
     hparams = {}
     if args.hparams is not None:
         import yaml
@@ -110,21 +48,24 @@ def create_model(vocab, args, additional_args):
 
     p.set_defaults(**hparams)
     model_args = p.parse_args(additional_args)
-    model = Model(vocabulary, model_args)
+    model = Model(vocab, model_args)
     if args.weights_file is not None and os.path.isfile(args.weights_file):
         model.model.load_weights(args.weights_file)
 
 
-def train(args, additional_args):
+def train(args: Namespace, additional_args: List[str]):
     pass
 
 
-def write_words(args, additional_args):
+def write_words(args: Namespace, additional_args: List[str]):
     vocabulary.write_words(args.word_embeddings, args.words_list)
 
 
-def run_processor(args, additional_args):
-    pass
+def run_processor(args: Namespace, additional_args: List[str]):
+    vocab = create_vocabulary(args)
+    model = create_model(vocab, args, additional_args)
+    processor = SentenceProcessor(model)
+    nlpnewt.run_processor(processor, args)
 
 
 def main(args=None):

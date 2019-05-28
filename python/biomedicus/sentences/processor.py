@@ -5,7 +5,7 @@ import nlpnewt
 from nlpnewt.events import Document
 from nlpnewt.processing import DocumentProcessor
 
-from biomedicus.sentences.base import SentenceModel
+from biomedicus.sentences.models.base import SentenceModel
 
 LOGGER = logging.getLogger(__name__)
 
@@ -18,4 +18,4 @@ class SentenceProcessor(DocumentProcessor):
 
     def process(self, document: Document, params: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         text = document.text
-        self.detector.predict_txt(text)
+        sentences = self.model.predict_txt(self.model, )

@@ -24,7 +24,7 @@ _DEFAULT_CONFIG = _collapse({}, None, {
         'model': 'deep',
         'hparams_file': '${BIOMEDICUS_DATA}/sentences/hparams.yaml',
         'weights_file': '${BIOMEDICUS_DATA}/sentences/weights.h5',
-        'words_list': '${BIOMEDICUS_DATA}/sentences/words.txt',
+        'words_list': '${BIOMEDICUS_DATA}/sentences/vocab/words.txt',
         'vocab_dir': '${BIOMEDICUS_DATA}/sentences/vocab/',
     }
 })

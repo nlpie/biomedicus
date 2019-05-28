@@ -1,9 +1,10 @@
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Namespace
 from typing import AnyStr, List, Union, Tuple, Iterable
 
 import numpy
 import tensorflow as tf
 
+from biomedicus.sentences.models import SentenceModel
 from biomedicus.sentences.vocabulary import TokenSequenceGenerator, Vocabulary
 from biomedicus.tokenization import Token
 from biomedicus.utils import pad_to_length
@@ -57,14 +58,14 @@ def deep_hparams_parser():
     return parser
 
 
-class BiLSTMSentenceModel:
+class BiLSTMSentenceModel(SentenceModel):
     """A sentence detector that does sequence detection using a character representation of words
     and/or a word embeddings passed to a bidirectional LSTM, which creates a
     contextual word representation before passing it dense NN layer for prediction.
 
     """
 
-    def __init__(self, vocabulary, args):
+    def __init__(self, vocabulary: Vocabulary, args: Namespace):
         self.vocabulary = vocabulary
         self.labels = self.vocabulary.labels
         self.chars = self.vocabulary.characters
