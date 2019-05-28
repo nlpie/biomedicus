@@ -1,5 +1,7 @@
+from argparse import Namespace
+
 import logging
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 
 import nlpnewt
 from nlpnewt.events import Document
@@ -17,5 +19,6 @@ class SentenceProcessor(DocumentProcessor):
         self.model = model
 
     def process(self, document: Document, params: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        batch_size = params.get('batch_size', 32)
         text = document.text
-        sentences = self.model.predict_txt(self.model, )
+        sentences = self.model.predict_txt(text, batch_size, include_tokens=False)

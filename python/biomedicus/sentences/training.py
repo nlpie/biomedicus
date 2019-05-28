@@ -1,9 +1,8 @@
 import os
-from argparse import ArgumentParser
-from typing import Optional
 
 import numpy as np
 import tensorflow as tf
+from argparse import ArgumentParser
 
 from biomedicus.sentences.utils import _build_log_name, _Metrics
 from biomedicus.sentences.vocabulary import directory_labels_generator
@@ -12,81 +11,44 @@ from biomedicus.utils import default_value
 
 def training_parser() -> ArgumentParser:
     parser = ArgumentParser(add_help=False)
-    parser.add_argument('--epochs', type=int,
-                        help="number of epochs to run training. defaults to 100.")
-    parser.add_argument('--tensorboard', action='store_true',
-                        help="whether to use a keras.callbacks.TensorBoard. default is False.")
-    parser.add_argument('--checkpoints', type=bool,
-                        help="whether to save the best model during training. default is True.")
-    parser.add_argument('--early-stopping', type=bool,
-                        help="whether to stop when the model stops improving. default is True.")
-    parser.add_argument('--early-stopping-patience', type=int,
-                        help="how many epochs without improvement before stopping. "
-                             "default is 5.")
-    parser.add_argument('--early-stopping-delta', type=float,
+    parser.add_argument('--epochs', type=int, default=100,
+                        help="number of epochs to run training.")
+    parser.add_argument('--tensorboard', action='store_true', default=False,
+                        help="whether to use a keras.callbacks.TensorBoard.")
+    parser.add_argument('--checkpoints', type=bool, default=True,
+                        help="whether to save the best model during training.")
+    parser.add_argument('--early-stopping', type=bool, default=True,
+                        help="whether to stop when the model stops improving.")
+    parser.add_argument('--early-stopping-patience', type=int, default=5,
+                        help="how many epochs without improvement before stopping.")
+    parser.add_argument('--early-stopping-delta', type=float, default=0.0001,
                         help="the smallest amount loss needs to improve by to be considered "
-                             "improvement by early stopping. default is 0.001")
-    parser.add_argument('--use-class-weights', type=bool,
+                             "improvement by early stopping.")
+    parser.add_argument('--use-class-weights', type=bool, default=True,
                         help="whether to weight the value of class loss and accuracy based on "
-                             "their support. default is True.")
-    parser.add_argument('--validation-split', type=float,
-                        help="the fraction of the data to use for validation. default is 0.2.")
-    parser.add_argument('--optimizer',
+                             "their support.")
+    parser.add_argument('--validation-split', type=float, default=0.2,
+                        help="the fraction of the data to use for validation.")
+    parser.add_argument('--optimizer', default='nadam',
                         help="the keras optimizer to use. default is 'nadam'")
+    parser.add_argument('--batch-size', default=32,
+                        help="The batch size to use during training.")
     return parser
 
 
 class SentenceTraining:
 
-    def __init__(self,
-                 epochs: Optional[int] = None,
-                 batch_size: Optional[int] = None,
-                 optimizer: Optional[str] = None,
-                 tensorboard: Optional[bool] = None,
-                 checkpoints: Optional[bool] = None,
-                 early_stopping: Optional[bool] = None,
-                 early_stopping_patience: Optional[int] = None,
-                 early_stopping_delta: Optional[float] = None,
-                 use_class_weights: Optional[bool] = None,
-                 validation_split: Optional[float] = None,
-                 verbose: Optional[bool] = None):
-        """
-        Parameters
-        ----------
-        epochs : int
-            the number of epochs to run. defaults to 100
-        batch_size : int
-            the size of batches. defaults to 32.
-        optimizer : str or Optimizer
-            the keras optimizer to use
-        tensorboard : bool
-            whether to write tensorboard logs. defaults to False
-        checkpoints : bool
-            whether to save the model after every epoch validation loss improves. defaults to True.
-        early_stopping : bool
-            whether to stop after no improvement for a certain number of epochs. defaults to True.
-        early_stopping_patience : int
-            number of epochs without improvement before stopping. defaults to 5.
-        early_stopping_delta : float
-            what constitutes improvement. defaults to 0.0001
-        use_class_weights : bool
-            true to weight labels by the class distribution. defaults to True
-        validation_split : double
-            percentage between 0 and 1 of data to use for validation. defaults to 0.2
-        verbose : bool
-            whether to print debug information. defaults to False.
-        """
-        self.epochs = default_value(epochs, 100)
-        self.tensorboard = default_value(tensorboard, False)
-        self.early_stopping_patience = default_value(early_stopping_patience, 10)
-        self.checkpoints = default_value(checkpoints, True)
-        self.batch_size = default_value(batch_size, 32)
-        self.validation_split = default_value(validation_split, .2)
-        self.early_stopping_delta = default_value(early_stopping_delta, .0001)
-        self.optimizer = default_value(optimizer, 'nadam')
-        self.use_class_weights = default_value(use_class_weights, True)
-        self.early_stopping = default_value(early_stopping, True)
-        self.verbose = default_value(verbose, True)
+    def __init__(self, args):
+        self.epochs = args.epochs
+        self.tensorboard = args.tensorboard
+        self.early_stopping_patience = args.early_stopping_patience
+        self.checkpoints = args.checkpoints
+        self.validation_split = args.validation_split
+        self.early_stopping_delta = args.early_stopping_delta
+        self.optimizer = args.optimizer
+        self.use_class_weights = args.use_class_weights
+        self.early_stopping = args.early_stopping
+        self.verbose = args.verbose
 
         self._sentence_model = None
         self._vocabulary = None
