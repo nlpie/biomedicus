@@ -1,12 +1,24 @@
+# Copyright 2019 Regents of the University of Minnesota.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 import os
 
 import numpy as np
 import tensorflow as tf
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Namespace
 
-from biomedicus.sentences.utils import _build_log_name, _Metrics
+from biomedicus.sentences.utils import build_log_name, Metrics
 from biomedicus.sentences.vocabulary import directory_labels_generator
-from biomedicus.utils import default_value
 
 
 def training_parser() -> ArgumentParser:
@@ -37,8 +49,7 @@ def training_parser() -> ArgumentParser:
 
 
 class SentenceTraining:
-
-    def __init__(self, args):
+    def __init__(self, args: Namespace):
         self.epochs = args.epochs
         self.tensorboard = args.tensorboard
         self.early_stopping_patience = args.early_stopping_patience
@@ -49,6 +60,7 @@ class SentenceTraining:
         self.use_class_weights = args.use_class_weights
         self.early_stopping = args.early_stopping
         self.verbose = args.verbose
+        self.batch_size = args.batch_size
 
         self._sentence_model = None
         self._vocabulary = None
@@ -88,10 +100,10 @@ class SentenceTraining:
         None
 
         """
-        log_name = _build_log_name()
+        log_name = build_log_name()
 
         callbacks = []
-        metrics = _Metrics(self.vocabulary)
+        metrics = Metrics(self.vocabulary)
         callbacks.append(metrics)
 
         if self.tensorboard:
@@ -114,13 +126,14 @@ class SentenceTraining:
                                                         min_delta=self.early_stopping_delta)
             callbacks.append(stopping)
 
-        self.sentence_model.model.fit(data,
-                                      {'logits': targets},
-                                      batch_size=self.batch_size,
-                                      epochs=self.epochs,
-                                      sample_weight=sample_weights,
-                                      validation_split=self.validation_split,
-                                      callbacks=callbacks)
+        with self.sentence_model.graph.as_default(), self.sentence_model.session.as_default():
+            self.sentence_model.model.fit(data,
+                                          {'logits': targets},
+                                          batch_size=self.batch_size,
+                                          epochs=self.epochs,
+                                          sample_weight=sample_weights,
+                                          validation_split=self.validation_split,
+                                          callbacks=callbacks)
 
     def train_model(self, job_dir: str, training_dir: str):
         """Trains a sentence detector model using a labeled training set

@@ -1,12 +1,27 @@
-from argparse import ArgumentParser, Namespace
-from typing import AnyStr, List, Union, Tuple, Iterable
+# Copyright 2019 Regents of the University of Minnesota.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+from abc import ABCMeta, abstractmethod
 
+import argparse
 import numpy
+import numpy as np
 import tensorflow as tf
+from argparse import ArgumentParser, Namespace
+from typing import Union, AnyStr, Iterable, Tuple, List, Optional
 
-from biomedicus.sentences.models import SentenceModel
-from biomedicus.sentences.vocabulary import TokenSequenceGenerator, Vocabulary
-from biomedicus.tokenization import Token
+from biomedicus.sentences.vocabulary import Vocabulary, TokenSequenceGenerator
+from biomedicus.tokenization import Token, tokenize
 from biomedicus.utils import pad_to_length
 
 
@@ -58,6 +73,80 @@ def deep_hparams_parser():
     return parser
 
 
+class SentenceModel(metaclass=ABCMeta):
+    """Base class for a sentence model
+
+    Attributes
+    ----------
+    session: tf.Session
+        The tensorflow session.
+    graph: tf.Graph
+        The tensorflow graph.
+
+    """
+
+    def __init__(self):
+        self.session = tf.Session()
+        self.graph = tf.get_default_graph()
+
+    @property
+    @abstractmethod
+    def model(self) -> tf.keras.models.Model:
+        raise NotImplementedError
+
+    @abstractmethod
+    def compile_model(self, optimizer):
+        raise NotImplementedError
+
+    def predict_txt(self,
+                    txt: AnyStr,
+                    batch_size: int,
+                    input_mapper: 'InputMapper',
+                    tokens: Optional[List[Token]] = None,
+                    include_tokens: bool = True) -> List['Sentence']:
+        if tokens is None:
+            tokens = list(tokenize(txt))
+
+        if len(tokens) == 0:
+            return []
+
+        inputs, _, weights = input_mapper.map_input([(txt, tokens)], include_labels=False)
+        with self.graph.as_default(), self.session.as_default():
+            outputs, _ = self.model.predict(inputs, batch_size=batch_size)
+        outputs = np.rint(outputs)
+        not_padding = np.nonzero(weights)
+        outputs = ['B' if x == 1 else 'I' for x in outputs[not_padding]]
+
+        # construct results list
+        results = []
+        prev = None
+        sentence = None
+        for token, label in zip(tokens, outputs):
+            if (label == 'B') or (label == 'O' and (prev is None or prev[1] != 'O')):
+                if sentence is not None:
+                    sentence.end_index = prev[0].end_index  # prev token end
+                    results.append(sentence)
+
+                sentence = Sentence(
+                    start_index=token.start_index,
+                    end_index=-1,
+                    category='S' if label is 'B' else 'U',
+                    tokens=None
+                )
+                if include_tokens:
+                    sentence.tokens = []
+
+            if include_tokens:
+                sentence.tokens.append(token)
+
+            prev = token, label
+
+        if prev is not None:
+            sentence.end_index = prev[0].end_index  # prev token end
+            results.append(sentence)
+        return results
+
+
 class BiLSTMSentenceModel(SentenceModel):
     """A sentence detector that does sequence detection using a character representation of words
     and/or a word embeddings passed to a bidirectional LSTM, which creates a
@@ -66,6 +155,7 @@ class BiLSTMSentenceModel(SentenceModel):
     """
 
     def __init__(self, vocabulary: Vocabulary, args: Namespace):
+        super().__init__()
         self.vocabulary = vocabulary
         self.labels = self.vocabulary.labels
         self.chars = self.vocabulary.characters
@@ -80,10 +170,6 @@ class BiLSTMSentenceModel(SentenceModel):
 
         self.word_length = args.word_length
         self.dim_char = args.dim_char
-
-        self.use_token_boundaries = args.use_token_boundaries
-        self.use_neighbor_boundaries = args.use_neighbor_boundaries
-        self.use_sequence_boundaries = args.use_sequence_boundaries
 
         self.char_mode = args.char_mode
         self.char_cnn_filters = args.char_cnn_filters
@@ -242,9 +328,35 @@ class BiLSTMSentenceModel(SentenceModel):
         config.pop('_model')
         return config
 
+
+class InputMapper(metaclass=ABCMeta):
+
+    @abstractmethod
     def map_input(self,
                   txt_tokens: Iterable[Tuple[AnyStr, List[Token]]],
-                  include_labels: bool):
+                  include_labels: bool) -> Tuple:
+        raise NotImplementedError
+
+
+class DeepMapper(InputMapper):
+    def __init__(self, vocabulary: Vocabulary, args: Namespace):
+        self.vocabulary = vocabulary
+
+        self.sequence_length = args.sequence_length
+
+        self.use_chars = args.use_chars
+
+        self.word_length = args.word_length
+
+        self.use_token_boundaries = args.use_token_boundaries
+        self.use_neighbor_boundaries = args.use_neighbor_boundaries
+        self.use_sequence_boundaries = args.use_sequence_boundaries
+
+        self.use_words = args.use_words
+
+    def map_input(self,
+                  txt_tokens: Iterable[Tuple[AnyStr, List[Token]]],
+                  include_labels: bool) -> Tuple:
         generator = InputGenerator(txt_tokens,
                                    vocabulary=self.vocabulary,
                                    sequence_length=self.sequence_length,
@@ -313,7 +425,7 @@ class InputGenerator(TokenSequenceGenerator):
 
         if self.use_words:
             word_id = self.vocabulary.get_word_id(
-                self.txt[self.current.begin:self.current.end],
+                self.txt[self.current.start_index:self.current.end_index],
                 is_identifier=self.current.is_identifier)
             self.segment_words.append(word_id)
 
@@ -339,11 +451,12 @@ class InputGenerator(TokenSequenceGenerator):
             self.words.append(self.segment_words)
             self.segment_words = []
 
+        self.weights.append(self.segment_weights)
+        self.segment_weights = []
+
         if self.include_labels:
             self.labels.append(self.segment_labels)
             self.segment_labels = []
-            self.weights.append(self.segment_weights)
-            self.segment_weights = []
 
     def _batch(self):
         inputs = {}
@@ -385,15 +498,15 @@ class InputGenerator(TokenSequenceGenerator):
             return inputs, class_counts, weights
 
     def get_chars(self) -> List[int]:
-        begin = self.current.begin
-        end = self.current.end
+        begin = self.current.start_index
+        end = self.current.end_index
 
         all_chars = []
 
         if self.prev is None:
             prev_end = max(0, begin - 7)
         else:
-            prev_end = max(self.prev.end, begin - 7)
+            prev_end = max(self.prev.end_index, begin - 7)
 
             if self.use_neighbor_boundaries:
                 all_chars.append('PREV_TOKEN')
@@ -422,7 +535,7 @@ class InputGenerator(TokenSequenceGenerator):
                 all_chars.append('SEGMENT_END')
 
         if self.next is not None:
-            next_begin = min(self.next.begin, end + 7)
+            next_begin = min(self.next.start_index, end + 7)
         else:
             next_begin = min(len(self.txt), end + 7)
 
@@ -434,3 +547,92 @@ class InputGenerator(TokenSequenceGenerator):
 
         # TODO: Look into doing id lookup prior to appending rather than after
         return [self.vocabulary.get_character_id(i) for i in all_chars]
+
+
+def ensemble_hparams_parser():
+    parser = argparse.ArgumentParser(add_help=False, parents=[deep_hparams_parser()])
+    parser.add_argument("--base-weights-file",
+                        help="The weights file for the already trained sentence model.")
+    return parser
+
+
+class MultiSentenceModel(BiLSTMSentenceModel):
+    """The ensemble sentence model.
+
+    """
+
+    def __init__(self, vocabulary: Vocabulary, args):
+        """Creates a new ensemble sentence model.
+
+        Parameters
+        ----------
+        vocabulary: Vocabulary
+            The vocabulary object.
+        model_a: BiLSTMSentenceModel
+            Already trained sentence model
+        kwargs: dict
+            All the parameters for BiLSTMSentenceModel
+        """
+        self.model_a = BiLSTMSentenceModel(vocabulary, args)
+        if args.base_weights_file:
+            self.model_a.model.load_weights(args.base_weights_file)
+        super().__init__(vocabulary, args)
+
+    def _build_model(self):
+        inputs, context = self.build_layers()
+        self.model_a.model.trainable = False
+        _, a_context = self.model_a.model(inputs)
+
+        context_sum = tf.keras.layers.Add()([a_context, context])
+
+        context_sum = tf.keras.layers.BatchNormalization(
+            name='corrected_word_representation'
+        )(context_sum)
+
+        logits = tf.keras.layers.TimeDistributed(
+            tf.keras.layers.Dense(1,
+                                  activation='sigmoid',
+                                  kernel_regularizer=tf.keras.regularizers.l1()),
+            name='logits'
+        )(context_sum)
+
+        return tf.keras.models.Model(inputs=inputs, outputs=[logits, context_sum])
+
+    def compile_model(self, optimizer):
+        self.model.compile(optimizer=optimizer,
+                           sample_weight_mode='temporal',
+                           loss={
+                               'logits': 'binary_crossentropy',
+                               'corrected_word_representation': None
+                           },
+                           weighted_metrics={
+                               'logits': ['binary_accuracy']
+                           },
+                           loss_weights={
+                               'logits': 1.,
+                               'corrected_word_representation': 0
+                           })
+
+
+class SavedModel(SentenceModel):
+    def __init__(self, model_file):
+        super().__init__()
+        with self.graph.as_default(), self.session.as_default():
+            self._model = tf.keras.models.load_model(model_file)
+            print(self._model.summary())
+
+    @property
+    def model(self) -> tf.keras.models.Model:
+        return self._model
+
+    def compile_model(self, optimizer):
+        pass
+
+
+class Sentence:
+    def __init__(self, start_index: float, end_index: float, category: Optional[str],
+                 tokens: Optional[List[Token]]):
+        self.start_index = start_index
+        self.end_index = end_index
+        self.category = category
+        self.tokens = tokens

@@ -1,15 +1,34 @@
+# Copyright 2019 Regents of the University of Minnesota.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+import logging
 import os
 
 import nlpnewt
 from argparse import ArgumentParser, Namespace
 from typing import List
 
-from . import vocabulary
-from .processor import SentenceProcessor
-from .training import training_parser, SentenceTraining
-from .utils import _print_metrics
-from .vocabulary import Vocabulary, directory_labels_generator
-from .. import config
+from biomedicus import config
+from biomedicus.sentences import vocabulary
+from biomedicus.sentences.models import SavedModel, deep_hparams_parser, BiLSTMSentenceModel, \
+    DeepMapper, MultiSentenceModel, ensemble_hparams_parser
+from biomedicus.sentences.processor import SentenceProcessor
+from biomedicus.sentences.training import training_parser, SentenceTraining
+from biomedicus.sentences.utils import print_metrics
+from biomedicus.sentences.vocabulary import Vocabulary, directory_labels_generator
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 def evaluate(sentence_model, vocabulary, evaluation_dir, batch_size):
@@ -17,10 +36,11 @@ def evaluate(sentence_model, vocabulary, evaluation_dir, batch_size):
     data, _, weights, targets = sentence_model.map_input(labels_generator, include_labels=True)
     prediction, _ = sentence_model.model.predict(data, batch_size=batch_size)
 
-    print(_print_metrics(prediction, targets, vocabulary, sample_weights=weights))
+    print(print_metrics(prediction, targets, vocabulary, sample_weights=weights))
 
 
 def create_model(vocab: Vocabulary, args: Namespace, additional_args: List[str]):
+    logger.info('Creating sentences model.')
     hparams = {}
     if args.hparams is not None:
         import yaml
@@ -31,27 +51,38 @@ def create_model(vocab: Vocabulary, args: Namespace, additional_args: List[str])
         with open(args.hparams, 'rb') as f:
             hparams = yaml.load(f, Loader=Loader)
     if args.model == 'deep':
-        from . import deep
-        p = deep.deep_hparams_parser()
-        Model = deep.BiLSTMSentenceModel
+        logger.info('Using deep model.')
+        p = deep_hparams_parser()
+        Model = BiLSTMSentenceModel
+        Mapper = DeepMapper
     elif args.model == 'ensemble':
-        from . import ensemble
-        p = ensemble.ensemble_hparams_parser()
-        Model = ensemble.MultiSentenceModel
+        logger.info('Using ensemble model.')
+        p = ensemble_hparams_parser()
+        Model = MultiSentenceModel
+        Mapper = DeepMapper
     else:
         raise ValueError('Unrecognized model: ' + args.model)
 
     p.set_defaults(**hparams)
     model_args = p.parse_args(additional_args)
-    model = Model(vocab, model_args)
-    if args.weights_file is not None and os.path.isfile(args.weights_file):
-        model.model.load_weights(args.weights_file)
+
+    if args.model_file is not None and os.path.isfile(args.model_file):
+        model = SavedModel(args.model_file)
+    else:
+        model = Model(vocab, model_args)
+
+    mapper = Mapper(vocab, model_args)
+
+    return model, mapper
 
 
 def train(args: Namespace, additional_args: List[str]):
     vocab = create_vocabulary(args)
-    model = create_model(vocab, args, additional_args)
-    training = SentenceTraining()
+    model, mapper = create_model(vocab, args, additional_args)
+    training = SentenceTraining(args)
+    training.sentence_model = model
+    training.vocabulary = vocab
+    training.train_model(args.job_dir, args.input_dir)
 
 
 def write_words(args: Namespace, *_):
@@ -64,8 +95,8 @@ def create_vocabulary(args: Namespace):
 
 def run_processor(args: Namespace, additional_args: List[str]):
     vocab = create_vocabulary(args)
-    model = create_model(vocab, args, additional_args)
-    processor = SentenceProcessor(model)
+    model, mapper = create_model(vocab, args, additional_args)
+    processor = SentenceProcessor(model, mapper)
     nlpnewt.run_processor(processor, args)
 
 
@@ -93,11 +124,12 @@ def main(args=None):
     models.add_argument('--model', default=c['sentences.model'], choices=['deep', 'ensemble'],
                         help="Which tensorflow sentences model to use.")
     models.add_argument('--hparams', default=c['sentences.hparams_file'])
-    models.add_argument('--weights-file', default=c['sentences.weights_file'])
+    models.add_argument('--model-file', default=c.get('sentences.model_file', None))
 
     # General optional stuff
 
-    subparsers = parser.add_subparsers('mode')
+    subparsers = parser.add_subparsers(title='mode', description='sentence utilities',
+                                       help='Options for which sentence utility to run.')
     # training/detector stuff
     train_parser = subparsers.add_parser('train',
                                          parents=[
@@ -117,7 +149,7 @@ def main(args=None):
 
     args, additional_args = parser.parse_known_args(args)
 
-    args.func(additional_args)
+    args.func(args, additional_args)
 
 
 main()

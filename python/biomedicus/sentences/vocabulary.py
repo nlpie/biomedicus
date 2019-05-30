@@ -1,12 +1,25 @@
+# Copyright 2019 Regents of the University of Minnesota.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 import os
-import pathlib
-import re
 from abc import abstractmethod, ABC
-from typing import Optional, AnyStr, Iterable, Tuple, List
 
 import numpy as np
+import pathlib
+import re
+from typing import Optional, AnyStr, Iterable, Tuple, List
 
-from ..tokenization import Token, detect_space_after
+from biomedicus.tokenization import Token, detect_space_after
 
 
 class Vocabulary(object):
@@ -223,6 +236,7 @@ class TokenSequenceGenerator(ABC, Iterable):
     """Abstract base class for transforming an iterable of document-tokens into data
     usable by a classifier.
     """
+
     def __init__(
             self,
             input_source: Iterable[Tuple[AnyStr, List[Token]]],
