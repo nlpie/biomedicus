@@ -76,8 +76,7 @@ setup(
         'setuptools_scm',
     ],
     tests_require=[
-        'pytest',
-        'requests'
+        'pytest'
     ],
     extras_require={
         'tf': 'tensorflow',

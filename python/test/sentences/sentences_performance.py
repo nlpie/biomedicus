@@ -11,17 +11,22 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import logging
+import os
 
-from biomedicus.sentences import create_parser
+import pytest
+from nlpnewt import Events, Pipeline
+from nlpnewt._events_service import EventsServicer
+from pathlib import Path
 
-logging.basicConfig(level=logging.INFO)
-
-
-def main(args=None):
-    parser = create_parser()
-    args, additional_args = parser.parse_known_args(args)
-    return args.func(args, additional_args)
+import biomedicus
+from biomedicus import sentences
 
 
-main()
+@pytest.fixture(name='sentences')
+def fixture_sentences():
+    pass
+
+def test_sentence_performance():
+    input_dir = Path(os.environ['BIOMEDICUS_TEST_DATA']) / 'sentences'
+    with Events(stub=EventsServicer()) as events, Pipeline() as pipeline:
+        for
