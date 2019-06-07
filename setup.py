@@ -16,7 +16,7 @@ Minnesota NLP/IE Group."""
 
 import sys
 
-from setuptools import setup, find_namespace_packages
+from setuptools import setup, find_packages
 from setuptools.command.test import test as _test
 
 
@@ -63,7 +63,8 @@ setup(
         'Topic :: Text Processing :: Linguistic'
     ],
     keywords='nlp biomedical text',
-    packages=find_namespace_packages(),
+    package_dir={'': 'python'},
+    packages=find_packages(where='python', exclude=['tests']),
     install_requires=[
         'nlpnewt',
         'numpy',
@@ -76,8 +77,7 @@ setup(
         'setuptools_scm',
     ],
     tests_require=[
-        'pytest',
-        'requests'
+        'pytest'
     ],
     extras_require={
         'tf': 'tensorflow',

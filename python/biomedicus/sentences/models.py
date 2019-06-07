@@ -618,7 +618,7 @@ class SavedModel(SentenceModel):
     def __init__(self, model_file):
         super().__init__()
         with self.graph.as_default(), self.session.as_default():
-            self._model = tf.keras.models.load_model(model_file)
+            self._model = tf.keras.models.load_model(model_file, compile=False)
             print(self._model.summary())
 
     @property

@@ -32,6 +32,7 @@ Token.has_space_after.__doc__ = "bool: boolean specifying if the token has a spa
 
 _segment_pattern = re.compile(r"\n{2,}|\Z", re.M)
 _token_pattern = re.compile(r"(^=+$)|(^-+$)|[A-Za-z]+|\S", re.M)
+_whitespace_pattern = re.compile(r"\S+")
 
 
 def detect_space_after(txt: AnyStr, end: int):
@@ -67,17 +68,12 @@ def tokenize(txt: str) -> Iterable[Token]:
     iterable of Token
         iterable of all the tokens in the text
     """
-    segment_start = 0
-    for segment_index, segment in enumerate(_segment_pattern.finditer(txt)):
-        segment_end = segment.start()
-        for token in _token_pattern.finditer(txt, segment_start, segment_end):
-            has_space_after = txt[token.end():token.end() + 1].isspace() if token.end() < len(
-                txt) else False
-            yield Token(segment_index,
-                        token.start(),
-                        token.end(),
-                        None,
-                        None,
-                        has_space_after)
-
-        segment_start = segment.end()
+    for token in _whitespace_pattern.finditer(txt):
+        has_space_after = txt[token.end():token.end() + 1].isspace() if token.end() < len(
+            txt) else False
+        yield Token(0,
+                    token.start(),
+                    token.end(),
+                    None,
+                    None,
+                    has_space_after)
