@@ -30,7 +30,8 @@ class SentenceProcessor(DocumentProcessor):
         self.model = model
         self.input_mapper = input_mapper
 
-    def process(self, document: Document, params: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    def process_document(self, document: Document,
+                         params: Dict[str, Any]):
         batch_size = params.get('batch_size', 32)
         text = document.text
         sentences = self.model.predict_txt(text, batch_size, self.input_mapper,

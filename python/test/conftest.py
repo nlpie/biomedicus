@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import pytest
+from nlpnewt.utils import subprocess_events_server
 
 
 def pytest_configure(config):
@@ -35,8 +36,8 @@ def pytest_collection_modifyitems(config, items):
             if "performance" in item.keywords:
                 item.add_marker(skip_consul)
 
+
 @pytest.fixture(name='events_service')
 def fixture_events_service():
-    with subprocess_events_server(cwd=Path(__file__).parents[2],
-                                  config_path=config_path) as address:
+    with subprocess_events_server() as address:
         yield address

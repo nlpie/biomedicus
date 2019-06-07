@@ -13,15 +13,15 @@
 # limitations under the License.
 import logging
 
-from biomedicus.sentences import create_parser
+from biomedicus.sentences.commands import SentenceCommands, create_parser
 
 logging.basicConfig(level=logging.INFO)
 
 
 def main(args=None):
     parser = create_parser()
-    args, additional_args = parser.parse_known_args(args)
-    return args.func(args, additional_args)
+    commands = parser.parse_args(args=args, namespace=SentenceCommands())
+    commands.func(commands)
 
 
 main()
