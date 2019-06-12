@@ -12,16 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
-import signal
-import subprocess
-from pathlib import Path
 
 import grpc
 import pytest
-from nlpnewt import Events, Pipeline
+import signal
+import subprocess
+from nlpnewt import Pipeline, RemoteProcessor, EventsClient, LocalProcessor
 from nlpnewt.io.serialization import get_serializer
 from nlpnewt.metrics import Metrics, Accuracy
 from nlpnewt.utils import find_free_port
+from pathlib import Path
 
 
 @pytest.fixture(name='sentences_service')
@@ -57,12 +57,13 @@ def test_sentence_performance(events_service, sentences_service):
     json_serializer = get_serializer('json')
 
     accuracy = Accuracy()
-    with Events(address=events_service) as events, Pipeline() as pipeline:
-        pipeline.add_processor(name='biomedicus-sentences', address=sentences_service)
-        pipeline.add_local_processor(Metrics(accuracy, tested='sentences', target='Sentence'),
-                                     identifier='metrics', events=events)
+    with EventsClient(address=events_service) as client, Pipeline(
+            RemoteProcessor(processor_id='biomedicus-sentences', address=sentences_service),
+            LocalProcessor(Metrics(accuracy, tested='sentences', target='Sentence'),
+                           component_id='metrics', client=client)
+    ) as pipeline:
         for test_file in input_dir.glob('**/*.json'):
-            event = json_serializer.file_to_event(test_file, events=events)
+            event = json_serializer.file_to_event(test_file, client=client)
             with event:
                 document = event['plaintext']
                 results = pipeline.run(document)
