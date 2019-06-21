@@ -19,7 +19,7 @@ package edu.umn.biomedicus.rtf.beans.keywords;
 import edu.umn.biomedicus.rtf.reader.KeywordAction;
 import edu.umn.biomedicus.rtf.reader.RtfSink;
 import edu.umn.biomedicus.rtf.reader.RtfSource;
-import edu.umn.biomedicus.rtf.reader.State;
+import edu.umn.biomedicus.rtf.reader.RtfState;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -78,11 +78,16 @@ public class PropertyKeywordAction extends AbstractKeywordAction {
   }
 
   @Override
-  public String executeAction(State state, RtfSource source, RtfSink sink) throws IOException {
+  public void executeAction(RtfState state, RtfSource source, RtfSink sink) throws IOException {
+    if (state.isSkippingDestination()) {
+      return;
+    }
     int value = (!alwaysUseDefault && hasParameter()) ? getParameter() : defaultValue;
     int oldValue = state.getPropertyValue(propertyGroup, propertyName);
     state.setPropertyValue(propertyGroup, propertyName, value);
-    sink.propertyChanged(propertyGroup, propertyName, oldValue, value);
+    if (value != oldValue) {
+      sink.propertyChanged(propertyGroup, propertyName, oldValue, value);
+    }
   }
 
   @Override

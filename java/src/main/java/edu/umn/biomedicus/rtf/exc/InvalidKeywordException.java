@@ -17,27 +17,12 @@
 package edu.umn.biomedicus.rtf.exc;
 
 /**
- *
+ * Indicates a failure parsing a keyword.
  */
 public class InvalidKeywordException extends RtfReaderException {
-
-  public InvalidKeywordException() {
-  }
+  public InvalidKeywordException() { }
 
   public InvalidKeywordException(String message) {
     super(message);
-  }
-
-  public InvalidKeywordException(String message, Throwable cause) {
-    super(message, cause);
-  }
-
-  public InvalidKeywordException(Throwable cause) {
-    super(cause);
-  }
-
-  public InvalidKeywordException(String message, Throwable cause, boolean enableSuppression,
-                                 boolean writableStackTrace) {
-    super(message, cause, enableSuppression, writableStackTrace);
   }
 }

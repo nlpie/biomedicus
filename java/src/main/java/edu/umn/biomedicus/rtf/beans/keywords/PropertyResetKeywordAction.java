@@ -16,15 +16,13 @@
 
 package edu.umn.biomedicus.rtf.beans.keywords;
 
-import edu.umn.biomedicus.rtf.reader.KeywordAction;
-import edu.umn.biomedicus.rtf.reader.RtfSink;
-import edu.umn.biomedicus.rtf.reader.RtfSource;
-import edu.umn.biomedicus.rtf.reader.State;
+import edu.umn.biomedicus.rtf.reader.*;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 import java.io.IOException;
+import java.util.Map;
 
 /**
  *
@@ -45,8 +43,17 @@ public class PropertyResetKeywordAction extends AbstractKeywordAction {
   }
 
   @Override
-  public String executeAction(State state, RtfSource source, RtfSink sink) throws IOException {
-    state.resetPropertyGroup(propertyGroupName);
+  public void executeAction(RtfState state, RtfSource source, RtfSink sink) throws IOException {
+    if (state.isSkippingDestination()) {
+      return;
+    }
+    Map<String, Integer> propertyGroup = state.getPropertyGroup(propertyGroupName);
+    propertyGroup.replaceAll((k, v) -> {
+      if (v != 0) {
+        sink.propertyChanged(propertyGroupName, k, v, 0);
+      }
+      return 0;
+    });
   }
 
   @Override

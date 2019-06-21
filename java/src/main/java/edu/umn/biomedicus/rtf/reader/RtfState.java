@@ -16,9 +16,6 @@
 
 package edu.umn.biomedicus.rtf.reader;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.util.Map;
@@ -27,29 +24,30 @@ import java.util.stream.Collectors;
 /**
  * Stores the stateful properties of rtf processing.
  */
-public class State {
+public class RtfState {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(State.class);
-
-  /**
-   * Various properties changed by property value keywords.
-   */
   private final Map<String, Map<String, Integer>> properties;
 
-  private CharsetDecoder decoder = Charset.forName("Windows-1252").newDecoder();
+  private CharsetDecoder decoder = Charset.forName("windows-1252").newDecoder();
 
   private int charactersToSkip = 0;
 
-  public State(Map<String, Map<String, Integer>> properties) {
+  private boolean skipDestinationIfUnknown = false;
+
+  private boolean skippingDestination = false;
+
+  private String destination = null;
+
+  public RtfState(Map<String, Map<String, Integer>> properties) {
     this.properties = properties;
   }
 
   /**
-   * Copies a child state object, which inherits the current values from this state object.
+   * Creates a child state object, which inherits the current values from this state object.
    *
    * @return new state object with the same values as this object.
    */
-  public State copy() {
+  public RtfState copy() {
     Map<String, Map<String, Integer>> propertiesCopy = properties.entrySet()
         .stream()
         .collect(Collectors.toMap(Map.Entry::getKey,
@@ -58,7 +56,12 @@ public class State {
                 .stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))));
 
-    return new State(propertiesCopy);
+    RtfState copy = new RtfState(propertiesCopy);
+    copy.charactersToSkip = charactersToSkip;
+    copy.skipDestinationIfUnknown = skipDestinationIfUnknown;
+    copy.skippingDestination = skippingDestination;
+    copy.destination = destination;
+    return copy;
   }
 
   /**
@@ -79,6 +82,10 @@ public class State {
    */
   public void resetPropertyGroup(String group) {
     properties.get(group).replaceAll((k, v) -> 0);
+  }
+
+  public Map<String, Integer> getPropertyGroup(String group) {
+    return properties.get(group);
   }
 
   /**
@@ -119,5 +126,29 @@ public class State {
 
   public int getAndDecrementCharactersToSkip() {
     return charactersToSkip--;
+  }
+
+  public boolean isSkipDestinationIfUnknown() {
+    return skipDestinationIfUnknown;
+  }
+
+  public void setSkipDestinationIfUnknown(boolean skipDestinationIfUnknown) {
+    this.skipDestinationIfUnknown = skipDestinationIfUnknown;
+  }
+
+  public boolean isSkippingDestination() {
+    return skippingDestination;
+  }
+
+  public void setSkippingDestination(boolean skippingDestination) {
+    this.skippingDestination = skippingDestination;
+  }
+
+  public void setDestination(String destinationName) {
+    destination = destinationName;
+  }
+
+  public String getDestination() {
+    return destination;
   }
 }

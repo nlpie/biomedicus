@@ -18,6 +18,31 @@
 <controlKeywordsDescription>
   <controlKeywords>
     <controlKeyword>
+      <keyword>ansi</keyword>
+      <encodingKeywordAction>
+        <encoding>cp1252</encoding>
+      </encodingKeywordAction>
+    </controlKeyword>
+    <controlKeyword>
+      <keyword>mac</keyword>
+      <encodingKeywordAction>
+        <encoding>MacRoman</encoding>
+      </encodingKeywordAction>
+    </controlKeyword>
+    <controlKeyword>
+      <keyword>pc</keyword>
+      <encodingKeywordAction>
+        <encoding>cp437</encoding>
+      </encodingKeywordAction>
+    </controlKeyword>
+    <controlKeyword>
+      <keyword>pca</keyword>
+      <encodingKeywordAction>
+        <encoding>cp850</encoding>
+      </encodingKeywordAction>
+    </controlKeyword>
+
+    <controlKeyword>
       <keyword>*</keyword>
       <skipDestinationIfUnknownKeywordAction/>
     </controlKeyword>

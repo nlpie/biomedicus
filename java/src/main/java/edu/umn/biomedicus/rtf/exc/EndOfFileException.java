@@ -17,27 +17,13 @@
 package edu.umn.biomedicus.rtf.exc;
 
 /**
- * Indicates
+ * Indicates unexpected end of file while parsing.
  */
 public class EndOfFileException extends RtfReaderException {
 
-  public EndOfFileException() {
-  }
+  public EndOfFileException() { }
 
   public EndOfFileException(String message) {
     super(message);
-  }
-
-  public EndOfFileException(String message, Throwable cause) {
-    super(message, cause);
-  }
-
-  public EndOfFileException(Throwable cause) {
-    super(cause);
-  }
-
-  public EndOfFileException(String message, Throwable cause, boolean enableSuppression,
-                            boolean writableStackTrace) {
-    super(message, cause, enableSuppression, writableStackTrace);
   }
 }

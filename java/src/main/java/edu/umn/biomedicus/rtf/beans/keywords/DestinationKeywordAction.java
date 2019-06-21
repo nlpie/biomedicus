@@ -16,15 +16,11 @@
 
 package edu.umn.biomedicus.rtf.beans.keywords;
 
-import edu.umn.biomedicus.rtf.reader.KeywordAction;
-import edu.umn.biomedicus.rtf.reader.RtfSink;
-import edu.umn.biomedicus.rtf.reader.RtfSource;
-import edu.umn.biomedicus.rtf.reader.State;
+import edu.umn.biomedicus.rtf.reader.*;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
-import java.io.IOException;
 
 /**
  * A keyword action that switches the current state to a different destination.
@@ -61,8 +57,11 @@ public class DestinationKeywordAction extends AbstractKeywordAction {
   }
 
   @Override
-  public String executeAction(State state, RtfSource source, RtfSink sink) throws IOException {
-    sink.changeDestination(destinationName);
+  public void executeAction(RtfState state, RtfSource source, RtfSink sink) {
+    if (state.isSkippingDestination()) {
+      return;
+    }
+    state.setDestination(destinationName);
   }
 
   @Override

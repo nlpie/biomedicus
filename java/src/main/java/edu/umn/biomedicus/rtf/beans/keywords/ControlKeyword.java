@@ -23,9 +23,18 @@ import javax.xml.bind.annotation.*;
  */
 @XmlRootElement
 @XmlType
-@XmlSeeAlso({BinaryKeywordAction.class, DestinationKeywordAction.class, HexKeywordAction.class,
-    OutputKeywordAction.class, PropertyKeywordAction.class, PropertyResetKeywordAction.class,
-    SkipDestinationIfUnknownKeywordAction.class, UnicodeKeywordAction.class})
+@XmlSeeAlso({
+    ANSICodepageAction.class,
+    BinaryKeywordAction.class,
+    DestinationKeywordAction.class,
+    EncodingKeywordAction.class,
+    HexKeywordAction.class,
+    OutputKeywordAction.class,
+    PropertyKeywordAction.class,
+    PropertyResetKeywordAction.class,
+    SkipDestinationIfUnknownKeywordAction.class,
+    UnicodeKeywordAction.class
+})
 public class ControlKeyword {
 
   private String keyword;

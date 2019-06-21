@@ -16,6 +16,24 @@
 
 package edu.umn.biomedicus.rtf;
 
-public class RTF {
+import edu.umn.biomedicus.rtf.beans.keywords.ControlKeywordsDescription;
+import edu.umn.biomedicus.rtf.beans.properties.PropertiesDescription;
+import edu.umn.biomedicus.rtf.reader.KeywordAction;
+import edu.umn.biomedicus.rtf.reader.RtfParser;
+import edu.umn.biomedicus.rtf.reader.RtfState;
 
+import java.util.Map;
+
+public class RTF {
+  public static RtfParser getParser() {
+    ControlKeywordsDescription controlKeywordsDescription = ControlKeywordsDescription
+        .loadFromFile("edu/umn/biomedicus/rtf/ControlKeywords.xml");
+    Map<String, KeywordAction> keywordActionMap = controlKeywordsDescription
+        .getKeywordActionsAsMap();
+    PropertiesDescription propertiesDescription = PropertiesDescription
+        .loadFromFile("edu/umn/biomedicus/rtf/PropertiesDescription.xml");
+    Map<String, Map<String, Integer>> properties = propertiesDescription.createProperties();
+    RtfState state = new RtfState(properties);
+    return new RtfParser(keywordActionMap, state);
+  }
 }

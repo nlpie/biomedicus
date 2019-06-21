@@ -18,7 +18,6 @@ package edu.umn.biomedicus.rtf.reader;
 
 import org.jetbrains.annotations.Nullable;
 
-import java.io.IOException;
 import java.util.Objects;
 
 /**
@@ -36,8 +35,7 @@ public class UnknownKeywordAction implements KeywordAction {
   private Integer parameter = null;
 
   @Override
-  public String executeAction(State state, RtfSource source, RtfSink sink) throws IOException {
-  }
+  public void executeAction(RtfState state, RtfSource source, RtfSink sink) { }
 
   @Override
   public KeywordAction copy() {

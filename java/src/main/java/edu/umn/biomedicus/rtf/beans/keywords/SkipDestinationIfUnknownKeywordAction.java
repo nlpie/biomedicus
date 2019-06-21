@@ -16,25 +16,26 @@
 
 package edu.umn.biomedicus.rtf.beans.keywords;
 
-import edu.umn.biomedicus.rtf.reader.KeywordAction;
-import edu.umn.biomedicus.rtf.reader.RtfSink;
-import edu.umn.biomedicus.rtf.reader.RtfSource;
-import edu.umn.biomedicus.rtf.reader.State;
+import edu.umn.biomedicus.rtf.reader.*;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 import java.io.IOException;
 
 /**
- *
+ * Keyword action that handles the "\*" command which skips destinations that the reader does not
+ * understand.
  */
 @XmlRootElement
 @XmlType
 public class SkipDestinationIfUnknownKeywordAction extends AbstractKeywordAction {
 
   @Override
-  public String executeAction(State state, RtfSource source, RtfSink sink) throws IOException {
-    state.markSkipDestinationIfUnknown();
+  public void executeAction(RtfState state, RtfSource source, RtfSink sink) {
+    if (state.isSkippingDestination()) {
+      return;
+    }
+    state.setSkipDestinationIfUnknown(true);
   }
 
   @Override

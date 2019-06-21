@@ -17,10 +17,7 @@
 package edu.umn.biomedicus.rtf.beans.keywords;
 
 import edu.umn.biomedicus.rtf.exc.RtfReaderException;
-import edu.umn.biomedicus.rtf.reader.KeywordAction;
-import edu.umn.biomedicus.rtf.reader.RtfSink;
-import edu.umn.biomedicus.rtf.reader.RtfSource;
-import edu.umn.biomedicus.rtf.reader.State;
+import edu.umn.biomedicus.rtf.reader.*;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
@@ -34,18 +31,14 @@ import java.io.IOException;
 public class UnicodeKeywordAction extends AbstractKeywordAction {
 
   @Override
-  public String executeAction(State state, RtfSource source, RtfSink sink) throws IOException {
+  public void executeAction(RtfState state, RtfSource source, RtfSink sink) throws IOException {
+    if (state.isSkippingDestination()) {
+      return;
+    }
     if (!hasParameter()) {
       throw new RtfReaderException("Unicode keyword without a parameter.");
     }
-    sink.writeCharacter((char) getParameter(), getStartIndex(), getEnd());
-    int charsToSkip = state.getPropertyValue("DocumentFormatting", "UnicodeByteCount") - 1;
-    int read = source.read();
-    if (read == ' ' || read == '\n' || read == '\r') {
-      read = source.read();
-    }
-
-
+    sink.writeCharacter(state.getDestination(), (char) getParameter(), getStartIndex(), getEnd());
   }
 
   @Override

@@ -16,10 +16,7 @@
 
 package edu.umn.biomedicus.rtf.beans.keywords;
 
-import edu.umn.biomedicus.rtf.reader.KeywordAction;
-import edu.umn.biomedicus.rtf.reader.RtfSink;
-import edu.umn.biomedicus.rtf.reader.RtfSource;
-import edu.umn.biomedicus.rtf.reader.State;
+import edu.umn.biomedicus.rtf.reader.*;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -45,9 +42,17 @@ public class OutputKeywordAction extends AbstractKeywordAction {
   }
 
   @Override
-  public String executeAction(State state, RtfSource source, RtfSink sink) throws IOException {
+  public void executeAction(RtfState state, RtfSource source, RtfSink sink) throws IOException {
+    if (state.isSkippingDestination()) {
+      return;
+    }
+    int charactersToSkip = state.getCharactersToSkip();
+    if (charactersToSkip > 0) {
+      state.setCharactersToSkip(charactersToSkip - 1);
+      return;
+    }
     char c = outputString.charAt(0);
-    sink.writeCharacter(c, getStartIndex(), getEnd());
+    sink.writeCharacter(state.getDestination(), c, getStartIndex(), getEnd());
   }
 
   @Override

@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.CharacterCodingException;
+import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CoderResult;
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -40,62 +41,80 @@ public class RtfParser {
 
   private final Map<String, KeywordAction> keywordActionMap;
 
-  private final State initialState;
+  private final RtfState initialState;
 
-  public RtfParser(Map<String, KeywordAction> keywordActionMap, State initialState) {
+  private final ByteBuffer bb = ByteBuffer.allocate(1);
+
+  private final CharBuffer cb = CharBuffer.allocate(1);
+
+  private final Deque<RtfState> stateStack = new ArrayDeque<>();
+
+  public RtfParser(Map<String, KeywordAction> keywordActionMap, RtfState initialState) {
     this.keywordActionMap = keywordActionMap;
     this.initialState = initialState;
   }
 
-  public void parseFile(RtfSource rtfSource, RtfSink rtfSink) throws IOException {
-    State currentState = initialState.copy();
-    Deque<State> stateStack = new ArrayDeque<>();
-    ByteBuffer bb = ByteBuffer.allocate(1);
-    CharBuffer cb = CharBuffer.allocate(1);
+  public void parseFile(RtfSource source, RtfSink sink) throws IOException {
+    RtfState state = initialState.copy();
     while (true) {
-      int index = rtfSource.getIndex();
-      int b = rtfSource.read();
+      int index = source.getIndex();
+      int b = source.read();
       if (b == -1) {
         break;
       }
       switch (b) {
         case '{':
-          stateStack.addFirst(currentState);
-          currentState = currentState.copy();
+          if (state.getCharactersToSkip() > 0) {
+            state.setCharactersToSkip(0);
+          }
+          stateStack.addFirst(state);
+          state = state.copy();
           break;
         case '}':
           if (stateStack.size() == 0) {
             throw new RtfReaderException("Extra closing brace.");
           }
-          currentState = stateStack.removeFirst();
+          if (state.getCharactersToSkip() > 0) {
+            state.setCharactersToSkip(0);
+          }
+          state = stateStack.removeFirst();
           break;
         case '\\':
-          KeywordAction keywordAction = parseKeyword(index, rtfSource);
-          try {
-            keywordAction.executeAction(currentState, rtfSource, rtfSink);
-          } catch (java.io.IOException e) {
-            e.printStackTrace();
+          KeywordAction keywordAction = parseKeyword(index, source);
+          if (state.isSkipDestinationIfUnknown()) {
+            state.setSkipDestinationIfUnknown(false);
+            if (!keywordAction.isKnown()) {
+              state.setSkippingDestination(true);
+            }
           }
+          keywordAction.executeAction(state, source, sink);
           break;
         case '\n':
         case '\r':
         case 0:
           break;
         default:
-          cb.clear();
-          bb.clear();
-          bb.put((byte) b);
-          CoderResult coderResult = currentState.getDecoder().decode(bb, cb, true);
-          if (coderResult.isError()) {
-            try {
-              coderResult.throwException();
-            } catch (CharacterCodingException e) {
-              throw new RtfReaderException(e);
-            }
+          int charactersToSkip = state.getCharactersToSkip();
+          if (charactersToSkip > 0) {
+            state.setCharactersToSkip(charactersToSkip - 1);
+            break;
           }
-          rtfSink.writeCharacter(cb.get(), index, rtfSource.getIndex());
-          break;
+          if (!state.isSkippingDestination()) {
+            cb.clear();
+            bb.clear();
+            bb.put((byte) b);
+            bb.rewind();
+            CharsetDecoder decoder = state.getDecoder();
+            decoder.reset();
+            CharBuffer cb = decoder.decode(bb);
+            sink.writeCharacter(state.getDestination(), cb.get(), index, source.getIndex());
+            break;
+          }
       }
+    }
+
+    if (stateStack.size() > 0) {
+      throw new RtfReaderException("Ended with unpopped state (unbalanced curly brackets).");
     }
   }
 

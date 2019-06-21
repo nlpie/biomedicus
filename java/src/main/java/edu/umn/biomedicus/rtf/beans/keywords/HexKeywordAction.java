@@ -16,11 +16,10 @@
 
 package edu.umn.biomedicus.rtf.beans.keywords;
 
-import edu.umn.biomedicus.rtf.exc.RtfReaderException;
 import edu.umn.biomedicus.rtf.reader.KeywordAction;
 import edu.umn.biomedicus.rtf.reader.RtfSink;
 import edu.umn.biomedicus.rtf.reader.RtfSource;
-import edu.umn.biomedicus.rtf.reader.State;
+import edu.umn.biomedicus.rtf.reader.RtfState;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
@@ -34,21 +33,27 @@ import java.nio.CharBuffer;
 @XmlRootElement
 @XmlType
 public class HexKeywordAction extends AbstractKeywordAction {
+  private final char[] chars = new char[2];
 
   @Override
-  public String executeAction(State state, RtfSource source, RtfSink sink) throws IOException {
-    char[] chars = new char[2];
-    try {
-      for (int i = 0; i < 2; i++) {
-        int code = source.read();
-        chars[i] = (char) code;
-      }
-      byte code = (byte)(Integer.parseInt(new String(chars), 16) & 0xff);
-      CharBuffer decode = state.getDecoder().decode(ByteBuffer.allocate(1).put(code));
-      sink.writeCharacter(decode.get(0), getStartIndex(), source.getIndex());
-    } catch (IOException e) {
-      throw new RtfReaderException(e);
+  public void executeAction(RtfState state, RtfSource source, RtfSink sink) throws IOException {
+    for (int i = 0; i < 2; i++) {
+      int code = source.read();
+      chars[i] = (char) code;
     }
+    int charactersToSkip = state.getCharactersToSkip();
+    if (charactersToSkip > 0) {
+      state.setCharactersToSkip(charactersToSkip - 1);
+      return;
+    }
+    if (state.isSkippingDestination()) {
+      return;
+    }
+    byte code = (byte) Integer.parseInt(new String(chars), 16);
+    ByteBuffer bb = ByteBuffer.allocate(1).put(code);
+    bb.rewind();
+    CharBuffer decode = state.getDecoder().decode(bb);
+    sink.writeCharacter(state.getDestination(), decode.get(0), getStartIndex(), source.getIndex());
   }
 
   @Override

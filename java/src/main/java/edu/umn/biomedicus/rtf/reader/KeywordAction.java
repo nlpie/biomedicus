@@ -36,9 +36,8 @@ public interface KeywordAction {
    * @param source
    * @param sink
    * @throws RtfReaderException if there is some kind of error executing the action
-   * @return
    */
-  String executeAction(State state, RtfSource source, RtfSink sink) throws IOException;
+  void executeAction(RtfState state, RtfSource source, RtfSink sink) throws IOException;
 
   KeywordAction copy();
 

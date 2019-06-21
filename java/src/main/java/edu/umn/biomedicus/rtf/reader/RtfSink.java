@@ -21,9 +21,7 @@ import java.nio.ByteBuffer;
 public interface RtfSink {
   void handleBinary(ByteBuffer byteBuffer, int startIndex, int endIndex);
 
-  void changeDestination(String destinationName);
-
-  void writeCharacter(char parameter, int startIndex, int endIndex);
+  void writeCharacter(String destinationName, char c, int startIndex, int endIndex);
 
   void propertyChanged(String propertyGroup, String propertyName, int oldValue, int newValue);
 }

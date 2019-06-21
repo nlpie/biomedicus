@@ -17,10 +17,7 @@
 package edu.umn.biomedicus.rtf.beans.keywords;
 
 import edu.umn.biomedicus.rtf.exc.RtfReaderException;
-import edu.umn.biomedicus.rtf.reader.KeywordAction;
-import edu.umn.biomedicus.rtf.reader.RtfSink;
-import edu.umn.biomedicus.rtf.reader.RtfSource;
-import edu.umn.biomedicus.rtf.reader.State;
+import edu.umn.biomedicus.rtf.reader.*;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
@@ -35,21 +32,29 @@ import java.nio.ByteBuffer;
 public class BinaryKeywordAction extends AbstractKeywordAction {
 
   @Override
-  public String executeAction(State state,
-                              RtfSource source,
-                              RtfSink sink) throws IOException {
+  public void executeAction(RtfState state,
+                            RtfSource source,
+                            RtfSink sink) throws IOException {
     int bytesToRead = getParameter();
-    ByteBuffer byteBuffer = ByteBuffer.allocate(bytesToRead);
+    ByteBuffer bb = ByteBuffer.allocate(bytesToRead);
     try {
       for (; bytesToRead > 0; bytesToRead--) {
         int b = source.read();
-        byteBuffer.put((byte) b);
+        bb.put((byte) b);
       }
     } catch (IOException e) {
       throw new RtfReaderException(e);
     }
-    sink.handleBinary(byteBuffer, getStartIndex(), source.getIndex());
-    return null;
+    if (state.isSkippingDestination()) {
+      return;
+    }
+    int charactersToSkip = state.getCharactersToSkip();
+    if (charactersToSkip > 0) {
+      state.setCharactersToSkip(charactersToSkip - 1);
+      return;
+    }
+    bb.position(0);
+    sink.handleBinary(bb, getStartIndex(), source.getIndex());
   }
 
   @Override

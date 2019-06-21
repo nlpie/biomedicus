@@ -19,11 +19,10 @@ package edu.umn.biomedicus.rtf.exc;
 import java.io.IOException;
 
 /**
- *
+ * Exception during RTF reading.
  */
 public class RtfReaderException extends IOException {
-  public RtfReaderException() {
-  }
+  public RtfReaderException() { }
 
   public RtfReaderException(String message) {
     super(message);
