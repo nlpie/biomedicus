@@ -40,7 +40,7 @@ class PropertyKeywordActionTest {
     RtfSource source = new RtfSource(null);
     action.setParameter(4);
     action.executeAction(state, source, sink);
-    verify(sink).propertyChanged("foo", "bar", 0, 4);
+    verify(sink).propertyChanged(, "foo", "bar", 0, 4);
     assertEquals(4, state.getPropertyValue("foo", "bar"));
   }
 
@@ -57,7 +57,7 @@ class PropertyKeywordActionTest {
     RtfSource source = new RtfSource(null);
     action.setParameter(4);
     action.executeAction(state, source, sink);
-    verify(sink).propertyChanged("foo", "bar", 0, 1);
+    verify(sink).propertyChanged(, "foo", "bar", 0, 1);
     assertEquals(1, state.getPropertyValue("foo", "bar"));
   }
 
@@ -92,7 +92,7 @@ class PropertyKeywordActionTest {
     RtfSource source = new RtfSource(null);
     action.setParameter(null);
     action.executeAction(state, source, sink);
-    verify(sink).propertyChanged("foo", "bar", 0, 1);
+    verify(sink).propertyChanged(, "foo", "bar", 0, 1);
     assertEquals(1, state.getPropertyValue("foo", "bar"));
   }
 }

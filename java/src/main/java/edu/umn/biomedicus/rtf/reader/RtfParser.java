@@ -54,7 +54,7 @@ public class RtfParser {
     this.initialState = initialState;
   }
 
-  public void parseFile(RtfSource source, RtfSink sink) throws IOException {
+  public void parseRtf(RtfSource source, RtfSink sink) throws IOException {
     RtfState state = initialState.copy();
     while (true) {
       int index = source.getIndex();

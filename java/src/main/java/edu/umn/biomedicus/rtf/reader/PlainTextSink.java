@@ -19,7 +19,7 @@ public class PlainTextSink implements RtfSink {
   }
 
   @Override
-  public void propertyChanged(String propertyGroup, String propertyName, int oldValue, int newValue) {
+  public void propertyChanged(String destinationName, String propertyGroup, String propertyName, int oldValue, int newValue) {
 
   }
 

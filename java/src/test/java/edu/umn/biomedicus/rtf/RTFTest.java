@@ -18,7 +18,7 @@ class RTFTest {
     PlainTextSink sink = new PlainTextSink();
     try (InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream("edu/umn/biomedicus/rtf/test.rtf")) {
       RtfSource source = new RtfSource(new BufferedInputStream(is));
-      parser.parseFile(source, sink);
+      parser.parseRtf(source, sink);
     }
     String text = sink.getText();
     assertEquals("The quick brown fox jumped over the lazy dog.\n", text);

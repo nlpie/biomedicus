@@ -86,7 +86,7 @@ public class PropertyKeywordAction extends AbstractKeywordAction {
     int oldValue = state.getPropertyValue(propertyGroup, propertyName);
     state.setPropertyValue(propertyGroup, propertyName, value);
     if (value != oldValue) {
-      sink.propertyChanged(propertyGroup, propertyName, oldValue, value);
+      sink.propertyChanged(, propertyGroup, propertyName, oldValue, value);
     }
   }
 

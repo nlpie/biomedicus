@@ -50,7 +50,7 @@ public class PropertyResetKeywordAction extends AbstractKeywordAction {
     Map<String, Integer> propertyGroup = state.getPropertyGroup(propertyGroupName);
     propertyGroup.replaceAll((k, v) -> {
       if (v != 0) {
-        sink.propertyChanged(propertyGroupName, k, v, 0);
+        sink.propertyChanged(, propertyGroupName, k, v, 0);
       }
       return 0;
     });
