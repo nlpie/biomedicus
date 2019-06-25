@@ -41,10 +41,16 @@ public class RtfProcessor extends EventProcessor {
 
   public static void main(String[] args) {
     try {
-      ProcessorServerOptions processorServerOptions = ProcessorServerOptions.parseArgs(args);
-
+      ProcessorServerOptions options = ProcessorServerOptions.parseArgs(args);
+      options.setProcessor(new RtfProcessor());
+      Newt newt = new Newt();
+      Server server = newt.createProcessorServer(options);
+      server.start();
+      server.blockUntilShutdown();
     } catch (CmdLineException e) {
       // pass
+    } catch (IOException | InterruptedException e) {
+      e.printStackTrace();
     }
   }
 }

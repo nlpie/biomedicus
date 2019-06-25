@@ -35,6 +35,8 @@ dependencies {
     implementation group: 'org.slf4j', name: 'slf4j-api', version: slf4jVersion
     implementation group: 'edu.umn.nlpie', name: 'nlpnewt', version: '[0.0, )'
 
+    runtimeOnly group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version: '2.11.2'
+
     testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: junitVersion
     testImplementation group: 'org.mockito', name: 'mockito-core', version: '2.+'
     testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: junitVersion
@@ -42,4 +44,15 @@ dependencies {
 
 test {
     useJUnitPlatform()
+}
+
+task fatJar(type: Jar) {
+    manifest {
+        attributes 'Implementation-Title': 'NLP-NEWT',
+                'Implementation-Version': version,
+                'Main-Class': 'edu.umn.nlpnewt.Newt'
+    }
+    baseName = project.name + '-all'
+    from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
 }

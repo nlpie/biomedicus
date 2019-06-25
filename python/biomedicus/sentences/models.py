@@ -141,7 +141,7 @@ class SentenceModel(metaclass=ABCMeta):
 
             prev = token, label
 
-        if prev is not None:
+        if sentence is not None:
             sentence.end_index = prev[0].end_index  # prev token end
             results.append(sentence)
         return results

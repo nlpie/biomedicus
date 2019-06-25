@@ -102,9 +102,10 @@ public class NewtDocumentRtfSink implements RtfSink {
             }
             labels.add(builder.build());
           }
+          startIndex = -1;
         }
       } else {
-        if (newValue > minimumValue) {
+        if (newValue >= minimumValue) {
           startIndex = index;
         }
       }
