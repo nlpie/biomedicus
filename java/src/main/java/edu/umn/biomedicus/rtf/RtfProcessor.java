@@ -26,6 +26,9 @@ public class RtfProcessor extends EventProcessor {
       binaryDataName = "rtf";
     }
     String outputDocumentName = params.getStringValue("output_document_name");
+    if (outputDocumentName == null) {
+      outputDocumentName = "plaintext";
+    }
     byte[] bytes = event.getBinaryData().get(binaryDataName);
     ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
     BufferedInputStream bis = new BufferedInputStream(bais);
