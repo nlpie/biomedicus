@@ -27,6 +27,7 @@ repositories {
 
 def junitVersion = '5.3.1'
 def slf4jVersion = '1.7.26'
+def jaxbVersion = '2.3.2'
 
 dependencies {
     implementation group: 'org.jetbrains', name: 'annotations', version: '17.0.0'
@@ -35,6 +36,9 @@ dependencies {
     implementation group: 'org.slf4j', name: 'slf4j-api', version: slf4jVersion
     implementation group: 'edu.umn.nlpie', name: 'nlpnewt', version: '[0.0, )'
 
+    implementation group: 'jakarta.xml.bind', name: 'jakarta.xml.bind-api', version: jaxbVersion
+
+    runtimeOnly group: 'org.glassfish.jaxb', name: 'jaxb-runtime', version: jaxbVersion
     runtimeOnly group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version: '2.11.2'
 
     testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: junitVersion
@@ -52,7 +56,7 @@ task fatJar(type: Jar) {
                 'Implementation-Version': version,
                 'Main-Class': 'edu.umn.nlpnewt.Newt'
     }
-    baseName = project.name + '-all'
+    setArchiveBaseName project.name + '-all'
     from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
     with jar
 }

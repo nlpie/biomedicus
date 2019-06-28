@@ -30,14 +30,15 @@ class PropertyResetKeywordActionTest {
 
   @Test
   void resets() throws IOException {
+    state.setDestination("Rtf");
     PropertyResetKeywordAction action = new PropertyResetKeywordAction();
     action.setBegin(5);
     action.setEnd(10);
     action.setPropertyGroupName("foo");
     RtfSource source = new RtfSource(null);
     action.executeAction(state, source, sink);
-    verify(sink).propertyChanged(, "foo", "bar", 1, 0);
-    verify(sink).propertyChanged(, "foo", "baz", 2, 0);
+    verify(sink).propertyChanged("Rtf", "foo", "bar", 1, 0);
+    verify(sink).propertyChanged("Rtf", "foo", "baz", 2, 0);
     assertEquals(0, state.getPropertyValue("foo", "bar"));
     assertEquals(0, state.getPropertyValue("foo", "baz"));
   }
