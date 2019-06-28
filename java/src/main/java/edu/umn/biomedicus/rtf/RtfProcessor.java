@@ -19,6 +19,20 @@ public class RtfProcessor extends EventProcessor {
     parser = RTF.getParser();
   }
 
+  public static void main(String[] args) {
+    try {
+      ProcessorServerOptions options = new ProcessorServerOptions(new RtfProcessor());
+      options.parseArgs(args);
+      Server server = Newt.createProcessorServer(options);
+      server.start();
+      server.blockUntilShutdown();
+    } catch (CmdLineException e) {
+      // pass
+    } catch (IOException | InterruptedException e) {
+      e.printStackTrace();
+    }
+  }
+
   @Override
   public void process(@NotNull Event event, @NotNull JsonObject params, @NotNull JsonObjectBuilder result) {
     String binaryDataName = params.getStringValue("binary_data_name");
@@ -29,31 +43,33 @@ public class RtfProcessor extends EventProcessor {
     if (outputDocumentName == null) {
       outputDocumentName = "plaintext";
     }
-    byte[] bytes = event.getBinaryData().get(binaryDataName);
-    ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
-    BufferedInputStream bis = new BufferedInputStream(bais);
-    RtfSource rtfSource = new RtfSource(bis);
-    NewtDocumentRtfSink rtfSink = new NewtDocumentRtfSink();
     try {
-      parser.parseRtf(rtfSource, rtfSink);
+      byte[] bytes = event.getBinaryData().get(binaryDataName);
+      ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
+      BufferedInputStream bis = new BufferedInputStream(bais);
+      StringBuilder sb = new StringBuilder();
+      bis.mark(6);
+      for (int i = 0; i < 6; i++) {
+        int code = bis.read();
+        if (code != -1) {
+          sb.append((char) code);
+        }
+      }
+      if ("{\\rtf1".equals(sb.toString())) {
+        bis.reset();
+        RtfSource rtfSource = new RtfSource(bis);
+        NewtDocumentRtfSink rtfSink = new NewtDocumentRtfSink();
+        parser.parseRtf(rtfSource, rtfSink);
+        rtfSink.done(event, outputDocumentName);
+      } else {
+        int code;
+        while ((code = bis.read()) != -1) {
+          sb.append((char) code);
+        }
+        event.addDocument(outputDocumentName, sb.toString());
+      }
     } catch (IOException e) {
       throw new IllegalStateException(e);
-    }
-    rtfSink.done(event, outputDocumentName);
-  }
-
-  public static void main(String[] args) {
-    try {
-      ProcessorServerOptions options = ProcessorServerOptions.parseArgs(args);
-      options.setProcessor(new RtfProcessor());
-      Newt newt = new Newt();
-      Server server = newt.createProcessorServer(options);
-      server.start();
-      server.blockUntilShutdown();
-    } catch (CmdLineException e) {
-      // pass
-    } catch (IOException | InterruptedException e) {
-      e.printStackTrace();
     }
   }
 }
