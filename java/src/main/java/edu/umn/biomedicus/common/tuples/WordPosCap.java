@@ -16,7 +16,7 @@
 
 package edu.umn.biomedicus.common.tuples;
 
-import edu.umn.biomedicus.common.tags.PartOfSpeech;
+import edu.umn.biomedicus.common.pos.PartOfSpeech;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.Serializable;

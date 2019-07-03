@@ -19,7 +19,7 @@ package edu.umn.biomedicus.tagging.tnt;
 import edu.umn.biomedicus.common.tuples.Pair;
 import edu.umn.biomedicus.common.tuples.WordCap;
 import edu.umn.biomedicus.common.tuples.WordPosCap;
-import edu.umn.biomedicus.common.tags.PartOfSpeech;
+import edu.umn.biomedicus.common.pos.PartOfSpeech;
 
 import java.util.*;
 

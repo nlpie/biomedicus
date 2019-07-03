@@ -16,7 +16,7 @@
 
 package edu.umn.biomedicus.tagging.tnt;
 
-import edu.umn.biomedicus.common.tags.PartOfSpeech;
+import edu.umn.biomedicus.common.pos.PartOfSpeech;
 import edu.umn.biomedicus.common.utilities.Strings;
 
 import org.jetbrains.annotations.Nullable;

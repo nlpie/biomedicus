@@ -18,8 +18,8 @@ package edu.umn.biomedicus.tagging.tnt;
 
 import edu.umn.nlpnewt.*;
 import org.jetbrains.annotations.NotNull;
-import sun.net.www.content.text.Generic;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -29,19 +29,13 @@ import java.util.List;
  * @author Ben Knoll
  * @since 1.7.0
  */
-public class TnTTrainerProcessor extends EventProcessor {
-
-  private final String viewName;
-
+public class TnTTrainerProcessor extends DocumentProcessor {
   private final TntModelTrainer tntModelTrainer;
 
   private final Path outputDir;
 
-  TnTTrainerProcessor(@NotNull String viewName,
-                      @NotNull Path outputDir,
+  TnTTrainerProcessor(@NotNull Path outputDir,
                       @NotNull DataStoreFactory dataStoreFactory) {
-    this.viewName = viewName;
-
     dataStoreFactory.setDbPath(outputDir.resolve("words/"));
 
     tntModelTrainer = TntModelTrainer.builder()
@@ -57,21 +51,17 @@ public class TnTTrainerProcessor extends EventProcessor {
   }
 
   @Override
-  public void process(@NotNull Event event,
-                      @NotNull JsonObject params,
-                      @NotNull JsonObjectBuilder result) {
-    Document view = event.getDocuments().get(viewName);
-
-    if (view == null) {
-      throw new RuntimeException("View was null: " + viewName);
-    }
-
-    LabelIndex<GenericLabel> sentences = view.getLabelIndex("sentences");
-    LabelIndex<GenericLabel> partsOfSpeech = view.getLabelIndex("pos_tags");
+  protected void process(@NotNull Document document, @NotNull JsonObject params, @NotNull JsonObjectBuilder result) {
+    LabelIndex<GenericLabel> sentences = document.getLabelIndex("sentences");
+    LabelIndex<GenericLabel> partsOfSpeech = document.getLabelIndex("pos_tags");
 
     for (GenericLabel sentence : sentences) {
       List<GenericLabel> sentencesPos = partsOfSpeech.inside(sentence).asList();
-      tntModelTrainer.addSentence(sentenceTokens, sentencesPos);
+      tntModelTrainer.addSentence(document.getText(), sentencesPos);
     }
+  }
+
+  void done() throws IOException {
+    tntModelTrainer.createModel().write(outputDir);
   }
 }

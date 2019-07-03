@@ -19,7 +19,7 @@ package edu.umn.biomedicus.tagging.tnt;
 import edu.umn.biomedicus.common.grams.Ngram;
 import edu.umn.biomedicus.common.tuples.PosCap;
 import edu.umn.biomedicus.common.tuples.WordCap;
-import edu.umn.biomedicus.common.tags.PartOfSpeech;
+import edu.umn.biomedicus.common.pos.PartOfSpeech;
 import edu.umn.biomedicus.common.viterbi.Viterbi;
 import edu.umn.biomedicus.common.viterbi.ViterbiProcessor;
 import edu.umn.biomedicus.tokenization.Tokenizer;
@@ -29,7 +29,6 @@ import edu.umn.nlpnewt.*;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
@@ -94,7 +93,9 @@ public class TntPosTagger extends DocumentProcessor {
           Ngram.create(BBS, BOS), Ngram::create);
 
       String docText = document.getText();
+      List<TokenResult> tokens = new ArrayList<>();
       for (TokenResult token : Tokenizer.tokenize(sentence.coveredText(document))) {
+        tokens.add(token);
         CharSequence text = token.text(docText);
         boolean isCapitalized = Character.isUpperCase(text.charAt(0));
         viterbiProcessor.advance(new WordCap(text.toString(), isCapitalized));
@@ -109,9 +110,10 @@ public class TntPosTagger extends DocumentProcessor {
       }
 
       Iterator<PosCap> it = tags.subList(2, tags.size()).iterator();
-      for (ParseToken token : tokens) {
+      for (TokenResult token : tokens) {
         PartOfSpeech partOfSpeech = it.next().getPartOfSpeech();
-        partOfSpeechLabeler.add(new PosTag(token, partOfSpeech));
+        partOfSpeechLabeler.add(GenericLabel.newBuilder(token.getStartIndex(), token.getEndIndex())
+            .setProperty("tag", partOfSpeech.toString()).build());
       }
     }
   }

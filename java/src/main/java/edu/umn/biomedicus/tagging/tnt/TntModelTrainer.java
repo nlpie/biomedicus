@@ -17,8 +17,8 @@
 package edu.umn.biomedicus.tagging.tnt;
 
 import edu.umn.biomedicus.common.tuples.WordCap;
-import edu.umn.biomedicus.common.tags.PartOfSpeech;
-import edu.umn.biomedicus.common.tags.PartsOfSpeech;
+import edu.umn.biomedicus.common.pos.PartOfSpeech;
+import edu.umn.biomedicus.common.pos.PartsOfSpeech;
 import edu.umn.nlpnewt.GenericLabel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
