@@ -66,7 +66,7 @@ public class TntModelTrainer {
   private final boolean useMslSuffixModel;
 
   /**
-   * Whether or not we should restrict to the {@link PartsOfSpeech#OPEN_CLASS}.
+   * Whether or not we should restrict to the {@link PartsOfSpeech#getOpenClass()}.
    */
   private final boolean restrictToOpenClass;
 
@@ -82,7 +82,7 @@ public class TntModelTrainer {
    * @param maxWordFrequency The maximum word frequency in the suffix / unknown words model.
    * @param useMslSuffixModel Whether or not the MSL suffix model should be used.
    * @param restrictToOpenClass Whether or not we should restrict to the {@link
-   * PartsOfSpeech#OPEN_CLASS}.
+   * PartsOfSpeech#getOpenClass()}.
    */
   private TntModelTrainer(List<FilteredWordPosFrequencies> filteredWordPosFrequencies,
       PosCapTrigramModelTrainer posCapTrigramModelTrainer,
