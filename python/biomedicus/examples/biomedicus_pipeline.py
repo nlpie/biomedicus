@@ -12,9 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from argparse import ArgumentParser
+from pathlib import Path
+
 from nlpnewt import EventsClient, Event, Pipeline, RemoteProcessor, LocalProcessor
 from nlpnewt.io.serialization import get_serializer, SerializationProcessor
-from pathlib import Path
 
 
 def main(args=None):
@@ -23,15 +24,18 @@ def main(args=None):
     parser.add_argument("output_directory", metavar="OUTPUT_DIR")
     parser.add_argument("--events")
     parser.add_argument("--rtf")
+    parser.add_argument("--tagger")
     parser.add_argument("--sentences")
     args = parser.parse_args(args)
 
     input_dir = Path(args.input_directory)
     with EventsClient(address=args.events) as client, Pipeline(
-            RemoteProcessor('biomedicus-rtf-processor', address=args.rtf,
+            RemoteProcessor('rtf-processor', address=args.rtf,
                             params={'binary_data_name': 'rtf',
                                     'output_document_name': 'plaintext'}),
-            RemoteProcessor('biomedicus-sentences', address=args.sentences,
+            RemoteProcessor('sentences', address=args.sentences,
+                            params={'document_name': 'plaintext'}),
+            RemoteProcessor('tnt-tagger', address=args.tagger,
                             params={'document_name': 'plaintext'}),
             LocalProcessor(SerializationProcessor(get_serializer('json'),
                                                   output_dir=args.output_directory),

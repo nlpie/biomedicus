@@ -17,6 +17,12 @@
 package edu.umn.biomedicus.tagging.tnt;
 
 import edu.umn.nlpnewt.*;
+import edu.umn.nlpnewt.common.JsonObject;
+import edu.umn.nlpnewt.common.JsonObjectBuilder;
+import edu.umn.nlpnewt.model.Document;
+import edu.umn.nlpnewt.model.GenericLabel;
+import edu.umn.nlpnewt.model.LabelIndex;
+import edu.umn.nlpnewt.processing.DocumentProcessor;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;

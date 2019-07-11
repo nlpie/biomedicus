@@ -3,14 +3,23 @@ package edu.umn.biomedicus.rtf;
 import edu.umn.biomedicus.rtf.reader.RtfParser;
 import edu.umn.biomedicus.rtf.reader.RtfSource;
 import edu.umn.nlpnewt.*;
+import edu.umn.nlpnewt.common.JsonObject;
+import edu.umn.nlpnewt.common.JsonObjectBuilder;
+import edu.umn.nlpnewt.common.Server;
+import edu.umn.nlpnewt.model.Event;
+import edu.umn.nlpnewt.processing.EventProcessor;
+import edu.umn.nlpnewt.processing.Processor;
+import edu.umn.nlpnewt.processing.ProcessorServerBuilder;
+import edu.umn.nlpnewt.processing.ProcessorServerOptions;
 import org.jetbrains.annotations.NotNull;
 import org.kohsuke.args4j.CmdLineException;
+import org.kohsuke.args4j.CmdLineParser;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
-@Processor("biomedicus-rtf-processor")
+@Processor("rtf-processor")
 public class RtfProcessor extends EventProcessor {
 
   private final RtfParser parser;
@@ -20,10 +29,11 @@ public class RtfProcessor extends EventProcessor {
   }
 
   public static void main(String[] args) {
+    ProcessorServerOptions options = new ProcessorServerOptions();
+    CmdLineParser cmdLineParser = new CmdLineParser(options);
     try {
-      ProcessorServerOptions options = new ProcessorServerOptions(new RtfProcessor());
-      options.parseArgs(args);
-      Server server = Newt.createProcessorServer(options);
+      cmdLineParser.parseArgument(args);
+      Server server = ProcessorServerBuilder.forProcessor(new RtfProcessor(), options).build();
       server.start();
       server.blockUntilShutdown();
     } catch (CmdLineException e) {

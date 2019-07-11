@@ -4,13 +4,23 @@ import edu.umn.biomedicus.common.pos.PartOfSpeech;
 import edu.umn.biomedicus.common.pos.PartsOfSpeech;
 import edu.umn.biomedicus.utilities.PtbReader.Node;
 import edu.umn.nlpnewt.*;
+import edu.umn.nlpnewt.common.JsonObject;
+import edu.umn.nlpnewt.common.JsonObjectBuilder;
+import edu.umn.nlpnewt.model.Document;
+import edu.umn.nlpnewt.model.Event;
+import edu.umn.nlpnewt.model.GenericLabel;
+import edu.umn.nlpnewt.model.Labeler;
+import edu.umn.nlpnewt.processing.*;
 import org.jetbrains.annotations.NotNull;
+import org.kohsuke.args4j.CmdLineException;
+import org.kohsuke.args4j.CmdLineParser;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+@Processor("ptb-reader")
 public class PtbReaderProcessor extends EventProcessor {
   @Override
   public void process(@NotNull Event event,
@@ -66,11 +76,24 @@ public class PtbReaderProcessor extends EventProcessor {
     }
 
     Document target = event.addDocument(targetDocumentName, documentBuilder.toString());
-    Labeler<GenericLabel> posTagsLabeler = target.getLabeler("pos_tags");
-    for (GenericLabel posTag : posTags) {
-      posTagsLabeler.add(posTag);
-    }
+    target.addLabels("sentences", true, sentences);
+    target.addLabels("pos_tags", true, posTags);
+  }
 
-    
+  public static void main(String[] args) {
+    ProcessorServerOptions options = new ProcessorServerOptions();
+    CmdLineParser parser = new CmdLineParser(options);
+    try {
+      parser.parseArgument(args);
+      ProcessorServer server = ProcessorServerBuilder
+          .forProcessor(new PtbReaderProcessor(), options)
+          .build();
+      server.start();
+      server.blockUntilShutdown();
+    } catch (CmdLineException e) {
+      ProcessorServerOptions.printHelp(parser, PtbReaderProcessor.class, e, null);
+    } catch (InterruptedException | IOException e) {
+      e.printStackTrace();
+    }
   }
 }
