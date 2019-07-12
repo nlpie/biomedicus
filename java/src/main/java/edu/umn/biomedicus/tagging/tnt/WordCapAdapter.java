@@ -29,6 +29,10 @@ public class WordCapAdapter implements UnaryOperator<WordCap> {
 
   private boolean ignoreCapitalization = false;
 
+  public WordCapAdapter() {
+
+  }
+
   public WordCapAdapter(boolean toLowercase, boolean ignoreCapitalization) {
     this.toLowercase = toLowercase;
     this.ignoreCapitalization = ignoreCapitalization;

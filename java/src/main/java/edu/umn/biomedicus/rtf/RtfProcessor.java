@@ -19,7 +19,7 @@ import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
-@Processor("rtf-processor")
+@Processor("biomedicus-rtf-processor")
 public class RtfProcessor extends EventProcessor {
 
   private final RtfParser parser;

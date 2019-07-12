@@ -19,14 +19,13 @@ package edu.umn.biomedicus.tagging.tnt;
 import edu.umn.biomedicus.common.config.Config;
 import edu.umn.biomedicus.common.data.DataFiles;
 import edu.umn.biomedicus.common.grams.Ngram;
+import edu.umn.biomedicus.common.pos.PartOfSpeech;
 import edu.umn.biomedicus.common.tuples.PosCap;
 import edu.umn.biomedicus.common.tuples.WordCap;
-import edu.umn.biomedicus.common.pos.PartOfSpeech;
 import edu.umn.biomedicus.common.viterbi.Viterbi;
 import edu.umn.biomedicus.common.viterbi.ViterbiProcessor;
-import edu.umn.biomedicus.tokenization.Tokenizer;
 import edu.umn.biomedicus.tokenization.TokenResult;
-
+import edu.umn.biomedicus.tokenization.Tokenizer;
 import edu.umn.nlpnewt.common.JsonObject;
 import edu.umn.nlpnewt.common.JsonObjectBuilder;
 import edu.umn.nlpnewt.model.Document;
@@ -53,7 +52,7 @@ import java.util.List;
  * @author Ben Knoll
  * @since 1.0.0
  */
-@Processor("tnt-tagger")
+@Processor("biomedicus-tnt-tagger")
 public class TntPosTaggerProcessor extends DocumentProcessor {
 
   /**
@@ -89,50 +88,13 @@ public class TntPosTaggerProcessor extends DocumentProcessor {
   /**
    * Default constructor. Initializes the beam threshold and tnt model.
    *
-   * @param tntModel tnt model.
+   * @param tntModel      tnt model.
    * @param beamThreshold beam threshold in log base 10. The difference from the most probable to
-   * exclude.
+   *                      exclude.
    */
   public TntPosTaggerProcessor(@NotNull TntModel tntModel, double beamThreshold) {
     this.tntModel = tntModel;
     this.beamThreshold = beamThreshold;
-  }
-
-  @Override
-  protected void process(@NotNull Document document,
-                         @NotNull JsonObject params,
-                         @NotNull JsonObjectBuilder result) {
-    LabelIndex<GenericLabel> sentenceLabelIndex = document.getLabelIndex("sentences");
-    Labeler<GenericLabel> partOfSpeechLabeler = document.getLabeler("pos_tags");
-
-    for (GenericLabel sentence : sentenceLabelIndex) {
-      ViterbiProcessor<PosCap, WordCap> viterbiProcessor = Viterbi.secondOrder(tntModel, tntModel,
-          Ngram.create(BBS, BOS), Ngram::create);
-
-      String docText = document.getText();
-      List<TokenResult> tokens = new ArrayList<>();
-      for (TokenResult token : Tokenizer.tokenize(sentence.coveredText(document))) {
-        tokens.add(token);
-        CharSequence text = token.text(docText);
-        boolean isCapitalized = Character.isUpperCase(text.charAt(0));
-        viterbiProcessor.advance(new WordCap(text.toString(), isCapitalized));
-        viterbiProcessor.beamFilter(beamThreshold);
-      }
-
-      List<PosCap> tags = viterbiProcessor.end(SKIP, EOS);
-
-      if (tokens.size() + 2 != tags.size()) {
-        throw new AssertionError(
-            "Tags should be same size as number of tokens in sentence");
-      }
-
-      Iterator<PosCap> it = tags.subList(2, tags.size()).iterator();
-      for (TokenResult token : tokens) {
-        PartOfSpeech partOfSpeech = it.next().getPartOfSpeech();
-        partOfSpeechLabeler.add(GenericLabel.newBuilder(token.getStartIndex(), token.getEndIndex())
-            .setProperty("tag", partOfSpeech.toString()).build());
-      }
-    }
   }
 
   public static TntPosTaggerProcessor createTaggerProcessor(
@@ -185,6 +147,44 @@ public class TntPosTaggerProcessor extends DocumentProcessor {
       ProcessorServerOptions.printHelp(parser, TntPosTaggerProcessor.class, e, null);
     } catch (InterruptedException | IOException e) {
       e.printStackTrace();
+    }
+  }
+
+  @Override
+  protected void process(@NotNull Document document,
+                         @NotNull JsonObject params,
+                         @NotNull JsonObjectBuilder result) {
+    LabelIndex<GenericLabel> sentenceLabelIndex = document.getLabelIndex("sentences");
+    try (Labeler<GenericLabel> partOfSpeechLabeler = document.getLabeler("pos_tags")) {
+      for (GenericLabel sentence : sentenceLabelIndex) {
+        ViterbiProcessor<PosCap, WordCap> viterbiProcessor = Viterbi.secondOrder(tntModel, tntModel,
+            Ngram.create(BBS, BOS), Ngram::create);
+        List<TokenResult> tokens = new ArrayList<>();
+        CharSequence sentenceText = sentence.coveredText(document);
+        for (TokenResult token : Tokenizer.tokenize(sentenceText)) {
+          tokens.add(token);
+          CharSequence text = token.text(sentenceText);
+          boolean isCapitalized = Character.isUpperCase(text.charAt(0));
+          viterbiProcessor.advance(new WordCap(text.toString().toLowerCase(), isCapitalized));
+          viterbiProcessor.beamFilter(beamThreshold);
+        }
+
+        List<PosCap> tags = viterbiProcessor.end(SKIP, EOS);
+
+        if (tokens.size() + 2 != tags.size()) {
+          throw new AssertionError(
+              "Tags should be same size as number of tokens in sentence");
+        }
+
+        Iterator<PosCap> it = tags.subList(2, tags.size()).iterator();
+        for (TokenResult token : tokens) {
+          PartOfSpeech partOfSpeech = it.next().getPartOfSpeech();
+          int startIndex = sentence.getStartIndex() + token.getStartIndex();
+          int endIndex = sentence.getStartIndex() + token.getEndIndex();
+          partOfSpeechLabeler.add(GenericLabel.newBuilder(startIndex, endIndex)
+              .setProperty("tag", partOfSpeech.toString()).build());
+        }
+      }
     }
   }
 
