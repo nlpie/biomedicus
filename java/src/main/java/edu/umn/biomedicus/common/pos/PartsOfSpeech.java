@@ -69,6 +69,7 @@ public final class PartsOfSpeech {
     builder.put("null", PartOfSpeech.XX);
     builder.put("", PartOfSpeech.XX);
     builder.put("X", PartOfSpeech.XX);
+    builder.put("XT", PartOfSpeech.XX);
     builder.put("“", PartOfSpeech.OPENING_QUOTATION);
     builder.put("”", PartOfSpeech.CLOSING_QUOTATION);
     builder.put("‘", PartOfSpeech.OPENING_SINGLE_QUOTE);
@@ -78,6 +79,7 @@ public final class PartsOfSpeech {
     builder.put("-RRB-", PartOfSpeech.RIGHT_PAREN);
     builder.put(";", PartOfSpeech.COLON_PUNCTUATION);
     builder.put("?", PartOfSpeech.SENTENCE_CLOSER_PUNCTUATION);
+    builder.put("CT", PartOfSpeech.CD);
 
     return Collections.unmodifiableMap(builder);
   }

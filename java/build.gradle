@@ -40,6 +40,7 @@ dependencies {
 
     implementation group: 'jakarta.xml.bind', name: 'jakarta.xml.bind-api', version: jaxbVersion
     implementation group: 'org.yaml', name: 'snakeyaml', version: '1.24'
+    implementation group: 'org.simpleframework', name: 'simple-xml', version: '2.7.1'
 
     runtimeOnly group: 'org.glassfish.jaxb', name: 'jaxb-runtime', version: jaxbVersion
     runtimeOnly group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version: '2.11.2'

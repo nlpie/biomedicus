@@ -163,6 +163,11 @@ public class TntPosTaggerProcessor extends DocumentProcessor {
         CharSequence sentenceText = sentence.coveredText(document);
         for (TokenResult token : Tokenizer.tokenize(sentenceText)) {
           tokens.add(token);
+        }
+
+
+
+        for (TokenResult token : tokens) {
           CharSequence text = token.text(sentenceText);
           boolean isCapitalized = Character.isUpperCase(text.charAt(0));
           viterbiProcessor.advance(new WordCap(text.toString().toLowerCase(), isCapitalized));

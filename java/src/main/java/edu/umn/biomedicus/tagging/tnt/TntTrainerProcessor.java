@@ -16,6 +16,7 @@
 
 package edu.umn.biomedicus.tagging.tnt;
 
+import edu.umn.biomedicus.common.exc.BiomedicusException;
 import edu.umn.nlpnewt.common.JsonObject;
 import edu.umn.nlpnewt.common.JsonObjectBuilder;
 import edu.umn.nlpnewt.model.Document;
@@ -39,7 +40,7 @@ import java.util.List;
  * @author Ben Knoll
  * @since 1.7
  */
-@Processor("biomedicus-tnt-trainer-processor")
+@Processor("biomedicus-tnt-trainer")
 public class TntTrainerProcessor extends DocumentProcessor {
   private static final Logger logger = LoggerFactory.getLogger(TntTrainerProcessor.class);
   private final TntModelTrainer tntModelTrainer;
@@ -70,9 +71,14 @@ public class TntTrainerProcessor extends DocumentProcessor {
     }
   }
 
-  public void done() throws IOException {
-    logger.info("Shutting down trainer, writing model to {}", outputDir);
-    tntModelTrainer.createModel().write(outputDir);
+  @Override
+  public void shutdown() {
+    System.out.println("Shutting down tnt trainer, writing model to " + outputDir);
+    try {
+      tntModelTrainer.createModel().write(outputDir);
+    } catch (IOException e) {
+      throw new BiomedicusException(e);
+    }
   }
 
   public static TntTrainerProcessor createTrainer(Path outputDir) {
@@ -88,7 +94,6 @@ public class TntTrainerProcessor extends DocumentProcessor {
     ProcessorServer server = ProcessorServerBuilder.forProcessor(trainer, options).build();
     server.start();
     server.blockUntilShutdown();
-    trainer.done();
   }
 
   public static void main(String[] args) {
@@ -106,7 +111,7 @@ public class TntTrainerProcessor extends DocumentProcessor {
 
   public static class Options extends ProcessorServerOptions {
     @Argument(
-        metaVar = "outputPath",
+        metaVar = "OUTPUT_PATH",
         required = true,
         usage = "The output directory where the finished model should be written."
     )

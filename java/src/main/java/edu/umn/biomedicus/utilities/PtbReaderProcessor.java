@@ -26,7 +26,7 @@ public class PtbReaderProcessor extends EventProcessor {
                       @NotNull JsonObjectBuilder result) {
     String sourceDocumentName = params.getStringValue("source_document_name");
     if (sourceDocumentName == null) {
-      sourceDocumentName = "ptb";
+      sourceDocumentName = "source";
     }
     String targetDocumentName = params.getStringValue("target_document_name");
     if (targetDocumentName == null) {

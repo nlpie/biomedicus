@@ -93,8 +93,14 @@ class PosCapTrigramModelTrainer {
   public void addSentence(String text, List<GenericLabel> partsOfSpeech) {
     int[] tokenPosCaps = new int[partsOfSpeech.size()];
     for (int i = 0; i < partsOfSpeech.size(); i++) {
-      PartOfSpeech tag = PartsOfSpeech.forTag(partsOfSpeech.get(i).getStringValue("tag"));
-      boolean upperCase = Character.isUpperCase(partsOfSpeech.get(i).coveredText(text).charAt(0));
+      GenericLabel posTag = partsOfSpeech.get(i);
+      String tagText = posTag.getStringValue("tag");
+      PartOfSpeech tag = PartsOfSpeech.forTagWithFallback(tagText);
+      if (tag == null) {
+        LOGGER.error("Null part of speech for word: '{}' with tag '{}'", posTag.coveredText(text),
+            tagText);
+      }
+      boolean upperCase = Character.isUpperCase(posTag.coveredText(text).charAt(0));
       tokenPosCaps[i] = PosCap.create(tag, upperCase).ordinal();
     }
     int[] posCaps = new int[tokenPosCaps.length + 3];
