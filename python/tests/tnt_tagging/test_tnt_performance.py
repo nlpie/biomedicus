@@ -24,15 +24,15 @@ from nlpnewt.utils import find_free_port
 from pathlib import Path
 
 
-@pytest.fixture(name='sentences_service')
-def fixture_sentences_service(events_service):
+@pytest.fixture(name='pos_tags_service')
+def fixture_pos_tags_service(events_service):
+    cwd = Path(__file__).parents[3] / 'java'
     port = str(find_free_port())
     address = '127.0.0.1:' + port
-    p = subprocess.Popen(['python', '-m', 'biomedicus.sentences',
-                          'processor',
-                          '-p', port,
-                          '--events', events_service],
-                         start_new_session=True, stdin=subprocess.PIPE,
+    p = subprocess.Popen(['./gradlew',
+                          '-PmainClass=edu.umn.biomedicus.tagging.tnt.TntPosTaggerProcessor',
+                          'execute', '--args=-p ' + port + ' --events ' + events_service],
+                         start_new_session=True, cwd=cwd, stdin=subprocess.PIPE,
                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     try:
         if p.returncode is not None:
@@ -52,23 +52,23 @@ def fixture_sentences_service(events_service):
 
 
 @pytest.mark.performance
-def test_sentence_performance(events_service, sentences_service):
-    input_dir = Path(os.environ['BIOMEDICUS_TEST_DATA']) / 'sentences'
+def test_tnt_performance(events_service, pos_tags_service):
+    input_dir = Path(os.environ['BIOMEDICUS_TEST_DATA']) / 'pos_tags'
     json_serializer = get_serializer('json')
 
     accuracy = Accuracy()
     with EventsClient(address=events_service) as client, Pipeline(
-            RemoteProcessor(processor_id='biomedicus-sentences', address=sentences_service),
-            LocalProcessor(Metrics(accuracy, tested='sentences', target='Sentence'),
+            RemoteProcessor(processor_id='biomedicus-tnt-tagger', address=pos_tags_service),
+            LocalProcessor(Metrics(accuracy, tested='pos_tags', target='gold_tags'),
                            component_id='metrics', client=client)
     ) as pipeline:
         for test_file in input_dir.glob('**/*.json'):
             event = json_serializer.file_to_event(test_file, client=client)
             with event:
-                document = event['plaintext']
+                document = event['gold']
                 results = pipeline.run(document)
                 print('Accuracy for event - ', event.event_id, ':', results[1].results['accuracy'])
 
         print('Accuracy:', accuracy.value)
         pipeline.print_times()
-        assert accuracy.value > 0.8
+        assert accuracy.value > 0.9

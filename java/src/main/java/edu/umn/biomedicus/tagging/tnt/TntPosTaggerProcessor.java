@@ -154,8 +154,10 @@ public class TntPosTaggerProcessor extends DocumentProcessor {
   protected void process(@NotNull Document document,
                          @NotNull JsonObject params,
                          @NotNull JsonObjectBuilder result) {
-    LabelIndex<GenericLabel> sentenceLabelIndex = document.getLabelIndex("sentences");
-    try (Labeler<GenericLabel> partOfSpeechLabeler = document.getLabeler("pos_tags")) {
+    String sentencesIndex = (String) params.getOrDefault("sentences_index", "sentences");
+    LabelIndex<GenericLabel> sentenceLabelIndex = document.getLabelIndex(sentencesIndex);
+    String targetIndex = (String) params.getOrDefault("target_index", "pos_tags");
+    try (Labeler<GenericLabel> partOfSpeechLabeler = document.getLabeler(targetIndex)) {
       for (GenericLabel sentence : sentenceLabelIndex) {
         ViterbiProcessor<PosCap, WordCap> viterbiProcessor = Viterbi.secondOrder(tntModel, tntModel,
             Ngram.create(BBS, BOS), Ngram::create);

@@ -64,3 +64,8 @@ task fatJar(type: Jar) {
     from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
     with jar
 }
+
+task execute(type: JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    main = project.hasProperty('mainClass') ? project.getProperties().get('mainClass') : null
+}

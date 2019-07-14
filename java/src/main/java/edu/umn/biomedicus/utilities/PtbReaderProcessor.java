@@ -74,8 +74,10 @@ public class PtbReaderProcessor extends EventProcessor {
     }
 
     Document target = event.addDocument(targetDocumentName, documentBuilder.toString());
-    target.addLabels("sentences", true, sentences);
-    target.addLabels("pos_tags", true, posTags);
+    String sentencesIndex = (String) params.getOrDefault("sentences_index", "sentences");
+    target.addLabels(sentencesIndex, true, sentences);
+    String posTagsIndex = (String) params.getOrDefault("pos_tags_index", "pos_tags");
+    target.addLabels(posTagsIndex, true, posTags);
   }
 
   public static void main(String[] args) {
