@@ -39,7 +39,7 @@ def fixture_pos_tags_service(events_service):
             raise ValueError('subprocess terminated')
         with grpc.insecure_channel(address) as channel:
             future = grpc.channel_ready_future(channel)
-            future.result(timeout=120)
+            future.result(timeout=10)
         yield address
     finally:
         p.send_signal(signal.SIGINT)
@@ -58,7 +58,8 @@ def test_tnt_performance(events_service, pos_tags_service):
 
     accuracy = Accuracy()
     with EventsClient(address=events_service) as client, Pipeline(
-            RemoteProcessor(processor_id='biomedicus-tnt-tagger', address=pos_tags_service),
+            RemoteProcessor(processor_id='biomedicus-tnt-tagger', address=pos_tags_service,
+                            params={'token_index': 'gold_tags'}),
             LocalProcessor(Metrics(accuracy, tested='pos_tags', target='gold_tags'),
                            component_id='metrics', client=client)
     ) as pipeline:

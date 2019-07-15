@@ -43,6 +43,7 @@ import org.kohsuke.args4j.spi.ExplicitBooleanOptionHandler;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
@@ -157,20 +158,43 @@ public class TntPosTaggerProcessor extends DocumentProcessor {
     String sentencesIndex = (String) params.getOrDefault("sentences_index", "sentences");
     LabelIndex<GenericLabel> sentenceLabelIndex = document.getLabelIndex(sentencesIndex);
     String targetIndex = (String) params.getOrDefault("target_index", "pos_tags");
+    String tokenIndexName = (String) params.get("token_index");
+    LabelIndex<GenericLabel> tokenIndex = null;
+    if (tokenIndexName != null) {
+      tokenIndex = document.getLabelIndex(tokenIndexName);
+    }
+
     try (Labeler<GenericLabel> partOfSpeechLabeler = document.getLabeler(targetIndex)) {
       for (GenericLabel sentence : sentenceLabelIndex) {
         ViterbiProcessor<PosCap, WordCap> viterbiProcessor = Viterbi.secondOrder(tntModel, tntModel,
             Ngram.create(BBS, BOS), Ngram::create);
-        List<TokenResult> tokens = new ArrayList<>();
-        CharSequence sentenceText = sentence.coveredText(document);
-        for (TokenResult token : Tokenizer.tokenize(sentenceText)) {
-          tokens.add(token);
+        List<GenericLabel> tokens;
+        if (tokenIndex != null) {
+          tokens = tokenIndex.inside(sentence).asList();
+        } else {
+          tokens = new ArrayList<>();
+          CharSequence sentenceText = sentence.coveredText(document);
+          for (TokenResult token : Tokenizer.tokenize(sentenceText)) {
+            int startIndex = sentence.getStartIndex() + token.getStartIndex();
+            int endIndex = sentence.getStartIndex() + token.getEndIndex();
+            tokens.add(GenericLabel.newBuilder(startIndex, endIndex).build());
+          }
+          if (tokens.size() > 0) {
+            GenericLabel lastToken = tokens.remove(tokens.size() - 1);
+            if (lastToken.getEndIndex() - lastToken.getStartIndex() > 1) {
+              CharSequence tokenText = lastToken.coveredText(document);
+              if (Arrays.asList('!', '?', '.').contains(tokenText.charAt(tokenText.length() - 1))) {
+                tokens.add(GenericLabel.newBuilder(lastToken.getStartIndex(), lastToken.getEndIndex() - 1).build());
+                tokens.add(GenericLabel.newBuilder(lastToken.getEndIndex() - 1, lastToken.getEndIndex()).build());
+              } else {
+                tokens.add(lastToken);
+              }
+            }
+          }
         }
 
-
-
-        for (TokenResult token : tokens) {
-          CharSequence text = token.text(sentenceText);
+        for (GenericLabel token : tokens) {
+          CharSequence text = token.coveredText(document);
           boolean isCapitalized = Character.isUpperCase(text.charAt(0));
           viterbiProcessor.advance(new WordCap(text.toString().toLowerCase(), isCapitalized));
           viterbiProcessor.beamFilter(beamThreshold);
@@ -184,11 +208,9 @@ public class TntPosTaggerProcessor extends DocumentProcessor {
         }
 
         Iterator<PosCap> it = tags.subList(2, tags.size()).iterator();
-        for (TokenResult token : tokens) {
+        for (GenericLabel token : tokens) {
           PartOfSpeech partOfSpeech = it.next().getPartOfSpeech();
-          int startIndex = sentence.getStartIndex() + token.getStartIndex();
-          int endIndex = sentence.getStartIndex() + token.getEndIndex();
-          partOfSpeechLabeler.add(GenericLabel.newBuilder(startIndex, endIndex)
+          partOfSpeechLabeler.add(GenericLabel.newBuilder(token.getStartIndex(), token.getEndIndex())
               .setProperty("tag", partOfSpeech.toString()).build());
         }
       }
