@@ -2,15 +2,11 @@ package edu.umn.biomedicus.rtf;
 
 import edu.umn.biomedicus.rtf.reader.RtfParser;
 import edu.umn.biomedicus.rtf.reader.RtfSource;
-import edu.umn.nlpnewt.*;
 import edu.umn.nlpnewt.common.JsonObject;
 import edu.umn.nlpnewt.common.JsonObjectBuilder;
 import edu.umn.nlpnewt.common.Server;
 import edu.umn.nlpnewt.model.Event;
-import edu.umn.nlpnewt.processing.EventProcessor;
-import edu.umn.nlpnewt.processing.Processor;
-import edu.umn.nlpnewt.processing.ProcessorServerBuilder;
-import edu.umn.nlpnewt.processing.ProcessorServerOptions;
+import edu.umn.nlpnewt.processing.*;
 import org.jetbrains.annotations.NotNull;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
@@ -19,7 +15,24 @@ import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
-@Processor("biomedicus-rtf-processor")
+@Processor(value = "biomedicus-rtf-processor",
+    description = "Processes an RTF document into plaintext.",
+    parameters = {
+        @ParameterDescription(name = "binary_data_name", dataType = "str",
+            description = "The name of the event binary data containing the RTF-encoded document." +
+                "Defaults to \"rtf\""),
+        @ParameterDescription(name = "output_document_name", dataType = "str",
+            description = "The name of the document to create to hold the plaintext." +
+                "Defaults to \"plaintext\"")
+    },
+    outputs = {
+        @LabelIndexDescription(name = "biomedicus.bold",
+            description = "Rtf bold formatting."),
+        @LabelIndexDescription(name = "biomedicus.italic",
+            description = "Rtf italic formatting."),
+        @LabelIndexDescription(name = "biomedicus.underline",
+            description = "Rtf underline formatting."),
+    })
 public class RtfProcessor extends EventProcessor {
 
   private final RtfParser parser;

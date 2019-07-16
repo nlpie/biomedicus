@@ -53,7 +53,31 @@ import java.util.List;
  * @author Ben Knoll
  * @since 1.0.0
  */
-@Processor("biomedicus-tnt-tagger")
+@Processor(value = "biomedicus-tnt-tagger",
+    description = "Labels part of speech tags on the document.",
+    parameters = {
+        @ParameterDescription(name = "sentences_index", dataType = "str",
+            description = "The name of the index containing sentences. Defaults to \"sentences\""),
+        @ParameterDescription(name = "target_index", dataType = "str",
+            description = "The target index to create for POS tags. Defaults to \"pos_tags\""),
+        @ParameterDescription(name = "token_index", dataType = "str",
+            description = "The name of an index creating tokens. By default the processor will " +
+                "do tokenization on its own.")
+    },
+    inputs = {
+        @LabelIndexDescription(name = "sentences", nameFromParameter = "sentences_index"),
+        @LabelIndexDescription(nameFromParameter = "token_index", optional = true,
+            description = "Existing tokens to use. Otherwise will tokenize each sentence.")
+    },
+    outputs = {
+        @LabelIndexDescription(name = "pos_tags", nameFromParameter = "target_index",
+            description = "Labeled part of speech tags on tokens.",
+            properties = {
+                @PropertyDescription(name = "tag", dataType = "str",
+                    description = "The penn-treebank tag for the token.")
+            })
+    }
+)
 public class TntPosTaggerProcessor extends DocumentProcessor {
 
   /**
