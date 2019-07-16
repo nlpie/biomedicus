@@ -39,7 +39,7 @@ def fixture_sentences_service(events_service):
             raise ValueError('subprocess terminated')
         with grpc.insecure_channel(address) as channel:
             future = grpc.channel_ready_future(channel)
-            future.result(timeout=120)
+            future.result(timeout=20)
         yield address
     finally:
         p.send_signal(signal.SIGINT)
@@ -71,4 +71,4 @@ def test_sentence_performance(events_service, sentences_service):
 
         print('Accuracy:', accuracy.value)
         pipeline.print_times()
-        assert accuracy.value > 0.8
+        assert accuracy.value > 0.7

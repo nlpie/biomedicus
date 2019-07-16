@@ -12,18 +12,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
+from typing import Dict, Any
 
-import nlpnewt
 from nlpnewt.events import Document
 from nlpnewt.processing import DocumentProcessor
-from typing import Dict, Any, Optional
+from nlpnewt.processing.descriptions import label_index, parameter, processor
 
 from biomedicus.sentences.models import SentenceModel, InputMapper
 
 logger = logging.getLogger(__name__)
 
 
-@nlpnewt.processor('biomedicus-sentences')
+@processor('biomedicus-sentences',
+           description="Labels sentences given document text.",
+           entry_point=__name__,
+           parameters=[
+               parameter('batch_size', data_type='int',
+                         description='The batch size, number of sets of 32 tokens that are '
+                                     'processed at once.',
+                         required=False)
+           ],
+           outputs=[
+               label_index('sentences')
+           ])
 class SentenceProcessor(DocumentProcessor):
     def __init__(self, model: SentenceModel, input_mapper: InputMapper):
         logger.info("Initializing sentence processor.")

@@ -244,7 +244,7 @@ def create_parser() -> ArgumentParser:
     parser.add_argument("-v", "--verbose", type=int, help="Verbosity", default=0)
     parser.add_argument("additional_args", nargs='*', default=[])
     config_out = ArgumentParser(add_help=False)
-    config_out.add_argument("--config-out",
+    config_out.add_argument("--data-out",
                             help="A file to write the yaml configuration of the sentence "
                                  "detector")
     model_parser = model_opts(c)

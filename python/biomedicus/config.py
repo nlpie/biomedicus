@@ -63,8 +63,8 @@ def load_config():
         potential_paths.append(Path(cnf))
     except TypeError:
         pass
-    locations = [Path.cwd(), Path.home().joinpath('.biomedicus'), Path('/etc/biomedicus/')]
-    potential_paths += [location.joinpath('biomedicusConfig.yml') for location in locations]
+    locations = [Path.cwd(), Path.home() / '.biomedicus', Path('/etc/biomedicus/')]
+    potential_paths += [location / 'biomedicusConfig.yml' for location in locations]
 
     for config_path in potential_paths:
         try:

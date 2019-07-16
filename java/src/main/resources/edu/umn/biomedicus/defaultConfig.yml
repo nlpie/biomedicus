@@ -1,0 +1,7 @@
+tnt:
+  trigram: tnt/trigram.yml
+  word:
+    inMemory: no
+    db: tnt/words
+    metadata: tnt/wordMetadata.yml
+  beam.threshold: 2.0

@@ -1,10 +1,10 @@
 package edu.umn.biomedicus.rtf;
 
 import edu.umn.biomedicus.rtf.reader.RtfSink;
-import edu.umn.nlpnewt.Document;
-import edu.umn.nlpnewt.Event;
-import edu.umn.nlpnewt.GenericLabel;
-import edu.umn.nlpnewt.Labeler;
+import edu.umn.nlpnewt.model.Document;
+import edu.umn.nlpnewt.model.Event;
+import edu.umn.nlpnewt.model.GenericLabel;
+import edu.umn.nlpnewt.model.Labeler;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -113,11 +113,7 @@ public class NewtDocumentRtfSink implements RtfSink {
 
     void done(Document document) {
       if (labels.size() > 0) {
-        try (Labeler<GenericLabel> labeler = document.getLabeler(labelIndex)) {
-          for (GenericLabel label : labels) {
-            labeler.add(label);
-          }
-        }
+        document.addLabels(labelIndex, false, labels);
       }
     }
   }
