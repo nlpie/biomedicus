@@ -16,7 +16,6 @@
 
 package edu.umn.biomedicus.acronym;
 
-import edu.umn.biomedicus.common.collect.IndexMap;
 import edu.umn.biomedicus.serialization.YamlSerialization;
 import org.yaml.snakeyaml.Yaml;
 
@@ -24,10 +23,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -38,9 +34,8 @@ public class OrthographicAcronymModelTrainer {
   // Amount of discounting to apply to trigram counts; this amount gets applied to the interpolated bi/unigram counts
   private static final double discounting = .9;
   private final boolean caseSensitive;
-  private final transient IndexMap<Character> symbols;
-  private final transient int symbolsCount;
-  private final transient Set<Character> chars;
+  private final int[] symbols;
+  private final int[] chars;
   private final double[][][] longformProbs;
   private final double[][][] abbrevProbs;
   /**
@@ -55,11 +50,10 @@ public class OrthographicAcronymModelTrainer {
     this.caseSensitive = caseSensitive;
     symbols = caseSensitive ? OrthographicAcronymModel.CASE_SENS_SYMBOLS
         : OrthographicAcronymModel.CASE_INSENS_SYMBOLS;
-    symbolsCount = symbols.size();
     chars = caseSensitive ? OrthographicAcronymModel.CASE_SENS_CHARS
         : OrthographicAcronymModel.CASE_INSENS_CHARS;
-    longformProbs = new double[symbolsCount][symbolsCount][symbolsCount];
-    abbrevProbs = new double[symbolsCount][symbolsCount][symbolsCount];
+    longformProbs = new double[symbols.length][symbols.length][symbols.length];
+    abbrevProbs = new double[symbols.length][symbols.length][symbols.length];
     longformsLower = new HashSet<>();
   }
 
@@ -103,13 +97,13 @@ public class OrthographicAcronymModelTrainer {
    * For use in experiments. Probably not necessary otherwise
    */
   private void wordsToLogProbs(Set<String> words, double[][][] probs) {
-    int[][][] counts = new int[symbolsCount][symbolsCount][symbolsCount];
+    int[][][] counts = new int[symbols.length][symbols.length][symbols.length];
     for (String word : words) {
       addTrigramsFromWord(word, counts);
     }
-    for (int i = 0; i < symbolsCount; i++) {
-      for (int j = 0; j < symbolsCount; j++) {
-        for (int k = 0; k < symbolsCount; k++) {
+    for (int i = 0; i < symbols.length; i++) {
+      for (int j = 0; j < symbols.length; j++) {
+        for (int k = 0; k < symbols.length; k++) {
           probs[i][j][k] = (float) getTrigramLogProbability(i, j, k, counts);
         }
       }
@@ -167,8 +161,7 @@ public class OrthographicAcronymModelTrainer {
     if (biCount > 0) {
       prob += (((double) biCount) - discounting) / tensorSum(counts[w1]);
     }
-    double unigramInterpCoefficient =
-        discounting * tensorSum(counts[w1], true) / tensorSum(counts[w1]);
+    double unigramInterpCoefficient = discounting * tensorSum(counts[w1], true) / tensorSum(counts[w1]);
     prob += unigramInterpCoefficient * getUnigramProbability(w, counts);
     return prob;
   }
@@ -247,13 +240,17 @@ public class OrthographicAcronymModelTrainer {
     for (int i = 0; i < word.length(); i++) {
       thisChar = fixChar(word.charAt(i));
 
-      counts[symbols.indexOf(minus2)][symbols.indexOf(minus1)][symbols.indexOf(thisChar)]++;
+      counts[symbolIndex(minus2)][symbolIndex(minus1)][symbolIndex(thisChar)]++;
 
       minus2 = minus1;
       minus1 = thisChar;
     }
-    counts[symbols.indexOf(minus1)][symbols.indexOf(thisChar)][symbols.indexOf('$')]++;
-    counts[symbols.indexOf(thisChar)][symbols.indexOf('$')][symbols.indexOf('$')]++;
+    counts[symbolIndex(minus1)][symbolIndex(thisChar)][symbolIndex('$')]++;
+    counts[symbolIndex(thisChar)][symbolIndex('$')][symbolIndex('$')]++;
+  }
+
+  private int symbolIndex(char ch) {
+    return Arrays.binarySearch(symbols, ch);
   }
 
   /**
@@ -268,7 +265,7 @@ public class OrthographicAcronymModelTrainer {
     }
     if (Character.isDigit(c)) {
       c = '0';
-    } else if (!chars.contains(c)) {
+    } else if (symbolIndex(c) < 0) {
       c = '?';
     }
     return c;
@@ -280,7 +277,7 @@ public class OrthographicAcronymModelTrainer {
     Map<String, Object> serObj = new TreeMap<>();
     serObj.put("abbrevProbs", collapseProbs(abbrevProbs));
     serObj.put("longformProbs", collapseProbs(longformProbs));
-    serObj.put("longformsLower", longformsLower.stream().collect(Collectors.toList()));
+    serObj.put("longformsLower", new ArrayList<>(longformsLower));
     serObj.put("caseSensitive", caseSensitive);
 
     yaml.dump(serObj, Files.newBufferedWriter(out));
@@ -293,8 +290,7 @@ public class OrthographicAcronymModelTrainer {
         for (int k = 0; k < probs[i][j].length; k++) {
           double prob = probs[i][j][k];
           if (prob != 0.0) {
-            collapsedAbbrevProbs
-                .put("" + symbols.forIndex(i) + symbols.forIndex(j) + symbols.forIndex(k), prob);
+            collapsedAbbrevProbs.put("" + symbols[i] + symbols[j] + symbols[k], prob);
           }
         }
       }

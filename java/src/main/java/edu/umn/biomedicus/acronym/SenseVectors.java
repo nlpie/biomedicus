@@ -16,7 +16,8 @@
 
 package edu.umn.biomedicus.acronym;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.Closeable;
 import java.util.Collection;
 import java.util.Set;

@@ -16,26 +16,13 @@
 
 package edu.umn.biomedicus.acronym;
 
-import com.google.inject.Inject;
-import com.google.inject.ProvidedBy;
-import com.google.inject.Singleton;
-import edu.umn.biomedicus.annotations.Setting;
-import edu.umn.biomedicus.common.collect.HashIndexMap;
-import edu.umn.biomedicus.common.collect.IndexMap;
-import edu.umn.biomedicus.exc.BiomedicusException;
-import edu.umn.biomedicus.framework.DataLoader;
-import edu.umn.biomedicus.tokenization.Token;
 import org.yaml.snakeyaml.Yaml;
 
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.*;
 
 /**
  * Will use orthographic rules to determine if tokens not known to be abbreviations are
@@ -43,30 +30,23 @@ import java.util.stream.Collectors;
  *
  * @author Greg Finley
  */
-@ProvidedBy(OrthographicAcronymModel.Loader.class)
-public class OrthographicAcronymModel implements Serializable {
+public class OrthographicAcronymModel {
 
-  static final IndexMap<Character> CASE_SENS_SYMBOLS;
-  static final Set<Character> CASE_SENS_CHARS;
-  static final IndexMap<Character> CASE_INSENS_SYMBOLS;
-  static final Set<Character> CASE_INSENS_CHARS;
+  static final int[] CASE_SENS_SYMBOLS;
+  static final int[] CASE_SENS_CHARS;
+  static final int[] CASE_INSENS_SYMBOLS;
+  static final int[] CASE_INSENS_CHARS;
 
   static {
-    Set<Character> symbols = "abcdefghijklmnopqrstuvwxyz.-ABCDEFGHIJKLMNOPQRSTUVWXYZ0?^$".chars()
-        .mapToObj(i -> (char) i)
-        .collect(Collectors.toSet());
-    CASE_SENS_SYMBOLS = new HashIndexMap<>(symbols);
+    CASE_SENS_SYMBOLS = "abcdefghijklmnopqrstuvwxyz.-ABCDEFGHIJKLMNOPQRSTUVWXYZ0?^$".chars()
+        .sorted().toArray();
     CASE_SENS_CHARS = "abcdefghijklmnopqrstuvwxyz.-ABCDEFGHIJKLMNOPQRSTUVWXYZ".chars()
-        .mapToObj(i -> (char) i)
-        .collect(Collectors.toSet());
-
-    Set<Character> caseInsensSymbols = "abcdefghijklmnopqrstuvwxyz.-0?^$".chars()
-        .mapToObj(i -> (char) i)
-        .collect(Collectors.toSet());
-    CASE_INSENS_SYMBOLS = new HashIndexMap<>(caseInsensSymbols);
+        .sorted().toArray();
+    CASE_INSENS_SYMBOLS = "abcdefghijklmnopqrstuvwxyz.-0?^$".chars()
+        .sorted()
+        .toArray();
     CASE_INSENS_CHARS = "abcdefghijklmnopqrstuvwxyz.-".chars()
-        .mapToObj(i -> (char) i)
-        .collect(Collectors.toSet());
+        .sorted().toArray();
   }
 
   // Log probabilities that certain character trigrams are an abbreviation or a longform
@@ -78,9 +58,9 @@ public class OrthographicAcronymModel implements Serializable {
 
   private final Set<String> longformsLower;
 
-  private final transient IndexMap<Character> symbols;
+  private final int[] symbols;
 
-  private final transient Set<Character> chars;
+  private final int[] chars;
 
   private OrthographicAcronymModel(double[][][] abbrevProbs, double[][][] longformProbs,
       boolean caseSensitive, Set<String> longformsLower) {
@@ -98,9 +78,8 @@ public class OrthographicAcronymModel implements Serializable {
    * @param token the Token to check
    * @return true if it seems to be an abbreviation, false otherwise
    */
-  boolean seemsLikeAbbreviation(Token token) {
-
-    String wordRaw = token.getText();
+  boolean seemsLikeAbbreviation(CharSequence token) {
+    String wordRaw = token.toString();
     String wordLower = wordRaw.toLowerCase();
 
     // Check to see if it's a long form first
@@ -160,16 +139,20 @@ public class OrthographicAcronymModel implements Serializable {
     for (int i = 0; i < word.length(); i++) {
       thisChar = fixChar(word.charAt(i));
 
-      logProb += probs[symbols.indexOf(minus2)][symbols.indexOf(minus1)][symbols.indexOf(thisChar)];
+      logProb += probs[symbolIndex(minus2)][symbolIndex(minus1)][symbolIndex(thisChar)];
 
       minus2 = minus1;
       minus1 = thisChar;
     }
 
-    logProb += probs[symbols.indexOf(minus1)][symbols.indexOf(thisChar)][symbols.indexOf('$')];
-    logProb += probs[symbols.indexOf(thisChar)][symbols.indexOf('$')][symbols.indexOf('$')];
+    logProb += probs[symbolIndex(minus1)][symbolIndex(thisChar)][symbolIndex('$')];
+    logProb += probs[symbolIndex(thisChar)][symbolIndex('$')][symbolIndex('$')];
 
     return logProb;
+  }
+
+  private int symbolIndex(char minus2) {
+    return Arrays.binarySearch(symbols, minus2);
   }
 
   /**
@@ -184,63 +167,40 @@ public class OrthographicAcronymModel implements Serializable {
     }
     if (Character.isDigit(c)) {
       c = '0';
-    } else if (!chars.contains(c)) {
+    } else if (Arrays.binarySearch(chars, c) < 0) {
       c = '?';
     }
     return c;
   }
 
-  /**
-   * Loads the orthographic model.
-   *
-   * @since 1.5.0
-   */
-  @Singleton
-  static class Loader extends DataLoader<OrthographicAcronymModel> {
-
-    private final Path orthographicModel;
-
-    private IndexMap<Character> symbols;
-
-    @Inject
-    Loader(@Setting("acronym.orthographicModel.asDataPath") Path orthographicModel) {
-      this.orthographicModel = orthographicModel;
+  public static OrthographicAcronymModel load(Path path) throws IOException {
+    Yaml yaml = new Yaml();
+    try (BufferedReader reader = Files.newBufferedReader(path)) {
+      Map<String, Object> serObj = yaml.load(reader);
+      boolean caseSensitive = (Boolean) serObj.get("caseSensitive");
+      int[] symbols = caseSensitive ? CASE_SENS_SYMBOLS : CASE_INSENS_SYMBOLS;
+      @SuppressWarnings("unchecked")
+      Map<String, Double> abbrevProbsMap = (Map<String, Double>) serObj.get("abbrevProbs");
+      double[][][] abbrevProbs = expandProbs(abbrevProbsMap, symbols);
+      @SuppressWarnings("unchecked")
+      Map<String, Double> longformProbsMap = (Map<String, Double>) serObj.get("longformProbs");
+      double[][][] longformProbs = expandProbs(longformProbsMap, symbols);
+      @SuppressWarnings("unchecked")
+      List<String> longformsLowerList = (List<String>) serObj.get("longformsLower");
+      Set<String> longformsLower = new HashSet<>(longformsLowerList);
+      return new OrthographicAcronymModel(abbrevProbs, longformProbs, caseSensitive,
+          longformsLower);
     }
+  }
 
-    @Override
-    protected OrthographicAcronymModel loadModel() throws BiomedicusException {
-      Yaml yaml = new Yaml();
-      try {
-        @SuppressWarnings("unchecked")
-        Map<String, Object> serObj = yaml
-            .load(Files.newBufferedReader(orthographicModel));
-        boolean caseSensitive = (Boolean) serObj.get("caseSensitive");
-        symbols = caseSensitive ? CASE_SENS_SYMBOLS : CASE_INSENS_SYMBOLS;
-        @SuppressWarnings("unchecked")
-        Map<String, Double> abbrevProbsMap = (Map<String, Double>) serObj.get("abbrevProbs");
-        double[][][] abbrevProbs = expandProbs(abbrevProbsMap);
-        @SuppressWarnings("unchecked")
-        Map<String, Double> longformProbsMap = (Map<String, Double>) serObj.get("longformProbs");
-        double[][][] longformProbs = expandProbs(longformProbsMap);
-        Set<String> longformsLower = new HashSet<>();
-        @SuppressWarnings("unchecked")
-        List<String> longformsLowerList = (List<String>) serObj.get("longformsLower");
-        longformsLower.addAll(longformsLowerList);
-        return new OrthographicAcronymModel(abbrevProbs, longformProbs, caseSensitive,
-            longformsLower);
-      } catch (IOException e) {
-        throw new BiomedicusException(e);
-      }
+  private static double[][][] expandProbs(Map<String, Double> collapsedProbs, int[] symbols) {
+    double[][][] probs = new double[symbols.length][symbols.length][symbols.length];
+    for (Map.Entry<String, Double> entry : collapsedProbs.entrySet()) {
+      String key = entry.getKey();
+      probs[Arrays.binarySearch(symbols, key.charAt(0))]
+          [Arrays.binarySearch(symbols, key.charAt(1))]
+          [Arrays.binarySearch(symbols, key.charAt(2))] = entry.getValue();
     }
-
-    private double[][][] expandProbs(Map<String, Double> collapsedProbs) {
-      double[][][] probs = new double[symbols.size()][symbols.size()][symbols.size()];
-      for (Map.Entry<String, Double> entry : collapsedProbs.entrySet()) {
-        String key = entry.getKey();
-        probs[symbols.indexOf(key.charAt(0))][symbols.indexOf(key.charAt(1))][symbols
-            .indexOf(key.charAt(2))] = entry.getValue();
-      }
-      return probs;
-    }
+    return probs;
   }
 }

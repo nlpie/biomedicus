@@ -16,9 +16,9 @@
 
 package edu.umn.biomedicus.acronym;
 
+import org.jetbrains.annotations.Nullable;
 import org.rocksdb.*;
 
-import javax.annotation.Nullable;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.*;

@@ -1,3 +1,15 @@
+acronym:
+  labelOtherSenses: yes
+  useAlignment: no
+  expansionsModel: acronym/expansions.txt
+  alignmentModel: acronym-alignment/alignment.yml
+  cutoffScore: 0.001
+  vector:
+    model: acronym/vectorSpace.yml
+  senseMap:
+    senseVectors: acronym/senseVectors
+    inMemory: no
+  orthographicModel: acronym-orthographic/orthographicModel.yml
 tnt:
   trigram: tnt/trigram.yml
   word:

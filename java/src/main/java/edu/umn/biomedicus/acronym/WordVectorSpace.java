@@ -16,12 +16,17 @@
 
 package edu.umn.biomedicus.acronym;
 
-import edu.umn.biomedicus.tokenization.Token;
+import edu.umn.biomedicus.serialization.YamlSerialization;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.Yaml;
 
-import javax.annotation.Nullable;
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.Serializable;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.regex.Pattern;
@@ -185,7 +190,7 @@ public class WordVectorSpace {
    * @param startCenterToken the index of the first token of the term of interest
    * @param stopCenterToken the token index following the term of interest
    */
-  SparseVector vectorize(List<? extends Token> context, int startCenterToken, int stopCenterToken) {
+  SparseVector vectorize(List<CharSequence> context, int startCenterToken, int stopCenterToken) {
 
     Map<Integer, Double> wordVector = new HashMap<>();
 
@@ -224,10 +229,9 @@ public class WordVectorSpace {
     return new SparseVector(wordVector);
   }
 
-  public SparseVector vectorize(List<? extends Token> context, int centerToken) {
+  public SparseVector vectorize(List<CharSequence> context, int centerToken) {
     return vectorize(context, centerToken, centerToken + 1);
   }
-
 
   /**
    * For de-identification purposes: remove a single word from the dictionary
@@ -267,4 +271,10 @@ public class WordVectorSpace {
     return indicesRemoved;
   }
 
+  public static WordVectorSpace load(Path path) throws IOException {
+    Yaml yaml = YamlSerialization.createYaml();
+    try (BufferedReader reader = Files.newBufferedReader(path)) {
+      return (WordVectorSpace) yaml.load(reader);
+    }
+  }
 }

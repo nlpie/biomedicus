@@ -16,8 +16,6 @@
 
 package edu.umn.biomedicus.acronym;
 
-import edu.umn.biomedicus.tokenization.Token;
-
 import java.util.regex.Pattern;
 
 /**
@@ -56,10 +54,6 @@ public final class Acronyms {
     return charSequence.toString().toLowerCase();
   }
 
-  static String standardContextForm(Token t) {
-    return standardContextForm(t.getText());
-  }
-
   /**
    * Get a standardized form of this acronym token, collapsing some equivalent acronyms.
    * Collapse certain non-alphanumeric characters ('conjunction' symbols like /, &, +).
@@ -69,9 +63,5 @@ public final class Acronyms {
    */
   static String standardAcronymForm(CharSequence charSequence) {
     return charSequence.toString().replace('&', '/').replace('+', '/');
-  }
-
-  static String standardAcronymForm(Token t) {
-    return standardAcronymForm(t.getText());
   }
 }

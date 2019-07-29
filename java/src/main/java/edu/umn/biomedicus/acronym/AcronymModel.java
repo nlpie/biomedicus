@@ -16,9 +16,7 @@
 
 package edu.umn.biomedicus.acronym;
 
-import com.google.inject.ProvidedBy;
-import edu.umn.biomedicus.acronyms.ScoredSense;
-import edu.umn.biomedicus.tokenization.Token;
+import edu.umn.nlpnewt.model.GenericLabel;
 
 import java.util.List;
 import java.util.Set;
@@ -29,15 +27,24 @@ import java.util.Set;
  * 1) to determine if something is an acronym, and
  * 2) to expand a given acronym Token given its context Tokens
  * Models are generally serializable as well so they can be trained ahead of time
- *
- * @author Greg Finley
  */
-@ProvidedBy(AcronymVectorModel.Loader.class)
 interface AcronymModel {
+  /**
+   * Returns whether the acronym model has an acronym for the token.
+   *
+   * @param token The token.
+   * @return True if there are acronyms with the specified token text, False otherwise.
+   */
+  boolean hasAcronym(GenericLabel token);
 
-  <T extends Token> boolean hasAcronym(T token);
-
-  List<ScoredSense> findBestSense(List<? extends Token> allTokens, int forTokenIndex);
+  /**
+   * Finds the best sense for a
+   *
+   * @param allTokens The list of tokens that make up the acronym.
+   * @param forTokenIndex
+   * @return
+   */
+  List<ScoredSense> findBestSense(List<? extends GenericLabel> allTokens, int forTokenIndex);
 
   /**
    * For deidentification: remove a single word from the model entirely

@@ -16,18 +16,16 @@
 
 package edu.umn.biomedicus.rtf;
 
-import edu.umn.nlpnewt.Document;
-import edu.umn.nlpnewt.Event;
-import edu.umn.nlpnewt.JsonObjectImpl;
+import edu.umn.nlpnewt.common.JsonObjectImpl;
+import edu.umn.nlpnewt.model.Document;
+import edu.umn.nlpnewt.model.Event;
 import org.junit.jupiter.api.Test;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.ByteBuffer;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class RtfProcessorTest {
   @Test
@@ -39,7 +37,7 @@ class RtfProcessorTest {
         baos.write(b);
       }
     }
-    Event event = Event.create("1");
+    Event event = Event.newBuilder().withEventID("1").build();
     event.getBinaryData().put("rtf", baos.toByteArray());
     RtfProcessor processor = new RtfProcessor();
     processor.process(event, JsonObjectImpl.newBuilder().build(), JsonObjectImpl.newBuilder());
@@ -49,7 +47,7 @@ class RtfProcessorTest {
 
   @Test
   void plaintextDocument() {
-    Event event = Event.create("1");
+    Event event = Event.newBuilder().withEventID("1").build();
     event.getBinaryData().put("rtf", "The quick brown fox jumped over the lazy dog.\n".getBytes());
     RtfProcessor processor = new RtfProcessor();
     processor.process(event, JsonObjectImpl.newBuilder().build(), JsonObjectImpl.newBuilder());

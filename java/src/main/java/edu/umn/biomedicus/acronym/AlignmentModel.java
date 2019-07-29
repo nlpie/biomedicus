@@ -16,20 +16,14 @@
 
 package edu.umn.biomedicus.acronym;
 
-import com.google.inject.Inject;
-import com.google.inject.ProvidedBy;
-import com.google.inject.Singleton;
-import edu.umn.biomedicus.annotations.Setting;
-import edu.umn.biomedicus.exc.BiomedicusException;
-import edu.umn.biomedicus.framework.DataLoader;
 import edu.umn.biomedicus.serialization.YamlSerialization;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 
+import java.io.BufferedReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -38,19 +32,18 @@ import java.util.stream.Collectors;
 
 /**
  * Will attempt to determine a long form candidate for an unknown abbreviation by a sequence
- * matching algorithm Uses a modified Needleman-Wunsch algorithm, with parameters chosen with
+ * matching algorithm. Uses a modified Needleman-Wunsch algorithm, with parameters chosen with
  * abbreviations/acronyms in mind
  *
  * @author Greg Finley
  * @since 1.5.0
  */
-@ProvidedBy(AlignmentModel.Loader.class)
-class AlignmentModel implements Serializable {
-
+class AlignmentModel {
   private static final Logger LOGGER = LoggerFactory.getLogger(AlignmentModel.class);
   private List<String> longforms;
   private boolean caseSensitive;
-  private transient Map<String, Double> cachedScores = new HashMap<>();
+  private Map<String, Double> cachedScores = new HashMap<>();
+
   private AlignmentModel(List<String> longforms, boolean caseSensitive) {
     this.longforms = longforms;
     this.caseSensitive = caseSensitive;
@@ -99,7 +92,7 @@ class AlignmentModel implements Serializable {
   /**
    * Calculate the score of an optimal alignment using the Needleman-Wunsch algorithm
    *
-   * @param abbr the abbreviation to align
+   * @param abbr     the abbreviation to align
    * @param longform the longform to align
    * @return the score of the match
    */
@@ -208,7 +201,7 @@ class AlignmentModel implements Serializable {
    */
   List<String> findBestLongforms(String abbrev) {
     List<String> best = new ArrayList<>();
-    double maxScore = -Double.MAX_VALUE;
+    double maxScore = Double.NEGATIVE_INFINITY;
     for (String longform : longforms) {
       double thisScore = align(abbrev, longform);
       if (thisScore > maxScore) {
@@ -245,30 +238,11 @@ class AlignmentModel implements Serializable {
     return sortedScores;
   }
 
-  /**
-   *
-   */
-  @Singleton
-  static class Loader extends DataLoader<AlignmentModel> {
-
-    private final Path modelPath;
-
-    @Inject
-    public Loader(@Setting("acronym.alignmentModel.asDataPath") Path modelPath) {
-      this.modelPath = modelPath;
-    }
-
-    @Override
-    protected AlignmentModel loadModel() throws BiomedicusException {
-      LOGGER.info("Loading acronym alignment model: {}", modelPath);
-
-      Yaml yaml = YamlSerialization.createYaml();
-
-      try {
-        return (AlignmentModel) yaml.load(Files.newBufferedReader(modelPath));
-      } catch (IOException e) {
-        throw new BiomedicusException(e);
-      }
+  public static AlignmentModel load(Path modelPath) throws IOException {
+    LOGGER.info("Loading acronym alignment model: {}", modelPath);
+    Yaml yaml = YamlSerialization.createYaml();
+    try (BufferedReader reader = Files.newBufferedReader(modelPath)) {
+      return (AlignmentModel) yaml.load(reader);
     }
   }
 }
