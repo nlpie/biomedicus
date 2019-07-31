@@ -118,7 +118,7 @@ public class RocksDBSenseVectors implements SenseVectors {
 
       @Override
       public boolean contains(Object o) {
-        return o != null && o instanceof String && containsSense((String) o);
+        return o instanceof String && containsSense((String) o);
       }
 
       @Override

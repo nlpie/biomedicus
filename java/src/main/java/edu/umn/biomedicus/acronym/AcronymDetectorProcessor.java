@@ -17,20 +17,24 @@
 package edu.umn.biomedicus.acronym;
 
 import edu.umn.biomedicus.common.config.Config;
+import edu.umn.biomedicus.common.data.DataFiles;
 import edu.umn.biomedicus.common.pos.PartOfSpeech;
 import edu.umn.biomedicus.common.pos.PartsOfSpeech;
 import edu.umn.biomedicus.common.tokenization.WhitespaceTokenizer;
 import edu.umn.biomedicus.common.tuples.Pair;
 import edu.umn.biomedicus.serialization.YamlSerialization;
+import edu.umn.nlpnewt.Newt;
 import edu.umn.nlpnewt.common.JsonObject;
 import edu.umn.nlpnewt.common.JsonObjectBuilder;
 import edu.umn.nlpnewt.model.Document;
 import edu.umn.nlpnewt.model.GenericLabel;
 import edu.umn.nlpnewt.model.LabelIndex;
 import edu.umn.nlpnewt.model.Labeler;
-import edu.umn.nlpnewt.processing.DocumentProcessor;
+import edu.umn.nlpnewt.processing.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.kohsuke.args4j.CmdLineException;
+import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.kohsuke.args4j.spi.ExplicitBooleanOptionHandler;
 import org.slf4j.Logger;
@@ -47,13 +51,45 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * An implementation of an acronym model that uses word vectors and a cosine distance metric
- *
- * @author Greg Finley
- * @since 1.5.0
+ * An implementation of an acronym model that uses word vectors and a cosine distance metric.
  */
-class AcronymDetectorProcessor extends DocumentProcessor {
-
+@Processor(value = "biomedicus-acronyms",
+    description = "Labels acronyms.",
+    parameters = {
+        @ParameterDescription(name = "labelOtherSenses",
+            description = "Whether the non-highest scoring acronym disambiguations should be labeled",
+            dataType = "bool")
+    },
+    inputs = {
+        @LabelIndexDescription(name = "pos_tags", nameFromParameter = "target_index",
+            description = "Labeled part of speech tags on tokens.",
+            properties = {
+                @PropertyDescription(name = "tag", dataType = "str",
+                    description = "The penn-treebank tag for the token.")
+            })
+    },
+    outputs = {
+        @LabelIndexDescription(name = "acronyms",
+            description = "The highest scoring acronym disambiguation for an acronym.",
+            properties = {
+                @PropertyDescription(name = "score", dataType = "float",
+                    description = "The acronym's score."),
+                @PropertyDescription(name = "expansion", dataType = "str",
+                    description = "The acronym's expansion.")
+            }
+        ),
+        @LabelIndexDescription(name = "other_acronym_senses",
+            description = "The non-highest-scoring disambiguations.",
+            properties = {
+                @PropertyDescription(name = "score", dataType = "float",
+                    description = "The acronym's score."),
+                @PropertyDescription(name = "expansion", dataType = "str",
+                    description = "The acronym's expansion.")
+            }
+        )
+    }
+)
+public class AcronymDetectorProcessor extends DocumentProcessor {
   private static final Logger LOGGER = LoggerFactory.getLogger(AcronymDetectorProcessor.class);
 
   /*
@@ -144,13 +180,13 @@ class AcronymDetectorProcessor extends DocumentProcessor {
    */
   public List<ScoredSense> findBestSense(List<CharSequence> context, int index) {
     String acronym = Acronyms.standardAcronymForm(context.get(index));
-
-    // If the model doesn't contain this acronym, make sure it doesn't contain an upper-case version of it
+    // If the model doesn't contain this acronym, make sure it doesn't contain an upper-case version
     Collection<String> senses = expansions.get(acronym);
     if (senses == null) {
       senses = expansions.get(acronym.toUpperCase());
     }
     if (senses == null) {
+      // Delete non-word characters.
       senses = expansions.get(acronym.replaceAll("[\\W]", ""));
     }
     if (senses == null) {
@@ -247,34 +283,40 @@ class AcronymDetectorProcessor extends DocumentProcessor {
   @Override
   protected void process(@NotNull Document document, @NotNull JsonObject params, @NotNull JsonObjectBuilder result) {
     LOGGER.debug("Detecting acronyms in a document.");
+    Boolean labelOtherSenses = params.getBooleanValue("label_other_senses");
+    if (labelOtherSenses == null) {
+      labelOtherSenses = this.labelOtherSenses;
+    }
 
     LabelIndex<GenericLabel> posTags = document.getLabelIndex("pos_tags");
     List<GenericLabel> tokens = WhitespaceTokenizer.tokenize(document.getText());
     List<CharSequence> tokensText = tokens.stream().map(t -> t.coveredText(document)).collect(Collectors.toList());
-    Labeler<GenericLabel> acronymLabeler = document.getLabeler("acronyms");
-    Labeler<GenericLabel> otherSenseLabeler = document.getLabeler("other_acronym_senses");
-
-    int size = tokens.size();
-    for (int i = 0; i < size; i++) {
-      GenericLabel token = tokens.get(i);
-      List<GenericLabel> partOfSpeechLabelsForToken = posTags.inside(token).asList();
-      if (!allExcluded(partOfSpeechLabelsForToken)) {
-        CharSequence tokenText = token.coveredText(document);
-        if (hasAcronym(tokenText) || (orthographicModel != null && orthographicModel.seemsLikeAbbreviation(tokenText))) {
-          List<ScoredSense> senses = findBestSense(tokensText, i);
-          if (senses.size() > 0) {
-            ScoredSense first = senses.get(0);
-            acronymLabeler.add(GenericLabel.newBuilder(token.getStartIndex(), token.getEndIndex())
-                .setProperty("score", first.getScore())
-                .setProperty("expansion", first.getSense())
-                .build());
-            if (labelOtherSenses) {
-              for (int j = 1; j < senses.size(); j++) {
-                ScoredSense scoredSense = senses.get(j);
-                otherSenseLabeler.add(GenericLabel.newBuilder(token.getStartIndex(), token.getEndIndex())
-                    .setProperty("score", scoredSense.getScore())
-                    .setProperty("expansion", scoredSense.getSense())
-                    .build());
+    try (
+        Labeler<GenericLabel> acronymLabeler = document.getLabeler("acronyms");
+        Labeler<GenericLabel> otherSenseLabeler = document.getLabeler("other_acronym_senses")
+    ) {
+      int size = tokens.size();
+      for (int i = 0; i < size; i++) {
+        GenericLabel token = tokens.get(i);
+        List<GenericLabel> partOfSpeechLabelsForToken = posTags.inside(token).asList();
+        if (!allExcluded(partOfSpeechLabelsForToken)) {
+          CharSequence tokenText = token.coveredText(document);
+          if (hasAcronym(tokenText) || (orthographicModel != null && orthographicModel.seemsLikeAbbreviation(tokenText))) {
+            List<ScoredSense> senses = findBestSense(tokensText, i);
+            if (senses.size() > 0) {
+              ScoredSense first = senses.get(0);
+              acronymLabeler.add(GenericLabel.newBuilder(token.getStartIndex(), token.getEndIndex())
+                  .setProperty("score", first.getScore())
+                  .setProperty("expansion", first.getSense())
+                  .build());
+              if (labelOtherSenses) {
+                for (int j = 1; j < senses.size(); j++) {
+                  ScoredSense scoredSense = senses.get(j);
+                  otherSenseLabeler.add(GenericLabel.newBuilder(token.getStartIndex(), token.getEndIndex())
+                      .setProperty("score", scoredSense.getScore())
+                      .setProperty("expansion", scoredSense.getSense())
+                      .build());
+                }
               }
             }
           }
@@ -289,8 +331,7 @@ class AcronymDetectorProcessor extends DocumentProcessor {
         .allMatch(EXCLUDE_POS::contains);
   }
 
-
-  public static class Settings {
+  public static class Settings extends ProcessorServerOptions {
     @Option(
         name = "--acronym-vector-space",
         metaVar = "PATH",
@@ -363,20 +404,26 @@ class AcronymDetectorProcessor extends DocumentProcessor {
       expansionsModel = Paths.get(config.getStringValue("acronym.expansionsModel"));
       useAlignment = config.getBooleanValue("acronym.useAlignment");
       alignmentModel = Paths.get(config.getStringValue("acronym.alignmentModel"));
+      labelOtherSenses = config.getBooleanValue("acronym.labelOtherSenses");
       cutoffScore = config.getDoubleValue("acronym.cutoffScore");
     }
 
     public AcronymDetectorProcessor build() throws IOException {
+      DataFiles dataFiles = new DataFiles();
+      Path vectorSpace = dataFiles.getDataFile(this.vectorSpace);
       LOGGER.info("Loading acronym vector space: {}", vectorSpace);
       WordVectorSpace wordVectorSpace = WordVectorSpace.load(vectorSpace);
+      Path senseMap = dataFiles.getDataFile(this.senseMap);
       LOGGER.info("Loading acronym sense map: {}. inMemory = {}", senseMap, sensesInMemory);
       SenseVectors senseVectors = new RocksDBSenseVectors(senseMap, false)
           .inMemory(sensesInMemory);
       AlignmentModel alignment = null;
       if (useAlignment) {
+        Path alignmentModel = dataFiles.getDataFile(this.alignmentModel);
         LOGGER.info("Loading alignment model: {}", alignmentModel);
         alignment = AlignmentModel.load(alignmentModel);
       }
+      Path expansionsModel = dataFiles.getDataFile(this.expansionsModel);
       LOGGER.info("Loading acronym expansions: {}", expansionsModel);
       Map<String, Collection<String>> expansions = new HashMap<>();
       Pattern splitter = Pattern.compile("\\|");
@@ -387,9 +434,27 @@ class AcronymDetectorProcessor extends DocumentProcessor {
           expansions.put(Acronyms.standardAcronymForm(acronym), Arrays.asList(acronymExpansions));
         }
       }
+      Path orthographicModel = dataFiles.getDataFile(this.orthographicModel);
+      LOGGER.info("Loading orthographic model: {}", orthographicModel);
       OrthographicAcronymModel orthographicAcronymModel = OrthographicAcronymModel.load(orthographicModel);
       return new AcronymDetectorProcessor(wordVectorSpace, senseVectors, expansions,
           orthographicAcronymModel, alignment, labelOtherSenses, cutoffScore);
+    }
+  }
+
+  public static void main(String[] args) {
+    Config config = Config.defaultConfig();
+    Settings settings = new Settings(config);
+    CmdLineParser parser = new CmdLineParser(settings);
+    try {
+      parser.parseArgument(args);
+      ProcessorServer server = Newt.processorServerBuilder(settings.build(), settings).build();
+      server.start();
+      server.blockUntilShutdown();
+    } catch (CmdLineException e) {
+      ProcessorServerOptions.printHelp(parser, AcronymDetectorProcessor.class, e, null);
+    } catch (IOException | InterruptedException e) {
+      e.printStackTrace();
     }
   }
 }

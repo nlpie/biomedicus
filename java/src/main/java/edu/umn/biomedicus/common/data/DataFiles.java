@@ -34,6 +34,19 @@ public class DataFiles {
    * @return path to the data file
    */
   public Path getDataFile(String relativePath) {
+    return getDataFile(Paths.get(relativePath));
+  }
+
+  /**
+   * Retrieves a data file from a relative path.
+   *
+   * @param relativePath The relative path to the data
+   * @return path to the data file.
+   */
+  public Path getDataFile(Path relativePath) {
+    if (relativePath.isAbsolute()) {
+      return relativePath;
+    }
     return dataPath.resolve(relativePath);
   }
 }
