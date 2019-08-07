@@ -31,8 +31,6 @@ def main(args=None):
     input_dir = Path(args.input_directory)
     with EventsClient(address=args.events) as client, Pipeline(
             RemoteProcessor('biomedicus-sentences', address=args.sentences),
-            RemoteProcessor('biomedicus-tnt-tagger', address=args.tagger),
-            RemoteProcessor('biomedicus-acronyms', address=args.acronyms),
             LocalProcessor(SerializationProcessor(get_serializer('json'),
                                                   output_dir=args.output_directory),
                            component_id='serialize',
@@ -46,6 +44,8 @@ def main(args=None):
                 document = Document("plaintext", contents)
                 event.add_document(document)
                 pipeline.run(document)
+                for sentence in document.get_label_index("sentences"):
+                    print(sentence.get_covered_text(document.text))
 
         pipeline.print_times()
 
