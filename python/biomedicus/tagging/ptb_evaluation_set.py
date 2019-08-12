@@ -16,7 +16,6 @@ from pathlib import Path
 
 from nlpnewt import Event, EventsClient, Document, Pipeline, RemoteProcessor, LocalProcessor
 from nlpnewt.io.serialization import get_serializer, SerializationProcessor
-from nlpnewt.processors.copy_document import CopyDocument
 
 
 def main(args=None):

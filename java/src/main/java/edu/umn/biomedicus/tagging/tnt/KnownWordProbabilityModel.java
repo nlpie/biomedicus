@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Regents of the University of Minnesota.
+ * Copyright 2019 Regents of the University of Minnesota.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -106,13 +106,11 @@ public class KnownWordProbabilityModel implements WordProbabilityModel {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public void openDataStore(DataStoreFactory dataStoreFactory) {
     knownWordsDataStore = dataStoreFactory.openKnownWordDataStore(id);
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public void writeData() {
     knownWordsDataStore.write();
   }

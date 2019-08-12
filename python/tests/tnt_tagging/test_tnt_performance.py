@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
+from subprocess import PIPE, STDOUT, Popen, TimeoutExpired
 
 import grpc
 import pytest
 import signal
-import subprocess
 from nlpnewt import Pipeline, RemoteProcessor, EventsClient, LocalProcessor
 from nlpnewt.io.serialization import get_serializer
 from nlpnewt.metrics import Metrics, Accuracy
@@ -26,14 +26,13 @@ from pathlib import Path
 
 @pytest.fixture(name='pos_tags_service')
 def fixture_pos_tags_service(events_service):
-    cwd = Path(__file__).parents[3] / 'java'
     port = str(find_free_port())
     address = '127.0.0.1:' + port
-    p = subprocess.Popen(['./gradlew',
-                          '-PmainClass=edu.umn.biomedicus.tagging.tnt.TntPosTaggerProcessor',
-                          'execute', '--args=-p ' + port + ' --events ' + events_service],
-                         start_new_session=True, cwd=cwd, stdin=subprocess.PIPE,
-                         stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    biomedicus_jar = os.environ['BIOMEDICUS_JAR']
+    p = Popen(['java', '-cp', biomedicus_jar,
+               'edu.umn.biomedicus.tagging.tnt.TntPosTaggerProcessor', '-p', port,
+               '--events', events_service],
+              start_new_session=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
     try:
         if p.returncode is not None:
             raise ValueError('subprocess terminated')
@@ -47,7 +46,7 @@ def fixture_pos_tags_service(events_service):
             stdout, _ = p.communicate(timeout=1)
             print("python processor exited with code: ", p.returncode)
             print(stdout.decode('utf-8'))
-        except subprocess.TimeoutExpired:
+        except TimeoutExpired:
             print("timed out waiting for python processor to terminate")
 
 

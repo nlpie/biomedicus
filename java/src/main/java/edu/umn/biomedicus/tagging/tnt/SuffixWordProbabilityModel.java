@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Regents of the University of Minnesota.
+ * Copyright 2019 Regents of the University of Minnesota.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,10 @@ import edu.umn.biomedicus.common.tuples.WordCap;
 import edu.umn.biomedicus.common.pos.PartOfSpeech;
 import edu.umn.biomedicus.common.pos.PartsOfSpeech;
 import edu.umn.biomedicus.common.utilities.Strings;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -75,7 +77,6 @@ public class SuffixWordProbabilityModel implements WordProbabilityModel {
     suffixDataStore = dataStoreFactory.createSuffixDataStore(id);
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public void openDataStore(DataStoreFactory dataStoreFactory) {
     suffixDataStore = dataStoreFactory.openSuffixDataStore(id);
@@ -127,13 +128,9 @@ public class SuffixWordProbabilityModel implements WordProbabilityModel {
         .toArray();
 
     TreeMap<Pair<PartOfSpeech, String>, Double> probabilities = new TreeMap<>(
-        (o1, o2) -> {
-          int compare = o1.getFirst().compareTo(o2.getFirst());
-          if (compare != 0) {
-            return compare;
-          }
-          return o1.getSecond().compareTo(o2.getSecond());
-        });
+        Comparator.comparing((Function<Pair<PartOfSpeech, String>, @NotNull PartOfSpeech>) Pair::getFirst)
+            .thenComparing(Pair::getSecond)
+    );
 
 
     for (String word : wordPosFrequencies.getWords()) {

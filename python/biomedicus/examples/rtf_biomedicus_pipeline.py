@@ -25,6 +25,7 @@ def main(args=None):
     parser.add_argument("--events")
     parser.add_argument("--rtf")
     parser.add_argument("--tagger")
+    parser.add_argument("--acronyms")
     parser.add_argument("--sentences")
     args = parser.parse_args(args)
 
@@ -37,6 +38,7 @@ def main(args=None):
                             params={'document_name': 'plaintext'}),
             RemoteProcessor('tnt-tagger', address=args.tagger,
                             params={'document_name': 'plaintext'}),
+            RemoteProcessor('acronyms', address=args.acronyms),
             LocalProcessor(SerializationProcessor(get_serializer('json'),
                                                   output_dir=args.output_directory),
                            component_id='serialize',

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Regents of the University of Minnesota.
+ * Copyright 2019 Regents of the University of Minnesota.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ public final class StringIdentifier implements Comparable<StringIdentifier> {
    * Creates a new term identifier for known strings.
    *
    * @param value the value of the term identifier
-   * @return
+   * @return string identifier.
    */
   public static StringIdentifier withValue(int value) {
     if (value == -1) {

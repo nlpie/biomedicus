@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Regents of the University of Minnesota
+ * Copyright 2019 Regents of the University of Minnesota.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,30 +16,33 @@
 
 package edu.umn.biomedicus.rtf;
 
-import edu.umn.nlpnewt.Document;
-import edu.umn.nlpnewt.Event;
-import edu.umn.nlpnewt.JsonObjectImpl;
+import edu.umn.nlpnewt.common.JsonObjectImpl;
+import edu.umn.nlpnewt.model.Document;
+import edu.umn.nlpnewt.model.Event;
 import org.junit.jupiter.api.Test;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.ByteBuffer;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class RtfProcessorTest {
   @Test
   void rtfDocument() throws IOException {
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    try (InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream("edu/umn/biomedicus/rtf/test.rtf")) {
+    ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+    try (InputStream is = classLoader.getResourceAsStream("edu/umn/biomedicus/rtf/test.rtf")) {
+      if (is == null) {
+        throw new FileNotFoundException();
+      }
       int b;
       while ((b = is.read()) != -1) {
         baos.write(b);
       }
     }
-    Event event = Event.create("1");
+    Event event = Event.newBuilder().withEventID("1").build();
     event.getBinaryData().put("rtf", baos.toByteArray());
     RtfProcessor processor = new RtfProcessor();
     processor.process(event, JsonObjectImpl.newBuilder().build(), JsonObjectImpl.newBuilder());
@@ -49,7 +52,7 @@ class RtfProcessorTest {
 
   @Test
   void plaintextDocument() {
-    Event event = Event.create("1");
+    Event event = Event.newBuilder().withEventID("1").build();
     event.getBinaryData().put("rtf", "The quick brown fox jumped over the lazy dog.\n".getBytes());
     RtfProcessor processor = new RtfProcessor();
     processor.process(event, JsonObjectImpl.newBuilder().build(), JsonObjectImpl.newBuilder());
