@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Regents of the University of Minnesota
+ * Copyright 2019 Regents of the University of Minnesota.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,9 +24,7 @@ import edu.umn.biomedicus.rtf.exc.RtfReaderException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
-import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CharsetDecoder;
-import java.nio.charset.CoderResult;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Map;

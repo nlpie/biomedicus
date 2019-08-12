@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Regents of the University of Minnesota.
+ * Copyright 2019 Regents of the University of Minnesota.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package edu.umn.biomedicus.common.utilities;
 
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.util.Scanner;
 
 /**
@@ -38,11 +40,13 @@ public final class Resources {
    * @param resourceName the qualified classpath name of the resource.
    * @return String with the contents of the resource.
    */
-  public static String toString(String resourceName) {
+  public static String toString(String resourceName) throws FileNotFoundException {
     ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-
-    try (Scanner scanner = new Scanner(classLoader.getResourceAsStream(resourceName), "UTF_8")
-        .useDelimiter("\\A")) {
+    InputStream is = classLoader.getResourceAsStream(resourceName);
+    if (is == null) {
+      throw new FileNotFoundException();
+    }
+    try (Scanner scanner = new Scanner(is, "UTF_8").useDelimiter("\\A")) {
       return scanner.hasNext() ? scanner.next() : "";
     }
   }

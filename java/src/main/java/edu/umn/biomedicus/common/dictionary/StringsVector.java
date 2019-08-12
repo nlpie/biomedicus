@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Regents of the University of Minnesota.
+ * Copyright 2019 Regents of the University of Minnesota.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -197,33 +197,16 @@ public final class StringsVector extends AbstractList<StringIdentifier> {
 
     private final ArrayList<Integer> identifiers = new ArrayList<>();
 
-    /**
-     *
-     *
-     * @param stringIdentifier
-     * @return
-     */
     public Builder addTerm(StringIdentifier stringIdentifier) {
       identifiers.add(stringIdentifier.value());
       return this;
     }
 
-    /**
-     *
-     *
-     * @param identifier
-     * @return
-     */
     public Builder addIdentifier(int identifier) {
       identifiers.add(identifier);
       return this;
     }
 
-    /**
-     *
-     *
-     * @return
-     */
     public StringsVector build() {
       return new StringsVector(identifiers.stream().mapToInt(Integer::intValue).toArray());
     }

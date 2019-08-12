@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Regents of the University of Minnesota
+ * Copyright 2019 Regents of the University of Minnesota.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@ import javax.xml.bind.annotation.XmlElementRef;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
@@ -52,11 +54,16 @@ public class PropertiesDescription {
    * @param classpath the name of the classpath resource
    * @return initialized property groups from the XML file.
    */
-  public static PropertiesDescription loadFromFile(String classpath) {
+  public static PropertiesDescription loadFromFile(String classpath) throws IOException {
     LOGGER.debug("Loading properties description from: {}", classpath);
-    InputStream inputStream = Thread.currentThread().getContextClassLoader()
-        .getResourceAsStream(classpath);
-    return JAXB.unmarshal(inputStream, PropertiesDescription.class);
+
+    ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+    try(InputStream inputStream = classLoader.getResourceAsStream(classpath)) {
+      if (inputStream == null) {
+        throw new FileNotFoundException();
+      }
+      return JAXB.unmarshal(inputStream, PropertiesDescription.class);
+    }
   }
 
   /**
