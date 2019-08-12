@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Regents of the University of Minnesota
+ * Copyright 2019 Regents of the University of Minnesota.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import edu.umn.nlpnewt.model.Event;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -31,7 +32,11 @@ class RtfProcessorTest {
   @Test
   void rtfDocument() throws IOException {
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    try (InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream("edu/umn/biomedicus/rtf/test.rtf")) {
+    ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+    try (InputStream is = classLoader.getResourceAsStream("edu/umn/biomedicus/rtf/test.rtf")) {
+      if (is == null) {
+        throw new FileNotFoundException();
+      }
       int b;
       while ((b = is.read()) != -1) {
         baos.write(b);

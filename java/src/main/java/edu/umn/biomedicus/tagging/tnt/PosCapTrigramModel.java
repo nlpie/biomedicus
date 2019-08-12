@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Regents of the University of Minnesota.
+ * Copyright 2019 Regents of the University of Minnesota.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,13 +75,13 @@ class PosCapTrigramModel {
    * Default constructor. Creates the model with the given probability maps.
    *
    * @param unigramProbabilities probabilities that a pos-capitalization ordinal will occur
-   * @param bigramProbabilities probabilities that a pos-capitalization twin will occur conditional
-   * on a previous pos-capitalization twin
+   * @param bigramProbabilities  probabilities that a pos-capitalization twin will occur conditional
+   *                             on a previous pos-capitalization twin
    * @param trigramProbabilities probabilities that a pos-capitalization twin will occur conditional
-   * on a previous sequence of two pos-capitalization twins
-   * @param unigramLambda smoothing factor for the unigram probabilities
-   * @param bigramLambda smoothing factor for the bigram probabilities
-   * @param trigramLambda smoothing factor for the trigram probabilities
+   *                             on a previous sequence of two pos-capitalization twins
+   * @param unigramLambda        smoothing factor for the unigram probabilities
+   * @param bigramLambda         smoothing factor for the bigram probabilities
+   * @param trigramLambda        smoothing factor for the trigram probabilities
    */
   public PosCapTrigramModel(
       double[] unigramProbabilities,
@@ -104,7 +104,7 @@ class PosCapTrigramModel {
     Map<PosCap, Double> unigram = (Map<PosCap, Double>) store.get("unigram");
     double[] unigrams = new double[PosCap.cardinality()];
     Arrays.fill(unigrams, 0.0);
-    unigram.entrySet().forEach(e -> unigrams[e.getKey().ordinal()] = e.getValue());
+    unigram.forEach((key, value) -> unigrams[key.ordinal()] = value);
 
     @SuppressWarnings("unchecked")
     Map<PosCap, Map<PosCap, Double>> bigram = (Map<PosCap, Map<PosCap, Double>>) store
@@ -113,8 +113,7 @@ class PosCapTrigramModel {
     for (double[] doubles : bigrams) {
       Arrays.fill(doubles, 0.0);
     }
-    bigram.entrySet().forEach(e1 -> e1.getValue().entrySet()
-        .forEach(e2 -> bigrams[e1.getKey().ordinal()][e2.getKey().ordinal()] = e2.getValue()));
+    bigram.forEach((key, value) -> value.forEach((key1, value1) -> bigrams[key.ordinal()][key1.ordinal()] = value1));
 
     @SuppressWarnings("unchecked")
     Map<PosCap, Map<PosCap, Map<PosCap, Double>>> trigram = (Map<PosCap, Map<PosCap, Map<PosCap, Double>>>) store
@@ -126,10 +125,11 @@ class PosCapTrigramModel {
         Arrays.fill(unigramsInTrigram, 0.0);
       }
     }
-    trigram.entrySet().forEach(e1 -> e1.getValue().entrySet().forEach(e2 -> e2.getValue().entrySet()
-        .forEach(
-            e3 -> trigrams[e1.getKey().ordinal()][e2.getKey().ordinal()][e3.getKey().ordinal()] = e3
-                .getValue())));
+    trigram.forEach((key, value) -> value.forEach(
+        (key1, value1) -> value1.forEach(
+            (key2, value2) -> trigrams[key.ordinal()][key1.ordinal()][key2.ordinal()] = value2)
+        )
+    );
 
     return new PosCapTrigramModel(unigrams, bigrams, trigrams, (double) store.get("unigramLambda"),
         (double) store.get("bigramLambda"), (double) store.get("trigramLambda"));

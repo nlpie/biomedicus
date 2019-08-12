@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Regents of the University of Minnesota.
+ * Copyright 2019 Regents of the University of Minnesota.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,14 +48,8 @@ public class RocksToSLF4JLogger extends Logger {
         slf4jLogger.warn(logMsg);
         break;
       case ERROR_LEVEL:
-        slf4jLogger.error(logMsg);
-        break;
       case FATAL_LEVEL:
-        slf4jLogger.error(logMsg);
-        break;
       case HEADER_LEVEL:
-        slf4jLogger.error(logMsg);
-        break;
       case NUM_INFO_LOG_LEVELS:
         slf4jLogger.error(logMsg);
         break;

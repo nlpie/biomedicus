@@ -201,14 +201,6 @@ def _split_token_line(txt: AnyStr, line: Optional[str]) -> Optional[Token]:
 def directory_labels_generator(directory: AnyStr,
                                repeat=False,
                                return_name=False) -> Iterable[Tuple[AnyStr, List[Token]]]:
-    """Generates text, list of tokens tuples a directory containing text and labels files. The
-    labels files for each text document should contain one token on each line with the format
-    [segment] [begin_index] [end_index] [label] [1 if identifier, 0 if not]
-
-    :param directory: The directory to read the text and labels documents from
-    :param repeat:
-    :return:
-    """
     import tensorflow as tf
     while True:
         for doc_dir, _, docs in tf.io.gfile.walk(directory):

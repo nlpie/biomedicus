@@ -14,7 +14,7 @@
 from argparse import ArgumentParser
 from pathlib import Path
 
-from nlpnewt import EventsClient, Event, Pipeline, RemoteProcessor, LocalProcessor, Document
+from nlpnewt import EventsClient, Pipeline, RemoteProcessor, LocalProcessor
 from nlpnewt.io.serialization import get_serializer, SerializationProcessor
 
 
@@ -23,31 +23,26 @@ def main(args=None):
     parser.add_argument("input_directory", metavar="INPUT_DIR")
     parser.add_argument("output_directory", metavar="OUTPUT_DIR")
     parser.add_argument("--events")
-    parser.add_argument("--tagger")
     parser.add_argument("--sentences")
-    parser.add_argument("--acronyms")
+    parser.add_argument("--tagger")
     args = parser.parse_args(args)
+
+    json_serializer = get_serializer('json')
 
     input_dir = Path(args.input_directory)
     with EventsClient(address=args.events) as client, Pipeline(
             RemoteProcessor('biomedicus-sentences', address=args.sentences),
             RemoteProcessor('biomedicus-tnt-tagger', address=args.tagger),
-            RemoteProcessor('biomedicus-acronyms', address=args.acronyms),
             LocalProcessor(SerializationProcessor(get_serializer('json'),
                                                   output_dir=args.output_directory),
                            component_id='serialize',
                            client=client)
     ) as pipeline:
-        for path in input_dir.glob("**/*.txt"):
+        for path in input_dir.glob("**/*.json"):
             print("READING FILE:", str(path))
-            with path.open('r') as f:
-                contents = f.read()
-            with Event(event_id=path.stem, client=client) as event:
-                document = Document("plaintext", contents)
-                event.add_document(document)
+            with json_serializer.file_to_event(path, client=client) as event:
+                document = event['plaintext']
                 pipeline.run(document)
-                for sentence in document.get_label_index("sentences"):
-                    print(sentence.get_covered_text(document.text))
 
         pipeline.print_times()
 

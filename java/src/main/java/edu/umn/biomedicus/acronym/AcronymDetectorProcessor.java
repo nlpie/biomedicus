@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Regents of the University of Minnesota.
+ * Copyright 2019 Regents of the University of Minnesota.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -293,7 +293,7 @@ public class AcronymDetectorProcessor extends DocumentProcessor {
     List<CharSequence> tokensText = tokens.stream().map(t -> t.coveredText(document)).collect(Collectors.toList());
     try (
         Labeler<GenericLabel> acronymLabeler = document.getLabeler("acronyms");
-        Labeler<GenericLabel> otherSenseLabeler = document.getLabeler("other_acronym_senses")
+        Labeler<GenericLabel> otherSenseLabeler = document.getLabeler("all_acronym_senses")
     ) {
       int size = tokens.size();
       for (int i = 0; i < size; i++) {
@@ -310,11 +310,10 @@ public class AcronymDetectorProcessor extends DocumentProcessor {
                   .setProperty("expansion", first.getSense())
                   .build());
               if (labelOtherSenses) {
-                for (int j = 1; j < senses.size(); j++) {
-                  ScoredSense scoredSense = senses.get(j);
+                for (ScoredSense sense : senses) {
                   otherSenseLabeler.add(GenericLabel.newBuilder(token.getStartIndex(), token.getEndIndex())
-                      .setProperty("score", scoredSense.getScore())
-                      .setProperty("expansion", scoredSense.getSense())
+                      .setProperty("score", sense.getScore())
+                      .setProperty("expansion", sense.getSense())
                       .build());
                 }
               }

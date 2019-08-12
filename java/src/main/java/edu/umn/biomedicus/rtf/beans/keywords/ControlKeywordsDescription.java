@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Regents of the University of Minnesota
+ * Copyright 2019 Regents of the University of Minnesota.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
@@ -37,10 +39,17 @@ public class ControlKeywordsDescription {
 
   private List<ControlKeyword> controlKeywords;
 
-  public static ControlKeywordsDescription loadFromFile(String classpath) {
-    InputStream inputStream = Thread.currentThread().getContextClassLoader()
-        .getResourceAsStream(classpath);
-    return JAXB.unmarshal(inputStream, ControlKeywordsDescription.class);
+  public static ControlKeywordsDescription loadFromFile(String classpath) throws IOException {
+    try (
+        InputStream inputStream = Thread.currentThread()
+            .getContextClassLoader()
+            .getResourceAsStream(classpath)
+    ) {
+      if (inputStream == null) {
+        throw new FileNotFoundException();
+      }
+      return JAXB.unmarshal(inputStream, ControlKeywordsDescription.class);
+    }
   }
 
   @XmlElementWrapper(required = true)

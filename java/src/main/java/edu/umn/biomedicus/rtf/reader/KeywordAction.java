@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Regents of the University of Minnesota
+ * Copyright 2019 Regents of the University of Minnesota.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,19 +24,8 @@ import java.io.IOException;
 /**
  * Interface for a keyword action, which performs some kind of manipulation of the state when a
  * keyword is encountered in the RTF document.
- *
- * @since 1.3.0
  */
 public interface KeywordAction {
-
-  /**
-   * Executes the keyword.
-   *
-   * @param state current state.
-   * @param source
-   * @param sink
-   * @throws RtfReaderException if there is some kind of error executing the action
-   */
   void executeAction(RtfState state, RtfSource source, RtfSink sink) throws IOException;
 
   KeywordAction copy();

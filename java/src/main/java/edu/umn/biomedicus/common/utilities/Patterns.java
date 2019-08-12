@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Regents of the University of Minnesota.
+ * Copyright 2019 Regents of the University of Minnesota.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,7 @@
 
 package edu.umn.biomedicus.common.utilities;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.regex.Pattern;
@@ -74,23 +72,22 @@ public final class Patterns {
    *
    * @param resourceName the path to the resource of regex statements to be joined
    * @return newly created pattern
+   * @throws IOException if there is a failure finding or reading the file.
    */
-  public static Pattern loadPatternByJoiningLines(String resourceName) {
-    ClassLoader classLoader = Thread.currentThread()
-        .getContextClassLoader();
-    try (BufferedReader reader = new BufferedReader(
-        new InputStreamReader(
-            classLoader.getResourceAsStream(resourceName)))) {
+  public static Pattern loadPatternByJoiningLines(String resourceName) throws IOException {
+    InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(resourceName);
+    if (is == null) {
+      throw new FileNotFoundException();
+    }
+    try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
       return getPattern(reader);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
     }
   }
 
   private static Pattern getPattern(BufferedReader reader) {
     return Pattern
         .compile(reader.lines().collect(Collectors.joining("|")),
-            Pattern.MULTILINE|Pattern.UNIX_LINES);
+            Pattern.MULTILINE | Pattern.UNIX_LINES);
   }
 
   public static Pattern loadPatternByJoiningLines(Path path) throws IOException {

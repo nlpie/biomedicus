@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Regents of the University of Minnesota.
+ * Copyright 2019 Regents of the University of Minnesota.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,7 +64,7 @@ public final class YamlSerialization {
         yamlConstructors.put(new Tag("!pc"), new AbstractConstruct() {
           @Override
           public Object construct(Node node) {
-            String value = (String) constructScalar((ScalarNode) node);
+            String value = constructScalar((ScalarNode) node);
             boolean isCapitalized = value.charAt(0) == 'C';
             PartOfSpeech partOfSpeech = PartsOfSpeech.forTag(value.substring(1));
             return PosCap.create(partOfSpeech, isCapitalized);
@@ -73,28 +73,28 @@ public final class YamlSerialization {
         yamlConstructors.put(new Tag("!pos"), new AbstractConstruct() {
           @Override
           public Object construct(Node node) {
-            String value = (String) constructScalar((ScalarNode) node);
+            String value = constructScalar((ScalarNode) node);
             return PartsOfSpeech.forTag(value);
           }
         });
         yamlConstructors.put(new Tag("!cui"), new AbstractConstruct() {
           @Override
           public Object construct(Node node) {
-            String val = (String) constructScalar((ScalarNode) node);
+            String val = constructScalar((ScalarNode) node);
             return new CUI(val);
           }
         });
         yamlConstructors.put(new Tag("!tui"), new AbstractConstruct() {
           @Override
           public Object construct(Node node) {
-            String val = (String) constructScalar((ScalarNode) node);
+            String val = constructScalar((ScalarNode) node);
             return new TUI(val);
           }
         });
         yamlConstructors.put(new Tag("!sui"), new AbstractConstruct() {
           @Override
           public Object construct(Node node) {
-            String val = (String) constructScalar((ScalarNode) node);
+            String val = constructScalar((ScalarNode) node);
             return new SUI(val);
           }
         });
@@ -102,7 +102,7 @@ public final class YamlSerialization {
           yamlConstructors.put(new Tag("!t"), new AbstractConstruct() {
             @Override
             public Object construct(Node node) {
-              String val = (String) constructScalar((ScalarNode) node);
+              String val = constructScalar((ScalarNode) node);
               return bidirectionalDictionary.getTermIdentifier(val);
             }
           });
