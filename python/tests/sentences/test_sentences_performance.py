@@ -25,7 +25,7 @@ from pathlib import Path
 
 
 @pytest.fixture(name='sentences_service')
-def fixture_sentences_service(events_service):
+def fixture_sentences_service(events_service, processor_watcher):
     port = str(find_free_port())
     address = '127.0.0.1:' + port
     p = subprocess.Popen(['python', '-m', 'biomedicus.sentences',
@@ -34,21 +34,7 @@ def fixture_sentences_service(events_service):
                           '--events', events_service],
                          start_new_session=True, stdin=subprocess.PIPE,
                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    try:
-        if p.returncode is not None:
-            raise ValueError('subprocess terminated')
-        with grpc.insecure_channel(address) as channel:
-            future = grpc.channel_ready_future(channel)
-            future.result(timeout=20)
-        yield address
-    finally:
-        p.send_signal(signal.SIGINT)
-        try:
-            stdout, _ = p.communicate(timeout=1)
-            print("python processor exited with code: ", p.returncode)
-            print(stdout.decode('utf-8'))
-        except subprocess.TimeoutExpired:
-            print("timed out waiting for python processor to terminate")
+    yield from processor_watcher(address, p)
 
 
 @pytest.mark.performance

@@ -11,7 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import signal
+import subprocess
 
+import grpc
 import pytest
 from nlpnewt.utils import subprocess_events_server
 
@@ -41,3 +44,24 @@ def pytest_collection_modifyitems(config, items):
 def fixture_events_service():
     with subprocess_events_server() as address:
         yield address
+
+
+@pytest.fixture(name='processor_watcher')
+def fixture_processor_watcher():
+    def do_wait(address, process):
+        try:
+            if process.returncode is not None:
+                raise ValueError('subprocess terminated')
+            with grpc.insecure_channel(address) as channel:
+                future = grpc.channel_ready_future(channel)
+                future.result(timeout=20)
+            yield address
+        finally:
+            process.send_signal(signal.SIGINT)
+            try:
+                stdout, _ = process.communicate(timeout=1)
+                print("processor exited with code: ", process.returncode)
+                print(stdout.decode('utf-8'))
+            except subprocess.TimeoutExpired:
+                print("timed out waiting for processor to terminate")
+    return do_wait
