@@ -63,9 +63,8 @@ def test_sentence_performance(events_service, sentences_service):
                            component_id='metrics', client=client)
     ) as pipeline:
         for test_file in input_dir.glob('**/*.json'):
-            event = json_serializer.file_to_event(test_file, client=client)
-            with event:
-                document = event['plaintext']
+            with json_serializer.file_to_event(test_file, client=client) as event:
+                document = event.documents['plaintext']
                 results = pipeline.run(document)
                 print('Accuracy for event - ', event.event_id, ':', results[1].results['accuracy'])
 

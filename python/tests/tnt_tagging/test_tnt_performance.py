@@ -65,7 +65,7 @@ def test_tnt_performance(events_service, pos_tags_service):
         for test_file in input_dir.glob('**/*.json'):
             event = json_serializer.file_to_event(test_file, client=client)
             with event:
-                document = event['gold']
+                document = event.documents['gold']
                 results = pipeline.run(document)
                 print('Accuracy for event - ', event.event_id, ':', results[1].results['accuracy'])
 
