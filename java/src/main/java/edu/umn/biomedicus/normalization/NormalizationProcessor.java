@@ -1,0 +1,160 @@
+/*
+ * Copyright 2019 Regents of the University of Minnesota.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package edu.umn.biomedicus.normalization;
+
+import edu.umn.biomedicus.common.config.Config;
+import edu.umn.biomedicus.common.pos.PartOfSpeech;
+import edu.umn.biomedicus.common.pos.PartsOfSpeech;
+import edu.umn.nlpnewt.common.JsonObject;
+import edu.umn.nlpnewt.common.JsonObjectBuilder;
+import edu.umn.nlpnewt.model.Document;
+import edu.umn.nlpnewt.model.GenericLabel;
+import edu.umn.nlpnewt.model.LabelIndex;
+import edu.umn.nlpnewt.model.Labeler;
+import edu.umn.nlpnewt.processing.DocumentProcessor;
+import edu.umn.nlpnewt.processing.ProcessorServer;
+import edu.umn.nlpnewt.processing.ProcessorServerBuilder;
+import edu.umn.nlpnewt.processing.ProcessorServerOptions;
+import org.jetbrains.annotations.NotNull;
+import org.kohsuke.args4j.CmdLineException;
+import org.kohsuke.args4j.CmdLineParser;
+import org.kohsuke.args4j.Option;
+import org.kohsuke.args4j.spi.ExplicitBooleanOptionHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+/**
+ * Performs word normalization on the parse tokens in a document.
+ *
+ * @since 1.7.0
+ */
+final public class NormalizationProcessor extends DocumentProcessor {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(NormalizationProcessor.class);
+
+  private final NormalizerModel normalizerStore;
+
+  /**
+   * Creates a new normalizer for normalizing a document.
+   *
+   * @param normalizerStore the normalizer store to use.
+   */
+  public NormalizationProcessor(NormalizerModel normalizerStore) {
+    this.normalizerStore = normalizerStore;
+  }
+
+  @Override
+  protected void process(
+      @NotNull Document document,
+      @NotNull JsonObject params,
+      @NotNull JsonObjectBuilder result
+  ) {
+    LOGGER.debug("Normalizing tokens in a document.");
+    LabelIndex<GenericLabel> posTagIndex = document.getLabelIndex("pos_tags");
+    try (Labeler<GenericLabel> normFormLabeler = document.getLabeler("norm_forms")) {
+      for (GenericLabel posTag : posTagIndex) {
+        String word = posTag.coveredText(document).toString();
+        PartOfSpeech partOfSpeech = PartsOfSpeech.forTag(posTag.getStringValue("tag"));
+        String norm = normalizerStore.get(new TermPos(word, partOfSpeech));
+        if (norm == null) {
+          norm = word.toLowerCase();
+        }
+        normFormLabeler.add(GenericLabel.newBuilder(posTag.getStartIndex(), posTag.getEndIndex())
+            .setProperty("norm", norm).build());
+      }
+    }
+  }
+
+  public static NormalizerModel loadModel(Options options) {
+    Config config = Config.loadFromDefaultLocations();
+    Path dbPath = options.getDbPath();
+    if (dbPath == null) {
+      dbPath = Paths.get(config.getStringValue("normalization.db"));
+    }
+    Boolean inMemory = options.getInMemory();
+    if (inMemory == null) {
+      inMemory = config.getBooleanValue("normalization.inMemory");
+    }
+    LOGGER.info("Loading normalization dictionary from \"{}\". inMemory = {}", dbPath, inMemory);
+    return RocksDBNormalizerModel.loadModel(dbPath).inMemory(inMemory);
+  }
+
+  public static NormalizationProcessor createNormalizationProcessor(Options options) {
+    return new NormalizationProcessor(loadModel(options));
+  }
+
+  public static void runNormalizationProcessor(
+      Options options
+  ) throws IOException, InterruptedException {
+    NormalizationProcessor normalizationProcessor = createNormalizationProcessor(options);
+    ProcessorServer server = ProcessorServerBuilder.forProcessor(normalizationProcessor, options)
+        .build();
+    server.start();
+    server.blockUntilShutdown();
+  }
+
+  public static void main(String[] args) {
+    Options options = new Options();
+    CmdLineParser parser = new CmdLineParser(options);
+    try {
+      parser.parseArgument(args);
+      runNormalizationProcessor(options);
+    } catch (CmdLineException e) {
+      ProcessorServerOptions.printHelp(parser, NormalizationProcessor.class, e, null);
+    } catch (InterruptedException | IOException e) {
+      e.printStackTrace();
+    }
+  }
+
+  public static class Options extends ProcessorServerOptions {
+    @Option(
+        name = "--db-path",
+        metaVar = "DB_PATH",
+        usage = "Override path to the normalization dictionary."
+    )
+    private Path dbPath;
+
+    @Option(
+        name = "--in-memory",
+        metaVar = "IN_MEMORY",
+        handler = ExplicitBooleanOptionHandler.class,
+        usage = "Override boolean for whether the normalization dictionary should be loaded " +
+            "into memory."
+    )
+    private Boolean inMemory;
+
+    public Path getDbPath() {
+      return dbPath;
+    }
+
+    public void setDbPath(Path dbPath) {
+      this.dbPath = dbPath;
+    }
+
+    public Boolean getInMemory() {
+      return inMemory;
+    }
+
+    public void setInMemory(Boolean inMemory) {
+      this.inMemory = inMemory;
+    }
+  }
+}

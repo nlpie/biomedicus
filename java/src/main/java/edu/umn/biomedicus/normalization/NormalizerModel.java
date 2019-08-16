@@ -16,17 +16,12 @@
 
 package edu.umn.biomedicus.normalization;
 
-import com.google.inject.ProvidedBy;
-import edu.umn.biomedicus.framework.LifecycleManaged;
-
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Interface for a normalizer model.
  */
-@ProvidedBy(NormalizerModelLoader.class)
-public interface NormalizerModel extends LifecycleManaged {
-
+public interface NormalizerModel extends AutoCloseable {
   /**
    * Gets the term index identifier and its string form
    *
@@ -34,5 +29,5 @@ public interface NormalizerModel extends LifecycleManaged {
    * @return the term and string
    */
   @Nullable
-  TermString get(TermPos termPos);
+  String get(TermPos termPos);
 }

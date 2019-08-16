@@ -17,10 +17,10 @@
 package edu.umn.biomedicus.normalization;
 
 import edu.umn.biomedicus.common.dictionary.StringIdentifier;
-import edu.umn.biomedicus.common.types.syntax.PartOfSpeech;
+import edu.umn.biomedicus.common.pos.PartOfSpeech;
 
-import javax.annotation.Nonnull;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 
 /**
  * A storage / hash map key object that is a tuple of a term and a part of speech.
@@ -29,31 +29,18 @@ import java.nio.ByteBuffer;
  * @since 1.7.0
  */
 final class TermPos implements Comparable<TermPos> {
-
-  private static final int BYTES = Integer.BYTES * 2;
-
-  private final int indexedTerm;
-
   private final PartOfSpeech partOfSpeech;
+  private final String term;
 
-  TermPos(StringIdentifier termIdentifier,
-          PartOfSpeech partOfSpeech) {
-    this.indexedTerm = termIdentifier.value();
+  TermPos(String term, PartOfSpeech partOfSpeech) {
+    this.term = term;
     this.partOfSpeech = partOfSpeech;
   }
 
   TermPos(byte[] bytes) {
     ByteBuffer wrap = ByteBuffer.wrap(bytes);
-    indexedTerm = wrap.getInt();
     partOfSpeech = PartOfSpeech.values()[wrap.getInt()];
-  }
-
-  StringIdentifier getIndexedTerm() {
-    return new StringIdentifier(indexedTerm);
-  }
-
-  PartOfSpeech getPartOfSpeech() {
-    return partOfSpeech;
+    term = StandardCharsets.UTF_8.decode(wrap).toString();
   }
 
   @Override
@@ -64,10 +51,8 @@ final class TermPos implements Comparable<TermPos> {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-
     TermPos termPos = (TermPos) o;
-
-    if (indexedTerm != termPos.indexedTerm) {
+    if (!term.equals(termPos.term)) {
       return false;
     }
     return partOfSpeech == termPos.partOfSpeech;
@@ -75,21 +60,22 @@ final class TermPos implements Comparable<TermPos> {
 
   @Override
   public int hashCode() {
-    int result = indexedTerm;
+    int result = term.hashCode();
     result = 31 * result + partOfSpeech.hashCode();
     return result;
   }
 
   @Override
-  public int compareTo(@Nonnull TermPos o) {
-    int compare = Integer.compare(indexedTerm, o.indexedTerm);
-    if (compare != 0) {
-      return compare;
+  public int compareTo(TermPos o) {
+    int i = term.compareTo(o.term);
+    if (i != 0) {
+      return i;
     }
     return partOfSpeech.compareTo(o.partOfSpeech);
   }
 
   byte[] getBytes() {
-    return ByteBuffer.allocate(BYTES).putInt(indexedTerm).putInt(partOfSpeech.ordinal()).array();
+    byte[] bytes = term.getBytes();
+    return ByteBuffer.allocate(Integer.BYTES + bytes.length).putInt(partOfSpeech.ordinal()).put(bytes).array();
   }
 }

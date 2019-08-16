@@ -16,9 +16,10 @@
 
 package edu.umn.biomedicus.normalization;
 
+import org.jetbrains.annotations.Nullable;
 import org.rocksdb.*;
 
-import javax.annotation.Nullable;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
@@ -29,6 +30,10 @@ import java.util.Map;
 public class RocksDBNormalizerModel implements NormalizerModel {
 
   private final RocksDB db;
+
+  public static RocksDBNormalizerModel loadModel(Path dbPath) {
+    return new RocksDBNormalizerModel(dbPath);
+  }
 
   RocksDBNormalizerModel(Path dbPath) {
     RocksDB.loadLibrary();
@@ -42,22 +47,17 @@ public class RocksDBNormalizerModel implements NormalizerModel {
 
   @Nullable
   @Override
-  public TermString get(@Nullable TermPos termPos) {
+  public String get(@Nullable TermPos termPos) {
     if (termPos == null) {
       return null;
     }
     byte[] key = termPos.getBytes();
     try {
       byte[] bytes = db.get(key);
-      return bytes == null ? null : new TermString(bytes);
+      return bytes == null ? null : new String(bytes, StandardCharsets.UTF_8);
     } catch (RocksDBException e) {
       throw new RuntimeException(e);
     }
-  }
-
-  @Override
-  public void doShutdown() {
-    db.close();
   }
 
   NormalizerModel inMemory(boolean inMemory) {
@@ -65,17 +65,22 @@ public class RocksDBNormalizerModel implements NormalizerModel {
       return this;
     }
 
-    Map<TermPos, TermString> map = new HashMap<>();
+    Map<TermPos, String> map = new HashMap<>();
     try (RocksIterator rocksIterator = db.newIterator()) {
       rocksIterator.seekToFirst();
       while (rocksIterator.isValid()) {
         TermPos termPos = new TermPos(rocksIterator.key());
-        TermString termString = new TermString(rocksIterator.value());
+        String termString = new String(rocksIterator.value(), StandardCharsets.UTF_8);
         map.put(termPos, termString);
         rocksIterator.next();
       }
     }
 
     return new HashNormalizerModel(map);
+  }
+
+  @Override
+  public void close() throws Exception {
+    db.close();
   }
 }

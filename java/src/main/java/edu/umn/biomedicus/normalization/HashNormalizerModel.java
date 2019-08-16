@@ -16,7 +16,8 @@
 
 package edu.umn.biomedicus.normalization;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.Map;
 
 /**
@@ -27,20 +28,18 @@ import java.util.Map;
  */
 final class HashNormalizerModel implements NormalizerModel {
 
-  private final Map<TermPos, TermString> normalizationMap;
+  private final Map<TermPos, String> normalizationMap;
 
-  HashNormalizerModel(Map<TermPos, TermString> normalizationMap) {
+  HashNormalizerModel(Map<TermPos, String> normalizationMap) {
     this.normalizationMap = normalizationMap;
   }
 
   @Override
   @Nullable
-  public TermString get(TermPos termPos) {
+  public String get(TermPos termPos) {
     return normalizationMap.get(termPos);
   }
 
   @Override
-  public void doShutdown() {
-
-  }
+  public void close() {}
 }

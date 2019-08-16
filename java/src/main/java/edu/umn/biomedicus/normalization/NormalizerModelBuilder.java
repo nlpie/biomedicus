@@ -16,13 +16,7 @@
 
 package edu.umn.biomedicus.normalization;
 
-import com.google.inject.Inject;
-import edu.umn.biomedicus.common.dictionary.BidirectionalDictionary;
-import edu.umn.biomedicus.common.dictionary.StringIdentifier;
-import edu.umn.biomedicus.common.types.syntax.PartOfSpeech;
-import edu.umn.biomedicus.exc.BiomedicusException;
-import edu.umn.biomedicus.framework.Bootstrapper;
-import edu.umn.biomedicus.vocabulary.Vocabulary;
+import edu.umn.biomedicus.common.pos.PartOfSpeech;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
@@ -34,7 +28,6 @@ import org.rocksdb.RocksDBException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -108,47 +101,38 @@ public final class NormalizerModelBuilder {
     LRAGR_TO_PENN_FALLBACK = Collections.unmodifiableMap(builder);
   }
 
-  private final BidirectionalDictionary normsIndex;
-
-  private final BidirectionalDictionary wordsIndex;
-
-  @Nullable
-  @Option(name = "-l", required = true, handler = PathOptionHandler.class,
-      usage = "path to SPECIALIST Lexicon LRAGR file.")
+  @Argument(
+      metaVar = "LRAGR_FILE",
+      handler = PathOptionHandler.class,
+      usage = "path to SPECIALIST Lexicon LRAGR file."
+  )
   private Path lragrPath;
 
-  @Nullable
-  @Argument(required = true, handler = PathOptionHandler.class, usage = "output path of normalization model")
+  @Argument(
+      metaVar = "OUTPUT_FILE",
+      index = 1,
+      handler = PathOptionHandler.class,
+      usage = "output path of normalization model"
+  )
   private Path dbPath;
 
-  @SuppressWarnings("unchecked")
-  @Inject
-  public NormalizerModelBuilder(Vocabulary vocabulary) {
-    normsIndex = vocabulary.getNormsIndex();
-    wordsIndex = vocabulary.getWordsIndex();
-  }
-
   public static void main(String[] args) {
-    try {
-      Bootstrapper.create().getInstance(NormalizerModelBuilder.class).process(args);
-    } catch (IOException | BiomedicusException e) {
-      e.printStackTrace();
-    }
-  }
-
-  public void process(String[] args) throws IOException {
-    CmdLineParser parser = new CmdLineParser(this);
-
+    NormalizerModelBuilder builder = new NormalizerModelBuilder();
+    CmdLineParser parser = new CmdLineParser(builder);
     try {
       parser.parseArgument(args);
+      builder.doWork();
     } catch (CmdLineException e) {
       System.err.println(e.getLocalizedMessage());
       System.err.println("java edu.umn.biomedicus.normalization.NormalizerModelBuilder "
           + "-l [path-to-lragr] [path-to-po");
       parser.printUsage(System.err);
-      return;
+    } catch (IOException e) {
+      e.printStackTrace();
     }
+  }
 
+  public void doWork() throws IOException {
     assert lragrPath != null : "should be non-null by this point based on required = true";
 
     System.out.println("Starting building normalizer model from: " + lragrPath.toString());
@@ -161,7 +145,7 @@ public final class NormalizerModelBuilder {
       return;
     }
 
-    Map<TermPos, TermString> builder = new TreeMap<>();
+    Map<TermPos, String> builder = new TreeMap<>();
 
     Pattern exclusionPattern = Pattern.compile(".*[|$#,@;:<>?\\[\\]{}\\d.].*");
 
@@ -186,20 +170,13 @@ public final class NormalizerModelBuilder {
 
           if (!inflectionalVariant.endsWith(baseForm)) {
             PartOfSpeech pennPos = LRAGR_TO_PENN.get(lragrPos);
-            StringIdentifier termIdentifier = wordsIndex.getTermIdentifier(inflectionalVariant);
-            if (termIdentifier.isUnknown()) {
-              return;
-            }
-
             if (pennPos != null) {
-              builder.put(new TermPos(termIdentifier, pennPos),
-                  new TermString(normsIndex.getTermIdentifier(baseForm), baseForm));
+              builder.put(new TermPos(inflectionalVariant, pennPos), baseForm);
             }
 
             PartOfSpeech fallbackPos = LRAGR_TO_PENN_FALLBACK.get(lragrPos);
             if (fallbackPos != null) {
-              builder.put(new TermPos(termIdentifier, fallbackPos),
-                  new TermString(normsIndex.getTermIdentifier(baseForm), baseForm));
+              builder.put(new TermPos(inflectionalVariant, fallbackPos), baseForm);
             }
           }
 
