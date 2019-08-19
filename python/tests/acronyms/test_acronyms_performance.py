@@ -25,28 +25,14 @@ from nlpnewt.utils import find_free_port
 
 
 @pytest.fixture(name='acronyms_service')
-def fixture_acronyms_service(events_service):
+def fixture_acronyms_service(events_service, processor_watcher):
     port = str(find_free_port())
     address = '127.0.0.1:' + port
     biomedicus_jar = os.environ['BIOMEDICUS_JAR']
     p = Popen(['java', '-cp', biomedicus_jar, 'edu.umn.biomedicus.acronym.AcronymDetectorProcessor',
                '-p', port, '--events', events_service],
               start_new_session=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
-    try:
-        if p.returncode is not None:
-            raise ValueError('subprocess terminated')
-        with grpc.insecure_channel(address) as channel:
-            future = grpc.channel_ready_future(channel)
-            future.result(timeout=60)
-        yield address
-    finally:
-        p.send_signal(signal.SIGINT)
-        try:
-            stdout, _ = p.communicate(timeout=1)
-            print("python processor exited with code: ", p.returncode)
-            print(stdout.decode('utf-8'))
-        except TimeoutExpired:
-            print("timed out waiting for python processor to terminate.")
+    yield from processor_watcher(address, p)
 
 
 @pytest.mark.performance
@@ -67,7 +53,7 @@ def test_acronyms_performance(events_service, acronyms_service):
     ) as pipeline:
         for test_file in input_dir.glob('**/*.json'):
             with json_serializer.file_to_event(test_file, client=client) as event:
-                document = event['plaintext']
+                document = event.documents['plaintext']
                 pipeline.run(document)
 
         print('Top Sense Accuracy:', top_score_accuracy.value)
