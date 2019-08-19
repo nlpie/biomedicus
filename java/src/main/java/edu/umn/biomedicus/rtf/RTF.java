@@ -22,10 +22,11 @@ import edu.umn.biomedicus.rtf.reader.KeywordAction;
 import edu.umn.biomedicus.rtf.reader.RtfParser;
 import edu.umn.biomedicus.rtf.reader.RtfState;
 
+import java.io.IOException;
 import java.util.Map;
 
 public class RTF {
-  public static RtfParser getParser() {
+  public static RtfParser getParser() throws IOException {
     ControlKeywordsDescription controlKeywordsDescription = ControlKeywordsDescription
         .loadFromFile("edu/umn/biomedicus/rtf/ControlKeywords.xml");
     Map<String, KeywordAction> keywordActionMap = controlKeywordsDescription

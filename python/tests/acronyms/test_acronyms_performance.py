@@ -25,14 +25,14 @@ from nlpnewt.utils import find_free_port
 
 
 @pytest.fixture(name='acronyms_service')
-def fixture_acronyms_service(events_service, handle_service_process):
+def fixture_acronyms_service(events_service, processor_watcher):
     port = str(find_free_port())
     address = '127.0.0.1:' + port
     biomedicus_jar = os.environ['BIOMEDICUS_JAR']
     p = Popen(['java', '-cp', biomedicus_jar, 'edu.umn.biomedicus.acronym.AcronymDetectorProcessor',
                '-p', port, '--events', events_service],
               start_new_session=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
-    yield from handle_service_process(address, p)
+    yield from processor_watcher(address, p)
 
 
 @pytest.mark.performance
@@ -53,7 +53,7 @@ def test_acronyms_performance(events_service, acronyms_service):
     ) as pipeline:
         for test_file in input_dir.glob('**/*.json'):
             with json_serializer.file_to_event(test_file, client=client) as event:
-                document = event['plaintext']
+                document = event.documents['plaintext']
                 pipeline.run(document)
 
         print('Top Sense Accuracy:', top_score_accuracy.value)

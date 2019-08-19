@@ -48,7 +48,7 @@ def fixture_events_service():
 
 @pytest.fixture(name='processor_watcher')
 def fixture_processor_watcher():
-    def do_wait(address, process):
+    def func(address, process):
         try:
             if process.returncode is not None:
                 raise ValueError('subprocess terminated')
@@ -64,4 +64,4 @@ def fixture_processor_watcher():
                 print(stdout.decode('utf-8'))
             except subprocess.TimeoutExpired:
                 print("timed out waiting for processor to terminate")
-    return do_wait
+    return func

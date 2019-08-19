@@ -17,6 +17,7 @@
 package edu.umn.biomedicus.normalization;
 
 import edu.umn.biomedicus.common.config.Config;
+import edu.umn.biomedicus.common.data.DataFiles;
 import edu.umn.biomedicus.common.pos.PartOfSpeech;
 import edu.umn.biomedicus.common.pos.PartsOfSpeech;
 import edu.umn.nlpnewt.common.JsonObject;
@@ -25,10 +26,7 @@ import edu.umn.nlpnewt.model.Document;
 import edu.umn.nlpnewt.model.GenericLabel;
 import edu.umn.nlpnewt.model.LabelIndex;
 import edu.umn.nlpnewt.model.Labeler;
-import edu.umn.nlpnewt.processing.DocumentProcessor;
-import edu.umn.nlpnewt.processing.ProcessorServer;
-import edu.umn.nlpnewt.processing.ProcessorServerBuilder;
-import edu.umn.nlpnewt.processing.ProcessorServerOptions;
+import edu.umn.nlpnewt.processing.*;
 import org.jetbrains.annotations.NotNull;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
@@ -46,6 +44,24 @@ import java.nio.file.Paths;
  *
  * @since 1.7.0
  */
+@Processor(value = "biomedicus_normalizer",
+    description = "Labels norm forms for words.",
+    inputs = {
+        @LabelIndexDescription(name = "pos_tags", nameFromParameter = "target_index",
+            description = "Labeled part of speech tags on tokens.",
+            properties = {
+                @PropertyDescription(name = "tag", dataType = "str",
+                    description = "The penn-treebank tag for the token.")
+            })
+    },
+    outputs = {
+        @LabelIndexDescription(name = "norm_forms",
+            description = "The labeled normalized form of a word per token.",
+            properties = {
+                @PropertyDescription(name = "norm", dataType = "str",
+                    description = "The normal form of the word.")
+            })
+    })
 final public class NormalizationProcessor extends DocumentProcessor {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(NormalizationProcessor.class);
@@ -61,34 +77,14 @@ final public class NormalizationProcessor extends DocumentProcessor {
     this.normalizerStore = normalizerStore;
   }
 
-  @Override
-  protected void process(
-      @NotNull Document document,
-      @NotNull JsonObject params,
-      @NotNull JsonObjectBuilder result
-  ) {
-    LOGGER.debug("Normalizing tokens in a document.");
-    LabelIndex<GenericLabel> posTagIndex = document.getLabelIndex("pos_tags");
-    try (Labeler<GenericLabel> normFormLabeler = document.getLabeler("norm_forms")) {
-      for (GenericLabel posTag : posTagIndex) {
-        String word = posTag.coveredText(document).toString();
-        PartOfSpeech partOfSpeech = PartsOfSpeech.forTag(posTag.getStringValue("tag"));
-        String norm = normalizerStore.get(new TermPos(word, partOfSpeech));
-        if (norm == null) {
-          norm = word.toLowerCase();
-        }
-        normFormLabeler.add(GenericLabel.newBuilder(posTag.getStartIndex(), posTag.getEndIndex())
-            .setProperty("norm", norm).build());
-      }
-    }
-  }
-
   public static NormalizerModel loadModel(Options options) {
     Config config = Config.loadFromDefaultLocations();
     Path dbPath = options.getDbPath();
     if (dbPath == null) {
       dbPath = Paths.get(config.getStringValue("normalization.db"));
     }
+    DataFiles dataFiles = new DataFiles();
+    dbPath = dataFiles.getDataFile(dbPath);
     Boolean inMemory = options.getInMemory();
     if (inMemory == null) {
       inMemory = config.getBooleanValue("normalization.inMemory");
@@ -121,6 +117,28 @@ final public class NormalizationProcessor extends DocumentProcessor {
       ProcessorServerOptions.printHelp(parser, NormalizationProcessor.class, e, null);
     } catch (InterruptedException | IOException e) {
       e.printStackTrace();
+    }
+  }
+
+  @Override
+  protected void process(
+      @NotNull Document document,
+      @NotNull JsonObject params,
+      @NotNull JsonObjectBuilder result
+  ) {
+    LOGGER.debug("Normalizing tokens in a document.");
+    LabelIndex<GenericLabel> posTagIndex = document.getLabelIndex("pos_tags");
+    try (Labeler<GenericLabel> normFormLabeler = document.getLabeler("norm_forms")) {
+      for (GenericLabel posTag : posTagIndex) {
+        String word = posTag.coveredText(document).toString();
+        PartOfSpeech partOfSpeech = PartsOfSpeech.forTag(posTag.getStringValue("tag"));
+        String norm = normalizerStore.get(new TermPos(word, partOfSpeech));
+        if (norm == null) {
+          norm = word.toLowerCase();
+        }
+        normFormLabeler.add(GenericLabel.newBuilder(posTag.getStartIndex(), posTag.getEndIndex())
+            .setProperty("norm", norm).build());
+      }
     }
   }
 

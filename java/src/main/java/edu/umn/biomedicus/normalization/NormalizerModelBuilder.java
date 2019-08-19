@@ -103,6 +103,7 @@ public final class NormalizerModelBuilder {
 
   @Argument(
       metaVar = "LRAGR_FILE",
+      required = true,
       handler = PathOptionHandler.class,
       usage = "path to SPECIALIST Lexicon LRAGR file."
   )
@@ -111,6 +112,7 @@ public final class NormalizerModelBuilder {
   @Argument(
       metaVar = "OUTPUT_FILE",
       index = 1,
+      required = true,
       handler = PathOptionHandler.class,
       usage = "output path of normalization model"
   )

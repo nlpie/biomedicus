@@ -25,7 +25,7 @@ from pathlib import Path
 
 
 @pytest.fixture(name='pos_tags_service')
-def fixture_pos_tags_service(events_service):
+def fixture_pos_tags_service(events_service, processor_watcher):
     port = str(find_free_port())
     address = '127.0.0.1:' + port
     biomedicus_jar = os.environ['BIOMEDICUS_JAR']
@@ -33,21 +33,8 @@ def fixture_pos_tags_service(events_service):
                'edu.umn.biomedicus.tagging.tnt.TntPosTaggerProcessor', '-p', port,
                '--events', events_service],
               start_new_session=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
-    try:
-        if p.returncode is not None:
-            raise ValueError('subprocess terminated')
-        with grpc.insecure_channel(address) as channel:
-            future = grpc.channel_ready_future(channel)
-            future.result(timeout=10)
+    with processor_watcher(address, p):
         yield address
-    finally:
-        p.send_signal(signal.SIGINT)
-        try:
-            stdout, _ = p.communicate(timeout=1)
-            print("python processor exited with code: ", p.returncode)
-            print(stdout.decode('utf-8'))
-        except TimeoutExpired:
-            print("timed out waiting for python processor to terminate")
 
 
 @pytest.mark.performance

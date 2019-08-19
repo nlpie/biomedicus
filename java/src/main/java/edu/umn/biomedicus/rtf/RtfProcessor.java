@@ -53,7 +53,7 @@ public class RtfProcessor extends EventProcessor {
 
   private final RtfParser parser;
 
-  public RtfProcessor() {
+  public RtfProcessor() throws IOException {
     parser = RTF.getParser();
   }
 
