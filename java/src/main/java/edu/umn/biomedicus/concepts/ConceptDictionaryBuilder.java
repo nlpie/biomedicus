@@ -16,17 +16,12 @@
 
 package edu.umn.biomedicus.concepts;
 
-import com.google.common.base.Splitter;
-import com.google.inject.Inject;
-import edu.umn.biomedicus.annotations.Setting;
-import edu.umn.biomedicus.common.dictionary.BidirectionalDictionary;
-import edu.umn.biomedicus.common.dictionary.StringsBag;
-import edu.umn.biomedicus.exc.BiomedicusException;
-import edu.umn.biomedicus.framework.Bootstrapper;
-import edu.umn.biomedicus.vocabulary.Vocabulary;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
+import org.kohsuke.args4j.Option;
 import org.kohsuke.args4j.spi.PathOptionHandler;
 import org.rocksdb.Options;
 import org.rocksdb.RocksDB;
@@ -34,8 +29,6 @@ import org.rocksdb.RocksDBException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -49,95 +42,76 @@ import java.util.stream.Collectors;
 
 /**
  * Builds the concepts dictionary.
- *
+ * <p>
  * Usage: java edu.umn.biomedicus.concepts.ConceptDictionaryBuilder [umls installation] \
  * [tuis-of-interest file] [banned-ttys file] [outputPath]
  */
 public class ConceptDictionaryBuilder {
-
   private static final Logger LOGGER = LoggerFactory.getLogger(ConceptDictionaryBuilder.class);
 
   private static final Pattern SPLITTER = Pattern.compile("\\|");
 
   private static final Pattern SPACE_SPLITTER = Pattern.compile(" ");
 
-  private final Set<SUI> filteredSuis;
-
-  private final Set<CUI> filteredCuis;
-
-  private final Set<SuiCui> filteredSuiCuis;
-
-  private final Set<TUI> filteredTuis;
-
-  private final Vocabulary vocabulary;
-
-  @Nullable
-  @Argument(required = true, handler = PathOptionHandler.class, usage = "Path to UMLS installation")
+  @Argument(required = true, metaVar = "PATH/TO/UMLS", handler = PathOptionHandler.class,
+      usage = "Path to UMLS installation")
   private Path umlsPath;
 
-  @Nullable
-  @Argument(index = 1, required = true, handler = PathOptionHandler.class,
+  @Argument(index = 1, metaVar = "PATH/TO/TUIS", handler = PathOptionHandler.class,
       usage = "Path to TUIs of interest")
   private Path tuisOfInterestFile;
 
-  @Nullable
-  @Argument(index = 2, required = true, handler = PathOptionHandler.class,
+  @Argument(index = 2, metaVar = "PATH/TO/BANNED_TTYS", handler = PathOptionHandler.class,
       usage = "Banned TTYs file")
   private Path bannedTtysFile;
 
-  @Nullable
   @Argument(index = 3, handler = PathOptionHandler.class, usage = "Path to write db out to.")
   private Path dbPath;
 
-  @Inject
-  ConceptDictionaryBuilder(
-      @Setting("concepts.filters.sui.asDataPath") Path filteredSuisPath,
-      @Setting("concepts.filters.cui.asDataPath") Path filteredCuisPath,
-      @Setting("concepts.filters.suicui.asDataPath") Path filteredSuiCuisPath,
-      @Setting("concepts.filters.tui.asDataPath") Path filteredTuisPath,
-      Vocabulary vocabulary
-  ) throws IOException {
-    Pattern splitter = Pattern.compile(",");
+  @Option(name = "--filtered-suis", handler = PathOptionHandler.class,
+      usage = "A path to a file containing SUIs to filter out.")
+  private Path filteredSuisPath = null;
 
-    filteredSuis = Files.lines(filteredSuisPath).map(SUI::new)
-        .collect(Collectors.toSet());
+  @Option(name = "--filtered-cuis", handler = PathOptionHandler.class,
+      usage = "A path to a file containing CUIs to filter out.")
+  private Path filteredCuisPath = null;
 
-    filteredCuis = Files.lines(filteredCuisPath).map(CUI::new)
-        .collect(Collectors.toSet());
+  @Option(name = "--filtered-sui-cuis", handler = PathOptionHandler.class,
+      usage = "A path to a file containing SUI-CUI combinations to filter")
+  private Path filteredSuiCuisPath;
 
-    filteredSuiCuis = Files.lines(filteredSuiCuisPath)
-        .map(splitter::split)
-        .map(line -> new ConceptDictionaryBuilder.SuiCui(new SUI(line[0]), new CUI(line[1])))
-        .collect(Collectors.toSet());
-
-    filteredTuis = Files.lines(filteredTuisPath).map(TUI::new)
-        .collect(Collectors.toSet());
-
-    this.vocabulary = vocabulary;
-  }
+  @Option(name = "--filtered-")
+  private Path filteredTuisPath;
 
   public static void main(String[] args) {
-    try {
-      Bootstrapper.create().getInstance(ConceptDictionaryBuilder.class).doWork(args);
-    } catch (BiomedicusException | IOException e) {
-      e.printStackTrace();
-    }
-  }
-
-  private void doWork(String[] args) throws IOException {
-    RocksDB.loadLibrary();
-
-    CmdLineParser parser = new CmdLineParser(this);
-
+    ConceptDictionaryBuilder builder = new ConceptDictionaryBuilder();
+    CmdLineParser parser = new CmdLineParser(builder);
     try {
       parser.parseArgument(args);
+      builder.doWork();
     } catch (CmdLineException e) {
       System.err.println(e.getLocalizedMessage());
       System.err.println("java edu.umn.biomedicus.concepts.ConceptDictionaryBuilder [umls path]"
           + " [tuis of interest path] [banned ttys path] [output path]");
       parser.printUsage(System.err);
-      return;
+    } catch (IOException e) {
+      e.printStackTrace();
     }
+  }
+
+  private void doWork() throws IOException {
+    Set<SUI> filteredSuis = filteredSuisPath != null ? Files.lines(filteredSuisPath).map(SUI::new)
+        .collect(Collectors.toSet()) : Collections.emptySet();
+    Set<CUI> filteredCuis = filteredCuisPath != null ? Files.lines(filteredCuisPath).map(CUI::new)
+        .collect(Collectors.toSet()) : Collections.emptySet();
+    Set<SuiCui> filteredSuiCuis = filteredSuiCuisPath != null ? Files.lines(filteredSuiCuisPath)
+        .map(Pattern.compile(",")::split)
+        .map(line -> new SuiCui(new SUI(line[0]), new CUI(line[1])))
+        .collect(Collectors.toSet()) : Collections.emptySet();
+    Set<TUI> filteredTuis = filteredTuisPath != null ? Files.lines(filteredTuisPath).map(TUI::new)
+        .collect(Collectors.toSet()) : Collections.emptySet();
+
+    RocksDB.loadLibrary();
 
     if (Files.exists(dbPath)) {
       Files.deleteIfExists(dbPath.resolve("phrases"));
@@ -179,9 +153,6 @@ public class ConceptDictionaryBuilder {
               }
               return firstList;
             }));
-
-    BidirectionalDictionary normIndex = vocabulary.getWordsIndex();
-
     Path mrconsoPath = umlsPath.resolve("MRCONSO.RRF");
     System.out.println("Loading phrases and SUI -> CUIs from MRCONSO: " + mrconsoPath);
     Set<SUI> bannedSUIs = new HashSet<>();
@@ -285,7 +256,7 @@ public class ConceptDictionaryBuilder {
     int lineCount = 0;
     long totalLines = Files.lines(mrxnsPath).count();
 
-    NavigableMap<StringsBag, List<ConceptRow>> map = new TreeMap<>();
+    NavigableMap<String, List<ConceptRow>> map = new TreeMap<>();
 
     try (BufferedReader bufferedReader = Files.newBufferedReader(mrxnsPath)) {
       String line;
@@ -293,10 +264,11 @@ public class ConceptDictionaryBuilder {
         if (++lineCount % 10_000 == 0) {
           System.out.println("Read " + lineCount + " of " + totalLines);
         }
-        Iterable<String> columns = Splitter.on("|").split(line);
-        Iterator<String> it = columns.iterator();
+        Iterator<String> it = SPLITTER.splitAsStream(line).iterator();
+
         if ("ENG".equals(it.next())) {
-          List<String> norms = Arrays.asList(SPACE_SPLITTER.split(it.next()));
+          String normsLine = it.next();
+          List<String> norms = Arrays.asList(SPACE_SPLITTER.split(normsLine));
           CUI cui = new CUI(it.next());
           it.next();
           SUI sui = new SUI(it.next());
@@ -309,10 +281,9 @@ public class ConceptDictionaryBuilder {
             continue;
           }
 
-          StringsBag termsBag = normIndex.getTermsBag(norms);
           List<TUI> tuis = cuiToTUIs.get(cui);
           if (tuis == null || tuis.size() == 0) {
-            LOGGER.trace("Filtering \"{}\" because it has no interesting types", termsBag);
+            LOGGER.trace("Filtering \"{}\" because it has no interesting types", normsLine);
             continue;
           }
           for (TUI tui : tuis) {
@@ -324,7 +295,7 @@ public class ConceptDictionaryBuilder {
 
             List<Integer> sourceList = suiCuiSources.get(sc);
             for (Integer sourceId : sourceList) {
-              multimapPut(map, termsBag, new ConceptRow(sui, cui, tui, sourceId));
+              multimapPut(map, normsLine, new ConceptRow(sui, cui, tui, sourceId));
             }
           }
         }
@@ -334,7 +305,7 @@ public class ConceptDictionaryBuilder {
     int wrote = 0;
     try (Options options = new Options().setCreateIfMissing(true).prepareForBulkLoad();
          RocksDB normsDb = RocksDB.open(options, dbPath.resolve("norms").toString())) {
-      for (Entry<StringsBag, List<ConceptRow>> entry : map.entrySet()) {
+      for (Entry<String, List<ConceptRow>> entry : map.entrySet()) {
         List<ConceptRow> suiCuiTuis = entry.getValue();
         byte[] suiCuiTuiBytes = getBytes(suiCuiTuis);
         normsDb.put(entry.getKey().getBytes(), suiCuiTuiBytes);
@@ -416,7 +387,7 @@ public class ConceptDictionaryBuilder {
     }
 
     @Override
-    public int compareTo(@Nonnull SuiCui o) {
+    public int compareTo(@NotNull SuiCui o) {
       int compare = Integer.compare(sui.identifier(), o.sui.identifier());
       if (compare != 0) return compare;
       return Integer.compare(cui.identifier(), o.cui.identifier());

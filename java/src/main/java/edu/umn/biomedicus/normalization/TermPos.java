@@ -16,7 +16,6 @@
 
 package edu.umn.biomedicus.normalization;
 
-import edu.umn.biomedicus.common.dictionary.StringIdentifier;
 import edu.umn.biomedicus.common.pos.PartOfSpeech;
 
 import java.nio.ByteBuffer;

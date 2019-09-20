@@ -201,15 +201,15 @@ public class TntPosTaggerProcessor extends DocumentProcessor {
           for (TokenResult token : Tokenizer.tokenize(sentenceText)) {
             int startIndex = sentence.getStartIndex() + token.getStartIndex();
             int endIndex = sentence.getStartIndex() + token.getEndIndex();
-            tokens.add(GenericLabel.newBuilder(startIndex, endIndex).build());
+            tokens.add(GenericLabel.withSpan(startIndex, endIndex).build());
           }
           if (tokens.size() > 0) {
             GenericLabel lastToken = tokens.remove(tokens.size() - 1);
             if (lastToken.getEndIndex() - lastToken.getStartIndex() > 1) {
               CharSequence tokenText = lastToken.coveredText(document);
               if (Arrays.asList('!', '?', '.').contains(tokenText.charAt(tokenText.length() - 1))) {
-                tokens.add(GenericLabel.newBuilder(lastToken.getStartIndex(), lastToken.getEndIndex() - 1).build());
-                tokens.add(GenericLabel.newBuilder(lastToken.getEndIndex() - 1, lastToken.getEndIndex()).build());
+                tokens.add(GenericLabel.withSpan(lastToken.getStartIndex(), lastToken.getEndIndex() - 1).build());
+                tokens.add(GenericLabel.withSpan(lastToken.getEndIndex() - 1, lastToken.getEndIndex()).build());
               } else {
                 tokens.add(lastToken);
               }
@@ -234,8 +234,8 @@ public class TntPosTaggerProcessor extends DocumentProcessor {
         Iterator<PosCap> it = tags.subList(2, tags.size()).iterator();
         for (GenericLabel token : tokens) {
           PartOfSpeech partOfSpeech = it.next().getPartOfSpeech();
-          partOfSpeechLabeler.add(GenericLabel.newBuilder(token.getStartIndex(), token.getEndIndex())
-              .setProperty("tag", partOfSpeech.toString()).build());
+          partOfSpeechLabeler.add(GenericLabel.withSpan(token)
+              .setProperty("tag", partOfSpeech.toString()));
         }
       }
     }
@@ -250,7 +250,7 @@ public class TntPosTaggerProcessor extends DocumentProcessor {
     private @Nullable Path trigram = null;
 
     @Option(
-        name = "--wordDB",
+        name = "--word-db-path",
         metaVar = "PATH_TO_WORD_DB",
         usage = "Optional override path to the word DB model."
     )

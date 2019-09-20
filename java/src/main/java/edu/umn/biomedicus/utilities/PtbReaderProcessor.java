@@ -77,13 +77,13 @@ public class PtbReaderProcessor extends EventProcessor {
           if (partOfSpeech == null) {
             partOfSpeech = PartOfSpeech.XX;
           }
-          posTags.add(GenericLabel.newBuilder(begin, end)
+          posTags.add(GenericLabel.withSpan(begin, end)
               .setProperty("tag", partOfSpeech.toString())
               .build());
 
         }
         int sentEnd = documentBuilder.length();
-        sentences.add(GenericLabel.newBuilder(sentBegin, sentEnd).build());
+        sentences.add(GenericLabel.createSpan(sentBegin, sentEnd));
       }
     } catch (IOException e) {
       throw new IllegalStateException(e);

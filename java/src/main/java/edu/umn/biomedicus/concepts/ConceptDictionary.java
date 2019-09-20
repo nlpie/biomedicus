@@ -16,16 +16,13 @@
 
 package edu.umn.biomedicus.concepts;
 
-import com.google.inject.ProvidedBy;
-import edu.umn.biomedicus.common.dictionary.StringsBag;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.util.List;
 
 /**
  * An interface for the dictionary of concepts used by the DetectDictionaryConcepts.
  */
-@ProvidedBy(ConceptDictionaryLoader.class)
 public interface ConceptDictionary {
   /**
    * Finds the applicable concepts for a given phase in text.
@@ -52,7 +49,7 @@ public interface ConceptDictionary {
    * @return a list of all the concepts that apply
    */
   @Nullable
-  List<ConceptRow> forNorms(StringsBag norms);
+  List<ConceptRow> forNorms(String norms);
 
   /**
    * Returns the full source name for the identifier.

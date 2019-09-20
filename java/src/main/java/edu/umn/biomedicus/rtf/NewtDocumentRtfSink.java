@@ -111,7 +111,7 @@ public class NewtDocumentRtfSink implements RtfSink {
       if (startIndex != -1) {
         if (newValue < minimumValue) {
           if (index != startIndex || zeroLengthEmitted) {
-            GenericLabel.Builder builder = GenericLabel.newBuilder(startIndex, index);
+            GenericLabel.Builder builder = GenericLabel.withSpan(startIndex, index);
             if (valueIncluded) {
               builder.setProperty("value", oldValue);
             }

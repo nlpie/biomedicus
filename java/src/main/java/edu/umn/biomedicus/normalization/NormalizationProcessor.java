@@ -136,8 +136,8 @@ final public class NormalizationProcessor extends DocumentProcessor {
         if (norm == null) {
           norm = word.toLowerCase();
         }
-        normFormLabeler.add(GenericLabel.newBuilder(posTag.getStartIndex(), posTag.getEndIndex())
-            .setProperty("norm", norm).build());
+        normFormLabeler.add(GenericLabel.withSpan(posTag.getStartIndex(), posTag.getEndIndex())
+            .setProperty("norm", norm));
       }
     }
   }

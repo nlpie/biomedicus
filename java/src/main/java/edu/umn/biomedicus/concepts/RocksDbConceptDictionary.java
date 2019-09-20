@@ -16,24 +16,30 @@
 
 package edu.umn.biomedicus.concepts;
 
-import edu.umn.biomedicus.common.dictionary.StringsBag;
-import edu.umn.biomedicus.framework.LifecycleManaged;
-import org.rocksdb.RocksDB;
-import org.rocksdb.RocksDBException;
+import org.jetbrains.annotations.Nullable;
+import org.rocksdb.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
+import java.io.Closeable;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
  * An implementation of {@link ConceptDictionary} that uses RocksDB as a backend.
  *
  * @since 1.8.0
  */
-class RocksDbConceptDictionary implements ConceptDictionary, LifecycleManaged {
+class RocksDbConceptDictionary implements ConceptDictionary, Closeable {
+  private static Logger LOGGER = LoggerFactory.getLogger(RocksDbConceptDictionary.class);
 
   private final RocksDB phrases;
 
@@ -65,6 +71,83 @@ class RocksDbConceptDictionary implements ConceptDictionary, LifecycleManaged {
     return list;
   }
 
+  public static ConceptDictionary loadModel(Path dbPath, boolean inMemory) throws RocksDBException, IOException {
+    RocksDB.loadLibrary();
+
+    try (Options options = new Options().setInfoLogLevel(InfoLogLevel.ERROR_LEVEL)) {
+      LOGGER.info("Opening concepts dictionary: {}. inMemory = {}.", dbPath, inMemory);
+
+      RocksDB phrasesDB = RocksDB.openReadOnly(options, dbPath.resolve("phrases").toString());
+      RocksDB lowercaseDB = RocksDB.openReadOnly(options, dbPath.resolve("lowercase").toString());
+      RocksDB normsDB = RocksDB.openReadOnly(options, dbPath.resolve("norms").toString());
+      Map<Integer, String> sources = new HashMap<>();
+
+      Files.lines(dbPath.resolve("sources.txt")).forEach(s -> sources.put(sources.size(), s));
+
+
+      if (inMemory) {
+        LOGGER.info("Loading concepts phrases into memory.");
+        final Map<String, List<ConceptRow>> phrases = new HashMap<>();
+        dumpToMap(phrasesDB, phrases, String::new);
+
+        LOGGER.info("Loading concepts lowercases into memory.");
+        final Map<String, List<ConceptRow>> lowercasePhrases = new HashMap<>();
+        dumpToMap(lowercaseDB, lowercasePhrases, String::new);
+
+        LOGGER.info("Loading concepts norms into memory.");
+        final Map<String, List<ConceptRow>> normDictionary = new HashMap<>();
+        dumpToMap(normsDB, normDictionary, String::new);
+
+        LOGGER.info("Done loading concepts into memory.");
+
+        return new ConceptDictionary() {
+          @Override
+          @Nullable
+          public List<ConceptRow> forPhrase(String phrase) {
+            return phrases.get(phrase);
+          }
+
+          @Override
+          @Nullable
+          public List<ConceptRow> forLowercasePhrase(String phrase) {
+            return lowercasePhrases.get(phrase);
+          }
+
+          @Override
+          @Nullable
+          public List<ConceptRow> forNorms(String norms) {
+            return normDictionary.get(norms);
+          }
+
+          @Override
+          public String source(int identifier) {
+            return sources.get(identifier);
+          }
+        };
+
+      }
+
+      LOGGER.info("Done opening concepts dictionary.");
+
+      return new RocksDbConceptDictionary(phrasesDB, lowercaseDB, normsDB, sources);
+    }
+  }
+
+  private static <T> void dumpToMap(RocksDB db, Map<T, List<ConceptRow>> suiCuiTuis,
+                                    Function<byte[], T> keyMapper) {
+    try (RocksIterator rocksIterator = db.newIterator()) {
+      rocksIterator.seekToFirst();
+      while (rocksIterator.isValid()) {
+        byte[] keyBytes = rocksIterator.key();
+        T key = keyMapper.apply(keyBytes);
+        suiCuiTuis.put(key, RocksDbConceptDictionary.toList(rocksIterator.value()));
+        rocksIterator.next();
+      }
+    }
+
+    db.close();
+  }
+
   @Nullable
   @Override
   public List<ConceptRow> forPhrase(String phrase) {
@@ -89,10 +172,7 @@ class RocksDbConceptDictionary implements ConceptDictionary, LifecycleManaged {
 
   @Nullable
   @Override
-  public List<ConceptRow> forNorms(StringsBag norms) {
-    if (norms.uniqueTerms() == 0) {
-      return null;
-    }
+  public List<ConceptRow> forNorms(String norms) {
     try {
       byte[] bytes = normsDB.get(norms.getBytes());
       return bytes == null ? null : toList(bytes);
@@ -108,7 +188,9 @@ class RocksDbConceptDictionary implements ConceptDictionary, LifecycleManaged {
   }
 
   @Override
-  public void doShutdown() {
-
+  public void close() throws IOException {
+    normsDB.close();
+    lowercase.close();
+    phrases.close();
   }
 }

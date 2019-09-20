@@ -14,16 +14,8 @@
  * limitations under the License.
  */
 
-package edu.umn.biomedicus.common.dictionary;
+package edu.umn.biomedicus.common;
 
-import java.io.Closeable;
+public class LabelIndices {
 
-public interface MappingIterator extends Closeable {
-  boolean isValid();
-
-  int identifier();
-
-  String string();
-
-  void next();
 }

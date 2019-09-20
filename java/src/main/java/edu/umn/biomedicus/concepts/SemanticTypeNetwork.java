@@ -16,8 +16,6 @@
 
 package edu.umn.biomedicus.concepts;
 
-import com.google.inject.ProvidedBy;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -28,7 +26,6 @@ import java.util.stream.Collectors;
 /**
  *
  */
-@ProvidedBy(SemanticTypeNetworkLoader.class)
 public class SemanticTypeNetwork {
 
   private static final Pattern PIPE = Pattern.compile("\\|");

@@ -16,7 +16,8 @@
 
 package edu.umn.biomedicus.concepts;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
