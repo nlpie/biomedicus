@@ -18,10 +18,7 @@ package edu.umn.biomedicus.concepts;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.kohsuke.args4j.Argument;
-import org.kohsuke.args4j.CmdLineException;
-import org.kohsuke.args4j.CmdLineParser;
-import org.kohsuke.args4j.Option;
+import org.kohsuke.args4j.*;
 import org.kohsuke.args4j.spi.PathOptionHandler;
 import org.rocksdb.Options;
 import org.rocksdb.RocksDB;
@@ -65,7 +62,7 @@ public class ConceptDictionaryBuilder {
       usage = "Banned TTYs file")
   private Path bannedTtysFile;
 
-  @Argument(index = 3, handler = PathOptionHandler.class, usage = "Path to write db out to.")
+  @Argument(index = 3, metaVar = "OUTPUT_PATH", usage = "Path to write db out to.")
   private Path dbPath;
 
   @Option(name = "--filtered-suis", handler = PathOptionHandler.class,
@@ -80,7 +77,7 @@ public class ConceptDictionaryBuilder {
       usage = "A path to a file containing SUI-CUI combinations to filter")
   private Path filteredSuiCuisPath;
 
-  @Option(name = "--filtered-")
+  @Option(name = "--filtered-tuis", usage = "A path to a file containing TUIs to filter out.")
   private Path filteredTuisPath;
 
   public static void main(String[] args) {
@@ -91,8 +88,7 @@ public class ConceptDictionaryBuilder {
       builder.doWork();
     } catch (CmdLineException e) {
       System.err.println(e.getLocalizedMessage());
-      System.err.println("java edu.umn.biomedicus.concepts.ConceptDictionaryBuilder [umls path]"
-          + " [tuis of interest path] [banned ttys path] [output path]");
+      System.err.println("java edu.umn.biomedicus.concepts.ConceptDictionaryBuilder" + parser.printExample(OptionHandlerFilter.ALL) + " PATH/TO/UMLS PATH/TO/TUIS PATH/TO/BANNED_TTYS OUTPUT_PATH");
       parser.printUsage(System.err);
     } catch (IOException e) {
       e.printStackTrace();

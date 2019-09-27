@@ -40,7 +40,7 @@ public final class YamlSerialization {
   }
 
   public static Yaml createYaml() {
-    return createYaml();
+    return new Yaml(constructor(), representer());
   }
 
   private static Constructor constructor() {

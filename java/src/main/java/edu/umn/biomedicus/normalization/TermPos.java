@@ -27,16 +27,16 @@ import java.nio.charset.StandardCharsets;
  * @author Ben Knoll
  * @since 1.7.0
  */
-final class TermPos implements Comparable<TermPos> {
+public final class TermPos implements Comparable<TermPos> {
   private final PartOfSpeech partOfSpeech;
   private final String term;
 
-  TermPos(String term, PartOfSpeech partOfSpeech) {
+  public TermPos(String term, PartOfSpeech partOfSpeech) {
     this.term = term;
     this.partOfSpeech = partOfSpeech;
   }
 
-  TermPos(byte[] bytes) {
+  public TermPos(byte[] bytes) {
     ByteBuffer wrap = ByteBuffer.wrap(bytes);
     partOfSpeech = PartOfSpeech.values()[wrap.getInt()];
     term = StandardCharsets.UTF_8.decode(wrap).toString();
@@ -73,7 +73,7 @@ final class TermPos implements Comparable<TermPos> {
     return partOfSpeech.compareTo(o.partOfSpeech);
   }
 
-  byte[] getBytes() {
+  public byte[] getBytes() {
     byte[] bytes = term.getBytes();
     return ByteBuffer.allocate(Integer.BYTES + bytes.length).putInt(partOfSpeech.ordinal()).put(bytes).array();
   }

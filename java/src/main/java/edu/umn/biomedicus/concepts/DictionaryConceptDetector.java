@@ -20,7 +20,9 @@ import edu.umn.biomedicus.common.config.Config;
 import edu.umn.biomedicus.common.data.DataFiles;
 import edu.umn.biomedicus.common.pos.PartOfSpeech;
 import edu.umn.biomedicus.common.pos.PartsOfSpeech;
-import edu.umn.biomedicus.common.tokenization.WhitespaceTokenizer;
+import edu.umn.biomedicus.normalization.NormalizationProcessor;
+import edu.umn.biomedicus.normalization.NormalizerModel;
+import edu.umn.biomedicus.normalization.TermPos;
 import edu.umn.nlpnewt.common.JsonObject;
 import edu.umn.nlpnewt.common.JsonObjectBuilder;
 import edu.umn.nlpnewt.model.*;
@@ -110,7 +112,13 @@ class DictionaryConceptDetector extends DocumentProcessor {
 
   private final ConceptDictionary conceptDictionary;
 
-  DictionaryConceptDetector(ConceptDictionary conceptDictionary) {this.conceptDictionary = conceptDictionary;}
+  @Nullable
+  private final NormalizerModel normalizerModel;
+
+  DictionaryConceptDetector(ConceptDictionary conceptDictionary, @Nullable NormalizerModel normalizerModel) {
+    this.conceptDictionary = conceptDictionary;
+    this.normalizerModel = normalizerModel;
+  }
 
   private static Set<PartOfSpeech> buildTrivialPos() {
     Set<PartOfSpeech> builder = new HashSet<>();
@@ -146,7 +154,15 @@ class DictionaryConceptDetector extends DocumentProcessor {
       inMemory = config.getBooleanValue("concepts.inMemory");
     }
     ConceptDictionary conceptDictionary = RocksDbConceptDictionary.loadModel(dbPath, inMemory);
-    return new DictionaryConceptDetector(conceptDictionary);
+    NormalizerModel normalizerModel = null;
+    Path normalizerModelPath = conceptsOptions.getNormalizerModel();
+    if (normalizerModelPath != null) {
+      NormalizationProcessor.Options normalizerOptions = new NormalizationProcessor.Options();
+      normalizerOptions.setDbPath(normalizerModelPath);
+      normalizerOptions.setInMemory(inMemory);
+      normalizerModel = NormalizationProcessor.loadModel(normalizerOptions);
+    }
+    return new DictionaryConceptDetector(conceptDictionary, normalizerModel);
   }
 
   public static void runDictionaryConceptDetector(
@@ -201,12 +217,23 @@ class DictionaryConceptDetector extends DocumentProcessor {
     )
     private @Nullable Boolean inMemory = null;
 
-    public Path getDbPath() {
+    @Option(
+        name = "--normalizer-model",
+        metaVar = "PATH_TO_NORMALIZER_MODEL",
+        usage = "Normalize here in the concept detector instead of using a norms index."
+    )
+    private @Nullable Path normalizerModel = null;
+
+    public @Nullable Path getDbPath() {
       return dbPath;
     }
 
-    public Boolean getInMemory() {
+    public @Nullable Boolean getInMemory() {
       return inMemory;
+    }
+
+    public @Nullable Path getNormalizerModel() {
+      return normalizerModel;
     }
   }
 
@@ -215,20 +242,19 @@ class DictionaryConceptDetector extends DocumentProcessor {
 
     private final LabelIndex<GenericLabel> sentences;
     private final LabelIndex<GenericLabel> posTags;
-    private final LabelIndex<GenericLabel> norms;
     private final LabelIndex<GenericLabel> acronyms;
     private final Labeler<GenericLabel> termLabeler;
     private final Labeler<GenericLabel> conceptLabeler;
 
     private StringBuilder editedSentenceText;
     private List<Label> editedSentenceTokens;
+    private List<Boolean> edited;
 
 
     public DetectConcepts(Document document) {
       this.document = document;
       sentences = document.getLabelIndex("sentences");
       posTags = document.getLabelIndex("pos_tags");
-      norms = document.getLabelIndex("norm_forms");
       acronyms = document.getLabelIndex("acronyms");
       termLabeler = document.getLabeler("umls_terms");
       conceptLabeler = document.getLabeler("umls_concepts");
@@ -236,13 +262,34 @@ class DictionaryConceptDetector extends DocumentProcessor {
 
     public void run() {
       String documentText = document.getText();
+      LabelIndex<GenericLabel> norms = null;
+      if (normalizerModel == null) {
+        norms = document.getLabelIndex("norm_forms");
+      }
       for (GenericLabel sentence : sentences) {
         LOGGER.trace("Identifying concepts in a sentence");
 
         editedSentenceText = new StringBuilder(sentence.coveredText(documentText));
         editedSentenceTokens = new ArrayList<>();
-        List<GenericLabel> sentenceTokens = WhitespaceTokenizer.tokenize(sentence.coveredText(document));
+        edited = new ArrayList<>();
+        List<GenericLabel> sentenceTokens = posTags.inside(sentence).asList();
         createEditedText(sentence, sentenceTokens);
+
+        List<String> sentenceNorms = new ArrayList<>();
+        if (normalizerModel != null) {
+          for (GenericLabel sentenceToken : sentenceTokens) {
+            String word = sentenceToken.coveredText(document).toString();
+            PartOfSpeech tag = PartsOfSpeech.forTag(sentenceToken.getStringValue("tag"));
+            String norm = normalizerModel.get(new TermPos(word, tag));
+            if (norm == null) norm = word.toLowerCase();
+            sentenceNorms.add(norm);
+          }
+        } else {
+          for (GenericLabel genericLabel : norms.inside(sentence)) {
+            sentenceNorms.add(genericLabel.getStringValue("norm"));
+          }
+        }
+
 
         for (int from = 0; from < sentenceTokens.size(); from++) {
           int to = Math.min(from + SPAN_SIZE, sentenceTokens.size());
@@ -255,46 +302,38 @@ class DictionaryConceptDetector extends DocumentProcessor {
             GenericLabel last = windowSubset.get(subsetSize - 1);
             GenericLabel entire = GenericLabel.createSpan(first.getStartIndex(), last.getEndIndex());
 
-            if (posTags.inside(entire).stream()
+            if (window.stream()
                 .map(posTag -> PartsOfSpeech.forTag(posTag.getStringValue("tag"))).allMatch(TRIVIAL_POS::contains)) {
               continue;
             }
 
-            if (checkPhrase(entire, entire.coveredText(documentText).toString(), subsetSize == 1, 0)) {
+            String phrase = entire.coveredText(documentText).toString();
+            if (checkPhrase(entire, phrase, subsetSize == 1, 0)) {
               continue;
             }
 
-            int editedBegin = editedSentenceTokens.get(from).getStartIndex();
-            int editedEnd = editedSentenceTokens.get(from + subsetSize - 1).getEndIndex();
-            String editedSubstring = editedSentenceText.substring(editedBegin, editedEnd);
-            if (checkPhrase(entire, editedSubstring, subsetSize == 1, .1)) {
-              continue;
+            if (edited.subList(from, from + subsetSize).stream().anyMatch(i -> i)) {
+              int editedBegin = editedSentenceTokens.get(from).getStartIndex();
+              int editedEnd = editedSentenceTokens.get(from + subsetSize - 1).getEndIndex();
+              String editedSubstring = editedSentenceText.substring(editedBegin, editedEnd);
+              if (checkPhrase(entire, editedSubstring, subsetSize == 1, .1)) {
+                  continue;
+                }
             }
 
             if (windowSubset.size() <= 1) {
-              return;
+              continue;
             }
 
-            Label phraseAsSpan = GenericLabel.createSpan(windowSubset.get(0).getStartIndex(),
-                windowSubset.get(windowSubset.size() - 1).getEndIndex());
-            TreeSet<String> windowNorms = new TreeSet<>();
-            for (GenericLabel normForm : norms.inside(phraseAsSpan)) {
-              GenericLabel posTag = posTags.firstAtLocation(normForm);
-
-              if (posTag != null && TRIVIAL_POS.contains(PartsOfSpeech.forTag(posTag.getStringValue("tag")))) {
-                continue;
-              }
-
-              windowNorms.add(normForm.getStringValue("norm"));
-            }
+            List<String> windowNorms = new ArrayList<>(sentenceNorms.subList(from, to));
+            windowNorms.sort(Comparator.naturalOrder());
             StringBuilder queryStringBuilder = new StringBuilder();
             for (String windowNorm : windowNorms) {
               queryStringBuilder.append(windowNorm);
             }
-
             List<ConceptRow> normsCUI = conceptDictionary.forNorms(queryStringBuilder.toString());
             if (normsCUI != null) {
-              labelTerm(phraseAsSpan, normsCUI, .3);
+              labelTerm(entire, normsCUI, .3);
             }
           }
         }
@@ -304,22 +343,19 @@ class DictionaryConceptDetector extends DocumentProcessor {
     private void createEditedText(GenericLabel sentence, List<GenericLabel> sentenceTokens) {
       int offset = 0;
       for (GenericLabel sentenceToken : sentenceTokens) {
-        GenericLabel token = GenericLabel.createSpan(
-            sentence.getStartIndex() + sentenceToken.getStartIndex(),
-            sentence.getStartIndex() + sentenceToken.getEndIndex()
-        );
-
         Label span;
-        GenericLabel acronymForToken = acronyms.firstAtLocation(token);
+        GenericLabel acronymForToken = acronyms.firstAtLocation(sentenceToken);
         if (acronymForToken != null) {
+          edited.add(true);
           String expansion = acronymForToken.getStringValue("expansion");
-          editedSentenceText.replace(offset + sentenceToken.getStartIndex(),
-              offset + sentenceToken.getEndIndex(), expansion);
+          editedSentenceText.replace(offset + sentenceToken.getStartIndex() - sentence.getStartIndex(),
+              offset + sentenceToken.getEndIndex() - sentence.getStartIndex(), expansion);
+          span = GenericLabel.createSpan(offset + sentenceToken.getStartIndex() - sentence.getStartIndex(),
+              offset + sentenceToken.getStartIndex() + expansion.length() - sentence.getStartIndex());
           offset += expansion.length() - sentenceToken.length();
-          span = GenericLabel.createSpan(offset + sentenceToken.getStartIndex(),
-              offset + sentenceToken.getStartIndex() + expansion.length());
         } else {
-          span = GenericLabel.createSpan(offset + sentenceToken.getStartIndex(), offset + sentenceToken.getEndIndex());
+          edited.add(false);
+          span = GenericLabel.createSpan(offset + sentenceToken.getStartIndex() - sentence.getStartIndex(), offset + sentenceToken.getEndIndex() - sentence.getStartIndex());
         }
 
         editedSentenceTokens.add(span);

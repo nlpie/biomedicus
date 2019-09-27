@@ -44,7 +44,7 @@ import java.nio.file.Paths;
  *
  * @since 1.7.0
  */
-@Processor(value = "biomedicus_normalizer",
+@Processor(value = "biomedicus-normalizer",
     description = "Labels norm forms for words.",
     inputs = {
         @LabelIndexDescription(name = "pos_tags", nameFromParameter = "target_index",
