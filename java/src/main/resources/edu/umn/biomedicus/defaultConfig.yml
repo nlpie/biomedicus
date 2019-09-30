@@ -13,6 +13,7 @@ acronym:
 concepts:
   db: concepts
   inMemory: no
+  normalizeLocally: yes
 normalization:
   db: normalization
   inMemory: no

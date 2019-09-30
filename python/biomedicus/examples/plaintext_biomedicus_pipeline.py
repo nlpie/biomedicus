@@ -35,7 +35,6 @@ def main(args=None):
             RemoteProcessor('biomedicus-sentences', address=args.sentences),
             RemoteProcessor('biomedicus-tnt-tagger', address=args.tagger),
             RemoteProcessor('biomedicus-acronyms', address=args.acronyms),
-            RemoteProcessor('biomedicus-normalizer', address=args.norms),
             RemoteProcessor('biomedicus-concepts', address=args.concepts),
             LocalProcessor(SerializationProcessor(get_serializer('json'),
                                                   output_dir=args.output_directory),

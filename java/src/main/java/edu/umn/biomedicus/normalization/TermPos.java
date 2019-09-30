@@ -20,6 +20,7 @@ import edu.umn.biomedicus.common.pos.PartOfSpeech;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 /**
  * A storage / hash map key object that is a tuple of a term and a part of speech.
@@ -32,8 +33,8 @@ public final class TermPos implements Comparable<TermPos> {
   private final String term;
 
   public TermPos(String term, PartOfSpeech partOfSpeech) {
-    this.term = term;
-    this.partOfSpeech = partOfSpeech;
+    this.term = Objects.requireNonNull(term, "Term must not be null");
+    this.partOfSpeech = Objects.requireNonNull(partOfSpeech, "Part of speech must not be null.");
   }
 
   public TermPos(byte[] bytes) {

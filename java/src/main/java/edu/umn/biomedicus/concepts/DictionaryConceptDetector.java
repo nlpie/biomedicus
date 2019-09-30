@@ -27,6 +27,7 @@ import edu.umn.nlpnewt.common.JsonObject;
 import edu.umn.nlpnewt.common.JsonObjectBuilder;
 import edu.umn.nlpnewt.model.*;
 import edu.umn.nlpnewt.processing.*;
+import org.apache.commons.math3.analysis.function.Exp;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.kohsuke.args4j.CmdLineException;
@@ -64,6 +65,7 @@ import static edu.umn.biomedicus.common.pos.PartOfSpeech.*;
             }),
         @LabelIndexDescription(name = "norm_forms",
             description = "The labeled normalized form of a word per token.",
+            optional = true,
             properties = {
                 @PropertyDescription(name = "norm", dataType = "str",
                     description = "The normal form of the word.")
@@ -155,11 +157,24 @@ class DictionaryConceptDetector extends DocumentProcessor {
     }
     ConceptDictionary conceptDictionary = RocksDbConceptDictionary.loadModel(dbPath, inMemory);
     NormalizerModel normalizerModel = null;
-    Path normalizerModelPath = conceptsOptions.getNormalizerModel();
-    if (normalizerModelPath != null) {
+    Boolean normalizeLocally = conceptsOptions.getNormalizeLocally();
+    if (normalizeLocally == null) {
+      normalizeLocally = config.getBooleanValue("concepts.normalizeLocally");
+    }
+    if (normalizeLocally) {
+      Path normalizerModelPath = conceptsOptions.getNormalizerModel();
+      if (normalizerModelPath == null) {
+        normalizerModelPath = dataFiles.getDataFile(config.getStringValue("normalization.db"));
+      } else {
+        normalizerModelPath = dataFiles.getDataFile(normalizerModelPath);
+      }
       NormalizationProcessor.Options normalizerOptions = new NormalizationProcessor.Options();
       normalizerOptions.setDbPath(normalizerModelPath);
-      normalizerOptions.setInMemory(inMemory);
+      Boolean normalizerInMemory = conceptsOptions.getNormalizerModelInMemory();
+      if (normalizerInMemory == null) {
+        normalizerInMemory = config.getBooleanValue("normalization.inMemory");
+      }
+      normalizerOptions.setInMemory(normalizerInMemory);
       normalizerModel = NormalizationProcessor.loadModel(normalizerOptions);
     }
     return new DictionaryConceptDetector(conceptDictionary, normalizerModel);
@@ -218,11 +233,27 @@ class DictionaryConceptDetector extends DocumentProcessor {
     private @Nullable Boolean inMemory = null;
 
     @Option(
-        name = "--normalizer-model",
-        metaVar = "PATH_TO_NORMALIZER_MODEL",
+        name = "--normalize-locally",
+        metaVar = "BOOL",
+        handler = ExplicitBooleanOptionHandler.class,
         usage = "Normalize here in the concept detector instead of using a norms index."
     )
+    private @Nullable Boolean normalizeLocally = null;
+
+    @Option(
+        name = "--normalizer-model",
+        metaVar = "PATH_TO_NORMALIZER_MODEL",
+        usage = "Optional override for the normalizer model path"
+    )
     private @Nullable Path normalizerModel = null;
+
+    @Option(
+        name = "--normalizer-model-in-memory",
+        metaVar = "BOOL",
+        handler = ExplicitBooleanOptionHandler.class,
+        usage = "Optional override for whether to load the normalization model into memory."
+    )
+    private @Nullable Boolean normalizerModelInMemory = null;
 
     public @Nullable Path getDbPath() {
       return dbPath;
@@ -232,8 +263,16 @@ class DictionaryConceptDetector extends DocumentProcessor {
       return inMemory;
     }
 
+    public @Nullable Boolean getNormalizeLocally() {
+      return normalizeLocally;
+    }
+
     public @Nullable Path getNormalizerModel() {
       return normalizerModel;
+    }
+
+    public @Nullable Boolean getNormalizerModelInMemory() {
+      return normalizerModelInMemory;
     }
   }
 
