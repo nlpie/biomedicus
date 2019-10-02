@@ -15,40 +15,63 @@
 from argparse import ArgumentParser
 from pathlib import Path
 
-from nlpnewt import EventsClient, Pipeline, LocalProcessor, Event
+from nlpnewt import EventsClient, Pipeline, LocalProcessor, Event, RemoteProcessor
 from nlpnewt.io.serialization import get_serializer, SerializationProcessor
 
 
 def main(args=None):
     parser = ArgumentParser()
-    parser.add_argument("input-directory", metavar="INPUT_DIR")
-    parser.add_argument("concepts-csv", metavar="PATH_TO_CONCEPTS_CSV")
-    parser.add_argument("output-directory", metavar="OUTPUT_DIR")
+    parser.add_argument("input_directory", metavar="INPUT_DIR")
+    parser.add_argument("concepts_csv", metavar="PATH_TO_CONCEPTS_CSV")
+    parser.add_argument("output_directory", metavar="OUTPUT_DIR")
+    parser.add_argument("--sentences")
+    parser.add_argument("--tagger")
+    parser.add_argument("--acronyms")
     parser.add_argument("--events")
 
     ns = parser.parse_args(args)
 
     print('Reading concepts csv...')
     concepts = {}
-    with open(args.concepts_csv, 'r') as f:
+    with open(ns.concepts_csv, 'r') as f:
         for line in f.readlines():
             splits = line.split(',')
+            end = splits[0]
+            start = splits[1]
+            cui = splits[5]
             identifier = splits[6]
-            
+            try:
+                v = concepts[identifier]
+            except KeyError:
+                v = []
+                concepts[identifier] = v
+            v.append((start, end, cui))
 
-    with EventsClient(address=ns.events) as client, Pipeline(
-            LocalProcessor(SerializationProcessor(get_serializer('json'),
-                                                                 output_dir=args.output_directory),
-                                          component_id='serialize',
-                                          client=client)
-    ) as pipeline:
+    print('Reading mipacq source files...')
+    with EventsClient(address=ns.events) as client, \
+            Pipeline(
+                RemoteProcessor('biomedicus-sentences', address=ns.sentences),
+                RemoteProcessor('biomedicus-tnt-tagger', address=ns.tagger),
+                RemoteProcessor('biomedicus-acronyms', address=ns.acronyms),
+                LocalProcessor(SerializationProcessor(get_serializer('json'),
+                                                      output_dir=ns.output_directory),
+                               component_id='serialize',
+                               client=client)
+            ) as pipeline:
         for path in Path(ns.input_directory).glob('**/*.source'):
-            identifier = path.stem
+            identifier = path.stem.split('-')[0]
+            try:
+                doc_concepts = concepts[identifier]
+            except KeyError:
+                continue
             with Event(event_id=identifier, client=client) as event:
                 with path.open('r') as f:
                     text = f.read()
-
-
+                document = event.create_document('plaintext', text)
+                with document.get_labeler('gold_concepts') as label_concept:
+                    for start, end, cui in doc_concepts:
+                        label_concept(start, end, cui=cui)
+                pipeline.run(document)
 
 
 if __name__ == '__main__':
