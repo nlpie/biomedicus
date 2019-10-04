@@ -61,7 +61,8 @@ def fixture_processor_watcher():
             try:
                 stdout, _ = process.communicate(timeout=1)
                 print("processor exited with code: ", process.returncode)
-                print(stdout.decode('utf-8'))
+                if stdout is not None:
+                    print(stdout.decode('utf-8'))
             except subprocess.TimeoutExpired:
                 print("timed out waiting for processor to terminate")
     return func

@@ -14,16 +14,30 @@
  * limitations under the License.
  */
 
-package edu.umn.biomedicus.common.dictionary;
+package edu.umn.biomedicus.concepts;
 
-import java.io.Closeable;
+public class PhraseConcept {
+  private final String phrase;
+  private final ConceptRow conceptRow;
 
-public interface MappingIterator extends Closeable {
-  boolean isValid();
+  public PhraseConcept(String phrase, ConceptRow conceptRow) {
+    this.phrase = phrase;
+    this.conceptRow = conceptRow;
+  }
 
-  int identifier();
+  public String getPhrase() {
+    return phrase;
+  }
 
-  String string();
+  public ConceptRow getConceptRow() {
+    return conceptRow;
+  }
 
-  void next();
+  @Override
+  public String toString() {
+    return "PhraseConcept{" +
+        "phrase='" + phrase + '\'' +
+        ", conceptRow=" + conceptRow +
+        '}';
+  }
 }

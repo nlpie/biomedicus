@@ -281,7 +281,11 @@ public class AcronymDetectorProcessor extends DocumentProcessor {
   }
 
   @Override
-  protected void process(@NotNull Document document, @NotNull JsonObject params, @NotNull JsonObjectBuilder result) {
+  protected void process(
+      @NotNull Document document,
+      @NotNull JsonObject params,
+      @NotNull JsonObjectBuilder result
+  ) {
     LOGGER.debug("Detecting acronyms in a document.");
     Boolean labelOtherSenses = params.getBooleanValue("label_other_senses");
     if (labelOtherSenses == null) {
@@ -290,7 +294,8 @@ public class AcronymDetectorProcessor extends DocumentProcessor {
 
     LabelIndex<GenericLabel> posTags = document.getLabelIndex("pos_tags");
     List<GenericLabel> tokens = WhitespaceTokenizer.tokenize(document.getText());
-    List<CharSequence> tokensText = tokens.stream().map(t -> t.coveredText(document)).collect(Collectors.toList());
+    List<CharSequence> tokensText = tokens.stream().map(t -> t.coveredText(document))
+        .collect(Collectors.toList());
     try (
         Labeler<GenericLabel> acronymLabeler = document.getLabeler("acronyms");
         Labeler<GenericLabel> otherSenseLabeler = document.getLabeler("all_acronym_senses")
@@ -305,16 +310,14 @@ public class AcronymDetectorProcessor extends DocumentProcessor {
             List<ScoredSense> senses = findBestSense(tokensText, i);
             if (senses.size() > 0) {
               ScoredSense first = senses.get(0);
-              acronymLabeler.add(GenericLabel.newBuilder(token.getStartIndex(), token.getEndIndex())
+              acronymLabeler.add(GenericLabel.withSpan(token)
                   .setProperty("score", first.getScore())
-                  .setProperty("expansion", first.getSense())
-                  .build());
+                  .setProperty("expansion", first.getSense()));
               if (labelOtherSenses) {
                 for (ScoredSense sense : senses) {
-                  otherSenseLabeler.add(GenericLabel.newBuilder(token.getStartIndex(), token.getEndIndex())
+                  otherSenseLabeler.add(GenericLabel.withSpan(token)
                       .setProperty("score", sense.getScore())
-                      .setProperty("expansion", sense.getSense())
-                      .build());
+                      .setProperty("expansion", sense.getSense()));
                 }
               }
             }

@@ -10,6 +10,10 @@ acronym:
     senseVectors: acronym/senseVectors
     inMemory: no
   orthographicModel: acronym-orthographic/orthographicModel.yml
+concepts:
+  db: concepts
+  inMemory: no
+  normalizeLocally: yes
 normalization:
   db: normalization
   inMemory: no

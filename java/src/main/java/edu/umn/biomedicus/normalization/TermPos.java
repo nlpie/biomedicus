@@ -16,11 +16,11 @@
 
 package edu.umn.biomedicus.normalization;
 
-import edu.umn.biomedicus.common.dictionary.StringIdentifier;
 import edu.umn.biomedicus.common.pos.PartOfSpeech;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 /**
  * A storage / hash map key object that is a tuple of a term and a part of speech.
@@ -28,16 +28,16 @@ import java.nio.charset.StandardCharsets;
  * @author Ben Knoll
  * @since 1.7.0
  */
-final class TermPos implements Comparable<TermPos> {
+public final class TermPos implements Comparable<TermPos> {
   private final PartOfSpeech partOfSpeech;
   private final String term;
 
-  TermPos(String term, PartOfSpeech partOfSpeech) {
-    this.term = term;
-    this.partOfSpeech = partOfSpeech;
+  public TermPos(String term, PartOfSpeech partOfSpeech) {
+    this.term = Objects.requireNonNull(term, "Term must not be null");
+    this.partOfSpeech = Objects.requireNonNull(partOfSpeech, "Part of speech must not be null.");
   }
 
-  TermPos(byte[] bytes) {
+  public TermPos(byte[] bytes) {
     ByteBuffer wrap = ByteBuffer.wrap(bytes);
     partOfSpeech = PartOfSpeech.values()[wrap.getInt()];
     term = StandardCharsets.UTF_8.decode(wrap).toString();
@@ -74,7 +74,7 @@ final class TermPos implements Comparable<TermPos> {
     return partOfSpeech.compareTo(o.partOfSpeech);
   }
 
-  byte[] getBytes() {
+  public byte[] getBytes() {
     byte[] bytes = term.getBytes();
     return ByteBuffer.allocate(Integer.BYTES + bytes.length).putInt(partOfSpeech.ordinal()).put(bytes).array();
   }

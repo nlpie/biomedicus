@@ -44,7 +44,7 @@ import java.nio.file.Paths;
  *
  * @since 1.7.0
  */
-@Processor(value = "biomedicus_normalizer",
+@Processor(value = "biomedicus-normalizer",
     description = "Labels norm forms for words.",
     inputs = {
         @LabelIndexDescription(name = "pos_tags", nameFromParameter = "target_index",
@@ -136,8 +136,8 @@ final public class NormalizationProcessor extends DocumentProcessor {
         if (norm == null) {
           norm = word.toLowerCase();
         }
-        normFormLabeler.add(GenericLabel.newBuilder(posTag.getStartIndex(), posTag.getEndIndex())
-            .setProperty("norm", norm).build());
+        normFormLabeler.add(GenericLabel.withSpan(posTag.getStartIndex(), posTag.getEndIndex())
+            .setProperty("norm", norm));
       }
     }
   }

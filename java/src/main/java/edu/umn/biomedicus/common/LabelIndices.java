@@ -14,14 +14,8 @@
  * limitations under the License.
  */
 
-package edu.umn.biomedicus.common.dictionary;
+package edu.umn.biomedicus.common;
 
-public abstract class AbstractBidirectionalDictionary implements BidirectionalDictionary {
+public class LabelIndices {
 
-
-
-
-
-
-  public abstract BidirectionalDictionary inMemory(Boolean inMemory);
 }

@@ -51,7 +51,7 @@ class RtfProcessorTest {
   }
 
   @Test
-  void plaintextDocument() {
+  void plaintextDocument() throws IOException {
     Event event = Event.newBuilder().withEventID("1").build();
     event.getBinaryData().put("rtf", "The quick brown fox jumped over the lazy dog.\n".getBytes());
     RtfProcessor processor = new RtfProcessor();
