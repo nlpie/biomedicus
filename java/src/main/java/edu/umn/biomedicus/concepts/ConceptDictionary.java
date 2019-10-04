@@ -24,6 +24,10 @@ import java.util.List;
  * An interface for the dictionary of concepts used by the DetectDictionaryConcepts.
  */
 public interface ConceptDictionary {
+  List<PhraseConcept> withCui(CUI cui);
+
+  List<PhraseConcept> withWord(String word);
+
   /**
    * Finds the applicable concepts for a given phase in text.
    *

@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * An implementation of {@link ConceptDictionary} that uses RocksDB as a backend.
@@ -39,7 +40,7 @@ import java.util.function.Function;
  * @since 1.8.0
  */
 class RocksDbConceptDictionary implements ConceptDictionary, Closeable {
-  private static Logger LOGGER = LoggerFactory.getLogger(RocksDbConceptDictionary.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(RocksDbConceptDictionary.class);
 
   private final RocksDB phrases;
 
@@ -102,6 +103,25 @@ class RocksDbConceptDictionary implements ConceptDictionary, Closeable {
 
         return new ConceptDictionary() {
           @Override
+          public List<PhraseConcept> withCui(CUI cui) {
+            return phrases.entrySet().stream().filter(
+                e -> e.getValue().stream().anyMatch(cr -> cr.getCui().equals(cui))
+            ).flatMap(
+                e -> e.getValue().stream().filter(cr -> cr.getCui().equals(cui))
+                    .map(cr -> new PhraseConcept(e.getKey(), cr))
+            ).collect(Collectors.toList());
+          }
+
+          @Override
+          public List<PhraseConcept> withWord(String word) {
+            return lowercasePhrases.entrySet().stream().filter(
+                e -> e.getKey().contains(word)
+            ).flatMap(
+                e -> e.getValue().stream().map(cr -> new PhraseConcept(e.getKey(), cr))
+            ).collect(Collectors.toList());
+          }
+
+          @Override
           @Nullable
           public List<ConceptRow> forPhrase(String phrase) {
             return phrases.get(phrase);
@@ -148,6 +168,50 @@ class RocksDbConceptDictionary implements ConceptDictionary, Closeable {
     db.close();
   }
 
+  @Override
+  public List<PhraseConcept> withCui(CUI cui) {
+    List<PhraseConcept> results = new ArrayList<>();
+    try (RocksIterator rocksIterator = phrases.newIterator()) {
+      rocksIterator.seekToFirst();
+      while (rocksIterator.isValid()) {
+        byte[] keyBytes = rocksIterator.key();
+        String phrase = new String(keyBytes, StandardCharsets.UTF_8);
+        byte[] value = rocksIterator.value();
+        List<ConceptRow> concepts = toList(value);
+        for (ConceptRow concept : concepts) {
+          if (concept.getCui().equals(cui)) {
+            results.add(new PhraseConcept(phrase, concept));
+          }
+        }
+        rocksIterator.next();
+      }
+    }
+    return results;
+  }
+
+  @Override
+  public List<PhraseConcept> withWord(String word) {
+    List<PhraseConcept> results = new ArrayList<>();
+    try (RocksIterator rocksIterator = lowercase.newIterator()) {
+      rocksIterator.seekToFirst();
+      while (rocksIterator.isValid()) {
+        byte[] keyBytes = rocksIterator.key();
+        String phrase = new String(keyBytes, StandardCharsets.UTF_8);
+        if (phrase.contains(word)) {
+          byte[] value = rocksIterator.value();
+          List<ConceptRow> concepts = toList(value);
+          for (ConceptRow concept : concepts) {
+            PhraseConcept pc = new PhraseConcept(phrase, concept);
+            results.add(pc);
+            System.out.println("Found: " + pc.toString());
+          }
+          rocksIterator.next();
+        }
+      }
+    }
+    return results;
+  }
+
   @Nullable
   @Override
   public List<ConceptRow> forPhrase(String phrase) {
@@ -188,7 +252,7 @@ class RocksDbConceptDictionary implements ConceptDictionary, Closeable {
   }
 
   @Override
-  public void close() throws IOException {
+  public void close() {
     normsDB.close();
     lowercase.close();
     phrases.close();

@@ -27,7 +27,6 @@ import edu.umn.nlpnewt.common.JsonObject;
 import edu.umn.nlpnewt.common.JsonObjectBuilder;
 import edu.umn.nlpnewt.model.*;
 import edu.umn.nlpnewt.processing.*;
-import org.apache.commons.math3.analysis.function.Exp;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.kohsuke.args4j.CmdLineException;
@@ -146,6 +145,26 @@ class DictionaryConceptDetector extends DocumentProcessor {
       @NotNull ConceptsOptions conceptsOptions
   ) throws IOException, RocksDBException {
     Config config = Config.loadFromDefaultLocations();
+    ConceptDictionary conceptDictionary = loadConceptsDictionary(conceptsOptions, config);
+    NormalizerModel normalizerModel = null;
+    Boolean normalizeLocally = conceptsOptions.getNormalizeLocally();
+    if (normalizeLocally == null) {
+      normalizeLocally = config.getBooleanValue("concepts.normalizeLocally");
+    }
+    if (normalizeLocally) {
+      NormalizationProcessor.Options normalizerOptions = new NormalizationProcessor.Options();
+      normalizerOptions.setDbPath(conceptsOptions.getNormalizerModel());
+      normalizerOptions.setInMemory(conceptsOptions.getNormalizerModelInMemory());
+      normalizerModel = NormalizationProcessor.loadModel(normalizerOptions);
+    }
+    return new DictionaryConceptDetector(conceptDictionary, normalizerModel);
+  }
+
+  @NotNull
+  public static ConceptDictionary loadConceptsDictionary(
+      @NotNull DictionaryConceptDetector.ConceptsOptions conceptsOptions,
+      Config config
+  ) throws RocksDBException, IOException {
     DataFiles dataFiles = new DataFiles();
     Path dbPath = conceptsOptions.getDbPath();
     if (dbPath == null) {
@@ -155,29 +174,7 @@ class DictionaryConceptDetector extends DocumentProcessor {
     if (inMemory == null) {
       inMemory = config.getBooleanValue("concepts.inMemory");
     }
-    ConceptDictionary conceptDictionary = RocksDbConceptDictionary.loadModel(dbPath, inMemory);
-    NormalizerModel normalizerModel = null;
-    Boolean normalizeLocally = conceptsOptions.getNormalizeLocally();
-    if (normalizeLocally == null) {
-      normalizeLocally = config.getBooleanValue("concepts.normalizeLocally");
-    }
-    if (normalizeLocally) {
-      Path normalizerModelPath = conceptsOptions.getNormalizerModel();
-      if (normalizerModelPath == null) {
-        normalizerModelPath = dataFiles.getDataFile(config.getStringValue("normalization.db"));
-      } else {
-        normalizerModelPath = dataFiles.getDataFile(normalizerModelPath);
-      }
-      NormalizationProcessor.Options normalizerOptions = new NormalizationProcessor.Options();
-      normalizerOptions.setDbPath(normalizerModelPath);
-      Boolean normalizerInMemory = conceptsOptions.getNormalizerModelInMemory();
-      if (normalizerInMemory == null) {
-        normalizerInMemory = config.getBooleanValue("normalization.inMemory");
-      }
-      normalizerOptions.setInMemory(normalizerInMemory);
-      normalizerModel = NormalizationProcessor.loadModel(normalizerOptions);
-    }
-    return new DictionaryConceptDetector(conceptDictionary, normalizerModel);
+    return RocksDbConceptDictionary.loadModel(dbPath, inMemory);
   }
 
   public static void runDictionaryConceptDetector(
@@ -273,6 +270,26 @@ class DictionaryConceptDetector extends DocumentProcessor {
 
     public @Nullable Boolean getNormalizerModelInMemory() {
       return normalizerModelInMemory;
+    }
+
+    public void setDbPath(@Nullable Path dbPath) {
+      this.dbPath = dbPath;
+    }
+
+    public void setInMemory(@Nullable Boolean inMemory) {
+      this.inMemory = inMemory;
+    }
+
+    public void setNormalizeLocally(@Nullable Boolean normalizeLocally) {
+      this.normalizeLocally = normalizeLocally;
+    }
+
+    public void setNormalizerModel(@Nullable Path normalizerModel) {
+      this.normalizerModel = normalizerModel;
+    }
+
+    public void setNormalizerModelInMemory(@Nullable Boolean normalizerModelInMemory) {
+      this.normalizerModelInMemory = normalizerModelInMemory;
     }
   }
 

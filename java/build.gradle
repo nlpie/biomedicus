@@ -86,3 +86,8 @@ task execute(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     main = project.hasProperty('mainClass') ? project.getProperties().get('mainClass') : null
 }
+
+task conceptsUtility(type: JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    main 'edu.umn.biomedicus.concepts.ConceptsUtility'
+}
