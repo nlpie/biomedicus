@@ -16,7 +16,8 @@
 
 package edu.umn.biomedicus.common.tokenization;
 
-import edu.umn.nlpnewt.model.GenericLabel;
+import edu.umn.nlpie.mtap.model.GenericLabel;
+import edu.umn.nlpie.mtap.model.Label;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -30,7 +31,7 @@ class WhitespaceTokenizerTest {
   void testWhitespaceTokenizer() {
     String text = "The quick-brown-fox jumps, over the lazy dog.";
     List<GenericLabel> tokenize = WhitespaceTokenizer.tokenize(text);
-    List<String> list = tokenize.stream().map(t -> t.coveredText(text).toString()).collect(Collectors.toList());
+    List<String> list = tokenize.stream().map(Label::getText).collect(Collectors.toList());
     assertEquals(Arrays.asList("The", "quick-brown-fox", "jumps", "over", "the", "lazy", "dog"), list);
   }
 }

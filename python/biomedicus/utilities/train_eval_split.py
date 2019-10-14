@@ -14,8 +14,6 @@
 from argparse import ArgumentParser
 from pathlib import Path
 from shutil import copy2
-from typing import Tuple, List
-from subprocess import run
 
 import numpy as np
 

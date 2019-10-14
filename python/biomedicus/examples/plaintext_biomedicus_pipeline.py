@@ -14,8 +14,8 @@
 from argparse import ArgumentParser
 from pathlib import Path
 
-from nlpnewt import EventsClient, Event, Pipeline, RemoteProcessor, LocalProcessor, Document
-from nlpnewt.io.serialization import get_serializer, SerializationProcessor
+from mtap import EventsClient, Event, Pipeline, RemoteProcessor, LocalProcessor, Document
+from mtap.io.serialization import JsonSerializer, SerializationProcessor
 
 
 def main(args=None):
@@ -36,7 +36,7 @@ def main(args=None):
             RemoteProcessor('biomedicus-tnt-tagger', address=args.tagger),
             RemoteProcessor('biomedicus-acronyms', address=args.acronyms),
             RemoteProcessor('biomedicus-concepts', address=args.concepts),
-            LocalProcessor(SerializationProcessor(get_serializer('json'),
+            LocalProcessor(SerializationProcessor(JsonSerializer,
                                                   output_dir=args.output_directory),
                            component_id='serialize',
                            client=client)
@@ -46,8 +46,7 @@ def main(args=None):
             with path.open('r') as f:
                 contents = f.read()
             with Event(event_id=path.stem, client=client) as event:
-                document = Document("plaintext", contents)
-                event.add_document(document)
+                document = event.create_document("plaintext", text=contents)
                 pipeline.run(document)
 
         pipeline.print_times()

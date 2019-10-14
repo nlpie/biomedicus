@@ -12,16 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
-
-import grpc
-import pytest
-import signal
 import subprocess
-from nlpnewt import Pipeline, RemoteProcessor, EventsClient, LocalProcessor
-from nlpnewt.io.serialization import get_serializer
-from nlpnewt.metrics import Metrics, Accuracy
-from nlpnewt.utils import find_free_port
 from pathlib import Path
+
+import pytest
+from mtap import Pipeline, RemoteProcessor, EventsClient, LocalProcessor
+from mtap.io.serialization import JsonSerializer
+from mtap.metrics import Metrics, Accuracy
+from mtap.utils import find_free_port
 
 
 @pytest.fixture(name='sentences_service')
@@ -40,7 +38,6 @@ def fixture_sentences_service(events_service, processor_watcher):
 @pytest.mark.performance
 def test_sentence_performance(events_service, sentences_service):
     input_dir = Path(os.environ['BIOMEDICUS_TEST_DATA']) / 'sentences'
-    json_serializer = get_serializer('json')
 
     accuracy = Accuracy()
     with EventsClient(address=events_service) as client, Pipeline(
@@ -49,7 +46,7 @@ def test_sentence_performance(events_service, sentences_service):
                            component_id='metrics', client=client)
     ) as pipeline:
         for test_file in input_dir.glob('**/*.json'):
-            with json_serializer.file_to_event(test_file, client=client) as event:
+            with JsonSerializer.file_to_event(test_file, client=client) as event:
                 document = event.documents['plaintext']
                 results = pipeline.run(document)
                 print('Accuracy for event - ', event.event_id, ':', results[1].results['accuracy'])

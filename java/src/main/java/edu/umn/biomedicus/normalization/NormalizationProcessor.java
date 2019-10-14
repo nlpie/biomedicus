@@ -20,13 +20,13 @@ import edu.umn.biomedicus.common.config.Config;
 import edu.umn.biomedicus.common.data.DataFiles;
 import edu.umn.biomedicus.common.pos.PartOfSpeech;
 import edu.umn.biomedicus.common.pos.PartsOfSpeech;
-import edu.umn.nlpnewt.common.JsonObject;
-import edu.umn.nlpnewt.common.JsonObjectBuilder;
-import edu.umn.nlpnewt.model.Document;
-import edu.umn.nlpnewt.model.GenericLabel;
-import edu.umn.nlpnewt.model.LabelIndex;
-import edu.umn.nlpnewt.model.Labeler;
-import edu.umn.nlpnewt.processing.*;
+import edu.umn.nlpie.mtap.common.JsonObject;
+import edu.umn.nlpie.mtap.common.JsonObjectBuilder;
+import edu.umn.nlpie.mtap.model.Document;
+import edu.umn.nlpie.mtap.model.GenericLabel;
+import edu.umn.nlpie.mtap.model.LabelIndex;
+import edu.umn.nlpie.mtap.model.Labeler;
+import edu.umn.nlpie.mtap.processing.*;
 import org.jetbrains.annotations.NotNull;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
@@ -130,7 +130,7 @@ final public class NormalizationProcessor extends DocumentProcessor {
     LabelIndex<GenericLabel> posTagIndex = document.getLabelIndex("pos_tags");
     try (Labeler<GenericLabel> normFormLabeler = document.getLabeler("norm_forms")) {
       for (GenericLabel posTag : posTagIndex) {
-        String word = posTag.coveredText(document).toString();
+        String word = posTag.getText();
         PartOfSpeech partOfSpeech = PartsOfSpeech.forTag(posTag.getStringValue("tag"));
         String norm = normalizerStore.get(new TermPos(word, partOfSpeech));
         if (norm == null) {

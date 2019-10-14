@@ -16,9 +16,9 @@ from pathlib import Path
 from subprocess import PIPE, Popen
 
 import pytest
-from nlpnewt import EventsClient, Pipeline, RemoteProcessor
-from nlpnewt.io.serialization import get_serializer
-from nlpnewt.utils import find_free_port
+from mtap import EventsClient, Pipeline, RemoteProcessor
+from mtap.io.serialization import JsonSerializer
+from mtap.utils import find_free_port
 
 
 @pytest.fixture(name='normalization_processor')
@@ -34,12 +34,11 @@ def fixture_normalization_processor(events_service, processor_watcher):
 
 
 def test_normalization(events_service, normalization_processor):
-    json_serializer = get_serializer('json')
     with EventsClient(address=events_service) as client, \
             Pipeline(RemoteProcessor(processor_id='biomedicus_normalizer',
                                      address=normalization_processor)) as pipeline, \
-            json_serializer.file_to_event(Path(__file__).parent / '97_95.json',
-                                          client=client) as event:
+            JsonSerializer.file_to_event(Path(__file__).parent / '97_95.json',
+                                         client=client) as event:
         document = event.documents['plaintext']
         pipeline.run(document)
         for norm_form in document.get_label_index('norm_forms'):

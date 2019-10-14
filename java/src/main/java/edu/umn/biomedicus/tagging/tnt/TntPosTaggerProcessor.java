@@ -26,13 +26,13 @@ import edu.umn.biomedicus.common.viterbi.Viterbi;
 import edu.umn.biomedicus.common.viterbi.ViterbiProcessor;
 import edu.umn.biomedicus.tokenization.TokenResult;
 import edu.umn.biomedicus.tokenization.Tokenizer;
-import edu.umn.nlpnewt.common.JsonObject;
-import edu.umn.nlpnewt.common.JsonObjectBuilder;
-import edu.umn.nlpnewt.model.Document;
-import edu.umn.nlpnewt.model.GenericLabel;
-import edu.umn.nlpnewt.model.LabelIndex;
-import edu.umn.nlpnewt.model.Labeler;
-import edu.umn.nlpnewt.processing.*;
+import edu.umn.nlpie.mtap.common.JsonObject;
+import edu.umn.nlpie.mtap.common.JsonObjectBuilder;
+import edu.umn.nlpie.mtap.model.Document;
+import edu.umn.nlpie.mtap.model.GenericLabel;
+import edu.umn.nlpie.mtap.model.LabelIndex;
+import edu.umn.nlpie.mtap.model.Labeler;
+import edu.umn.nlpie.mtap.processing.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.kohsuke.args4j.CmdLineException;
@@ -197,7 +197,7 @@ public class TntPosTaggerProcessor extends DocumentProcessor {
           tokens = tokenIndex.inside(sentence).asList();
         } else {
           tokens = new ArrayList<>();
-          CharSequence sentenceText = sentence.coveredText(document);
+          CharSequence sentenceText = sentence.getText();
           for (TokenResult token : Tokenizer.tokenize(sentenceText)) {
             int startIndex = sentence.getStartIndex() + token.getStartIndex();
             int endIndex = sentence.getStartIndex() + token.getEndIndex();
@@ -206,7 +206,7 @@ public class TntPosTaggerProcessor extends DocumentProcessor {
           if (tokens.size() > 0) {
             GenericLabel lastToken = tokens.remove(tokens.size() - 1);
             if (lastToken.getEndIndex() - lastToken.getStartIndex() > 1) {
-              CharSequence tokenText = lastToken.coveredText(document);
+              CharSequence tokenText = lastToken.getText();
               if (Arrays.asList('!', '?', '.').contains(tokenText.charAt(tokenText.length() - 1))) {
                 tokens.add(GenericLabel.withSpan(lastToken.getStartIndex(), lastToken.getEndIndex() - 1).build());
                 tokens.add(GenericLabel.withSpan(lastToken.getEndIndex() - 1, lastToken.getEndIndex()).build());
@@ -218,7 +218,7 @@ public class TntPosTaggerProcessor extends DocumentProcessor {
         }
 
         for (GenericLabel token : tokens) {
-          CharSequence text = token.coveredText(document);
+          CharSequence text = token.getText();
           boolean isCapitalized = Character.isUpperCase(text.charAt(0));
           viterbiProcessor.advance(new WordCap(text.toString().toLowerCase(), isCapitalized));
           viterbiProcessor.beamFilter(beamThreshold);

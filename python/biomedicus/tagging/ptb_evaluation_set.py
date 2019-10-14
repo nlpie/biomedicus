@@ -14,8 +14,8 @@
 from argparse import ArgumentParser
 from pathlib import Path
 
-from nlpnewt import Event, EventsClient, Document, Pipeline, RemoteProcessor, LocalProcessor
-from nlpnewt.io.serialization import get_serializer, SerializationProcessor
+from mtap import Event, EventsClient, Document, Pipeline, RemoteProcessor, LocalProcessor
+from mtap.io.serialization import JsonSerializer, SerializationProcessor
 
 
 def main(args=None):
@@ -30,20 +30,20 @@ def main(args=None):
     parser.add_argument('--ptb-reader', metavar='READER', default=None,
                         help='The address of the PTB Reader.')
     args = parser.parse_args(args)
-    with EventsClient(args.events) as client, Pipeline(
+    with EventsClient(address=args.events) as client, Pipeline(
             RemoteProcessor('ptb-reader', address=args.ptb_reader,
                             params={'source_document_name': 'source',
                                     'target_document_name': 'gold',
                                     'pos_tags_index': 'gold_tags'}),
-            LocalProcessor(SerializationProcessor(get_serializer('json'), output_dir=args.output),
+            LocalProcessor(SerializationProcessor(JsonSerializer, output_dir=args.output),
                            component_id='serializer', client=client)
     ) as pipeline:
         for f in Path(args.input).rglob(args.glob):
             print('Reading:', f)
             with f.open('r') as r:
                 text = r.read()
-            with Event(f.name, client=client) as event:
-                d = Document('source', text)
+            with Event(event_id=f.name, client=client) as event:
+                d = Document('source', text=text)
                 event.add_document(d)
                 pipeline.run(event)
 

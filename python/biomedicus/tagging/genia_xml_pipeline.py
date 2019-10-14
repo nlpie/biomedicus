@@ -14,7 +14,7 @@
 from argparse import ArgumentParser
 from xml.etree import ElementTree
 
-from nlpnewt import Event, EventsClient, GenericLabel, Document, Pipeline, RemoteProcessor
+from mtap import Event, EventsClient, GenericLabel, Document, Pipeline, RemoteProcessor
 
 
 class DocumentBuilder:

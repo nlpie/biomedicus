@@ -19,7 +19,7 @@ package edu.umn.biomedicus.tagging.tnt;
 import edu.umn.biomedicus.common.pos.PartsOfSpeech;
 import edu.umn.biomedicus.common.tuples.PosCap;
 import edu.umn.biomedicus.common.pos.PartOfSpeech;
-import edu.umn.nlpnewt.model.GenericLabel;
+import edu.umn.nlpie.mtap.model.GenericLabel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -90,17 +90,16 @@ class PosCapTrigramModelTrainer {
    * Adds the count of part of speech tag and capitalization unigram, bigrams and trigrams in the
    * sentence to the running counts in the trainer.
    */
-  public void addSentence(String text, List<GenericLabel> partsOfSpeech) {
+  public void addSentence(List<GenericLabel> partsOfSpeech) {
     int[] tokenPosCaps = new int[partsOfSpeech.size()];
     for (int i = 0; i < partsOfSpeech.size(); i++) {
       GenericLabel posTag = partsOfSpeech.get(i);
       String tagText = posTag.getStringValue("tag");
       PartOfSpeech tag = PartsOfSpeech.forTagWithFallback(tagText);
       if (tag == null) {
-        LOGGER.error("Null part of speech for word: '{}' with tag '{}'", posTag.coveredText(text),
-            tagText);
+        LOGGER.error("Null part of speech for word: '{}' with tag '{}'", posTag.getText(), tagText);
       }
-      boolean upperCase = Character.isUpperCase(posTag.coveredText(text).charAt(0));
+      boolean upperCase = Character.isUpperCase(posTag.getText().charAt(0));
       tokenPosCaps[i] = PosCap.create(tag, upperCase).ordinal();
     }
     int[] posCaps = new int[tokenPosCaps.length + 3];

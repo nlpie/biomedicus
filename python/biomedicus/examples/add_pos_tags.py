@@ -14,8 +14,8 @@
 from argparse import ArgumentParser
 from pathlib import Path
 
-from nlpnewt import EventsClient, Pipeline, RemoteProcessor, LocalProcessor
-from nlpnewt.io.serialization import get_serializer, SerializationProcessor
+from mtap import EventsClient, Pipeline, RemoteProcessor, LocalProcessor
+from mtap.io.serialization import get_serializer, SerializationProcessor
 
 
 def main(args=None):

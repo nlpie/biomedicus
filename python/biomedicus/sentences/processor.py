@@ -14,9 +14,9 @@
 import logging
 from typing import Dict, Any
 
-from nlpnewt.events import Document
-from nlpnewt.processing import DocumentProcessor
-from nlpnewt.processing.descriptions import label_index, parameter, processor
+from mtap.events import Document
+from mtap.processing import DocumentProcessor
+from mtap.processing.descriptions import label_index, parameter, processor
 
 from biomedicus.sentences.models import SentenceModel, InputMapper
 

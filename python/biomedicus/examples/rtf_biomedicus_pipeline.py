@@ -14,8 +14,8 @@
 from argparse import ArgumentParser
 from pathlib import Path
 
-from nlpnewt import EventsClient, Event, Pipeline, RemoteProcessor, LocalProcessor
-from nlpnewt.io.serialization import get_serializer, SerializationProcessor
+from mtap import EventsClient, Event, Pipeline, RemoteProcessor, LocalProcessor
+from mtap.io.serialization import JsonSerializer, SerializationProcessor
 
 
 def main(args=None):
@@ -39,7 +39,7 @@ def main(args=None):
             RemoteProcessor('tnt-tagger', address=args.tagger,
                             params={'document_name': 'plaintext'}),
             RemoteProcessor('acronyms', address=args.acronyms),
-            LocalProcessor(SerializationProcessor(get_serializer('json'),
+            LocalProcessor(SerializationProcessor(JsonSerializer,
                                                   output_dir=args.output_directory),
                            component_id='serialize',
                            client=client)

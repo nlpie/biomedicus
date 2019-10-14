@@ -23,14 +23,11 @@ import edu.umn.biomedicus.common.pos.PartsOfSpeech;
 import edu.umn.biomedicus.common.tokenization.WhitespaceTokenizer;
 import edu.umn.biomedicus.common.tuples.Pair;
 import edu.umn.biomedicus.serialization.YamlSerialization;
-import edu.umn.nlpnewt.Newt;
-import edu.umn.nlpnewt.common.JsonObject;
-import edu.umn.nlpnewt.common.JsonObjectBuilder;
-import edu.umn.nlpnewt.model.Document;
-import edu.umn.nlpnewt.model.GenericLabel;
-import edu.umn.nlpnewt.model.LabelIndex;
-import edu.umn.nlpnewt.model.Labeler;
-import edu.umn.nlpnewt.processing.*;
+import edu.umn.nlpie.mtap.MTAP;
+import edu.umn.nlpie.mtap.common.JsonObject;
+import edu.umn.nlpie.mtap.common.JsonObjectBuilder;
+import edu.umn.nlpie.mtap.model.*;
+import edu.umn.nlpie.mtap.processing.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.kohsuke.args4j.CmdLineException;
@@ -294,7 +291,7 @@ public class AcronymDetectorProcessor extends DocumentProcessor {
 
     LabelIndex<GenericLabel> posTags = document.getLabelIndex("pos_tags");
     List<GenericLabel> tokens = WhitespaceTokenizer.tokenize(document.getText());
-    List<CharSequence> tokensText = tokens.stream().map(t -> t.coveredText(document))
+    List<CharSequence> tokensText = tokens.stream().map(Label::getText)
         .collect(Collectors.toList());
     try (
         Labeler<GenericLabel> acronymLabeler = document.getLabeler("acronyms");
@@ -305,7 +302,7 @@ public class AcronymDetectorProcessor extends DocumentProcessor {
         GenericLabel token = tokens.get(i);
         List<GenericLabel> partOfSpeechLabelsForToken = posTags.inside(token).asList();
         if (!allExcluded(partOfSpeechLabelsForToken)) {
-          CharSequence tokenText = token.coveredText(document);
+          CharSequence tokenText = token.getText();
           if (hasAcronym(tokenText) || (orthographicModel != null && orthographicModel.seemsLikeAbbreviation(tokenText))) {
             List<ScoredSense> senses = findBestSense(tokensText, i);
             if (senses.size() > 0) {
@@ -450,7 +447,7 @@ public class AcronymDetectorProcessor extends DocumentProcessor {
     CmdLineParser parser = new CmdLineParser(settings);
     try {
       parser.parseArgument(args);
-      ProcessorServer server = Newt.processorServerBuilder(settings.build(), settings).build();
+      ProcessorServer server = MTAP.processorServerBuilder(settings.build(), settings).build();
       server.start();
       server.blockUntilShutdown();
     } catch (CmdLineException e) {

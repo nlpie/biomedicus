@@ -16,10 +16,10 @@ from pathlib import Path
 from subprocess import Popen, PIPE
 
 import pytest
-from nlpnewt import EventsClient, RemoteProcessor, Pipeline, LocalProcessor
-from nlpnewt.io.serialization import get_serializer
-from nlpnewt.metrics import Accuracy, Metrics
-from nlpnewt.utils import find_free_port
+from mtap import EventsClient, RemoteProcessor, Pipeline, LocalProcessor
+from mtap.io.serialization import JsonSerializer
+from mtap.metrics import Accuracy, Metrics
+from mtap.utils import find_free_port
 
 
 @pytest.fixture(name='concepts_service')
@@ -29,16 +29,13 @@ def fixture_concepts_service(events_service, processor_watcher):
     biomedicus_jar = os.environ['BIOMEDICUS_JAR']
     p = Popen(['java', '-cp', biomedicus_jar,
                'edu.umn.biomedicus.concepts.DictionaryConceptDetector', '-p', port,
-               '--events', events_service], start_new_session=True, stdin=PIPE, stdout=PIPE,
-              stderr=PIPE)
+               '--events', events_service], stdin=PIPE, stdout=PIPE, stderr=PIPE)
     yield from processor_watcher(address, p)
 
 
 @pytest.mark.performance
 def test_concepts_performance(events_service, concepts_service):
     input_dir = Path(os.environ['BIOMEDICUS_TEST_DATA']) / 'concepts'
-    json_serializer = get_serializer('json')
-
     recall = Accuracy(name='recall', mode='any', fields=['cui'])
     precision = Accuracy(name='precision', mode='any', fields=['cui'])
     with EventsClient(address=events_service) as client, \
@@ -50,7 +47,7 @@ def test_concepts_performance(events_service, concepts_service):
                                component_id='metrics_reverse', client=client)
             ) as pipeline:
         for test_file in input_dir.glob('**/*.json'):
-            with json_serializer.file_to_event(test_file, client=client) as event:
+            with JsonSerializer.file_to_event(test_file, client=client) as event:
                 document = event.documents['plaintext']
                 pipeline.run(document)
 

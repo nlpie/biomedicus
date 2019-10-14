@@ -66,7 +66,7 @@ setup(
     package_dir={'': 'python'},
     packages=find_packages(where='python', exclude=['tests']),
     install_requires=[
-        'nlpnewt',
+        'mtap',
         'numpy',
         'scikit_learn',
         'pyyaml',

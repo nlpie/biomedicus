@@ -17,12 +17,12 @@
 package edu.umn.biomedicus.tagging.tnt;
 
 import edu.umn.biomedicus.common.exc.BiomedicusException;
-import edu.umn.nlpnewt.common.JsonObject;
-import edu.umn.nlpnewt.common.JsonObjectBuilder;
-import edu.umn.nlpnewt.model.Document;
-import edu.umn.nlpnewt.model.GenericLabel;
-import edu.umn.nlpnewt.model.LabelIndex;
-import edu.umn.nlpnewt.processing.*;
+import edu.umn.nlpie.mtap.common.JsonObject;
+import edu.umn.nlpie.mtap.common.JsonObjectBuilder;
+import edu.umn.nlpie.mtap.model.Document;
+import edu.umn.nlpie.mtap.model.GenericLabel;
+import edu.umn.nlpie.mtap.model.LabelIndex;
+import edu.umn.nlpie.mtap.processing.*;
 import org.jetbrains.annotations.NotNull;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
@@ -42,7 +42,6 @@ import java.util.List;
  */
 @Processor("biomedicus-tnt-trainer")
 public class TntTrainerProcessor extends DocumentProcessor {
-  private static final Logger logger = LoggerFactory.getLogger(TntTrainerProcessor.class);
   private final TntModelTrainer tntModelTrainer;
 
   private final Path outputDir;
@@ -67,7 +66,7 @@ public class TntTrainerProcessor extends DocumentProcessor {
     LabelIndex<GenericLabel> partsOfSpeech = document.getLabelIndex("pos_tags");
     for (GenericLabel sentence : sentences) {
       List<GenericLabel> sentencesPos = partsOfSpeech.inside(sentence).asList();
-      tntModelTrainer.addSentence(document.getText(), sentencesPos);
+      tntModelTrainer.addSentence(sentencesPos);
     }
   }
 

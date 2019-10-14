@@ -16,7 +16,8 @@
 
 package edu.umn.biomedicus.common.tokenization;
 
-import edu.umn.nlpnewt.model.GenericLabel;
+import edu.umn.nlpie.mtap.model.Document;
+import edu.umn.nlpie.mtap.model.GenericLabel;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,13 +31,15 @@ public class WhitespaceTokenizer {
     throw new UnsupportedOperationException();
   }
 
-  public static List<GenericLabel> tokenize(CharSequence text) {
+  public static List<GenericLabel> tokenize(String text) {
+    Document document = new Document("temporaryTokenize", text);
     List<GenericLabel> result = new ArrayList<>();
     Matcher matcher = WHITESPACE_PATTERN.matcher(text);
     int nextBegin = 0;
     while (matcher.find()) {
       int tokenEnd = matcher.start();
-      GenericLabel token = GenericLabel.createSpan(nextBegin, tokenEnd);
+      GenericLabel token = GenericLabel.withSpan(nextBegin, tokenEnd).withDocument(document)
+          .build();
       nextBegin = matcher.end();
       if (token.length() > 0) {
         result.add(token);

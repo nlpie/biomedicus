@@ -18,11 +18,11 @@ package edu.umn.biomedicus.rtf;
 
 import edu.umn.biomedicus.rtf.reader.RtfParser;
 import edu.umn.biomedicus.rtf.reader.RtfSource;
-import edu.umn.nlpnewt.common.JsonObject;
-import edu.umn.nlpnewt.common.JsonObjectBuilder;
-import edu.umn.nlpnewt.common.Server;
-import edu.umn.nlpnewt.model.Event;
-import edu.umn.nlpnewt.processing.*;
+import edu.umn.nlpie.mtap.common.JsonObject;
+import edu.umn.nlpie.mtap.common.JsonObjectBuilder;
+import edu.umn.nlpie.mtap.common.Server;
+import edu.umn.nlpie.mtap.model.Event;
+import edu.umn.nlpie.mtap.processing.*;
 import org.jetbrains.annotations.NotNull;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
@@ -97,9 +97,9 @@ public class RtfProcessor extends EventProcessor {
       if ("{\\rtf1".equals(sb.toString())) {
         bis.reset();
         RtfSource rtfSource = new RtfSource(bis);
-        NewtDocumentRtfSink rtfSink = new NewtDocumentRtfSink();
-        parser.parseRtf(rtfSource, rtfSink);
-        rtfSink.done(event, outputDocumentName);
+        MTAPDocumentsSink sink = new MTAPDocumentsSink();
+        parser.parseRtf(rtfSource, sink);
+        sink.done(event, outputDocumentName);
       } else {
         int code;
         while ((code = bis.read()) != -1) {

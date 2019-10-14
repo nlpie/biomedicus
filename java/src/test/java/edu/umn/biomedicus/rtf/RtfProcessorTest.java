@@ -16,9 +16,9 @@
 
 package edu.umn.biomedicus.rtf;
 
-import edu.umn.nlpnewt.common.JsonObjectImpl;
-import edu.umn.nlpnewt.model.Document;
-import edu.umn.nlpnewt.model.Event;
+import edu.umn.nlpie.mtap.common.JsonObjectImpl;
+import edu.umn.nlpie.mtap.model.Document;
+import edu.umn.nlpie.mtap.model.Event;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;

@@ -14,7 +14,7 @@
 from argparse import ArgumentParser
 from pathlib import Path
 
-from nlpnewt import Event, EventsClient, Document, Pipeline, RemoteProcessor
+from mtap import Event, EventsClient, Document, Pipeline, RemoteProcessor
 
 
 def main(args=None):
@@ -33,7 +33,7 @@ def main(args=None):
     parser.add_argument('--tnt-trainer', metavar='TRAINER', default=None,
                         help='The address of the TnT trainer.')
     args = parser.parse_args(args)
-    with EventsClient(args.events) as client, Pipeline(
+    with EventsClient(address=args.events) as client, Pipeline(
             RemoteProcessor('ptb-reader', address=args.ptb_reader,
                             params={'source_document_name': args.source_name,
                                     'target_document_name': args.target_name}),
@@ -44,8 +44,8 @@ def main(args=None):
             print('Reading:', f)
             with f.open('r') as r:
                 text = r.read()
-            with Event(f.name, client=client) as event:
-                d = Document(args.source_name, text)
+            with Event(event_id=f.name, client=client) as event:
+                d = Document(args.source_name, text=text)
                 event.add_document(d)
                 pipeline.run(event)
 

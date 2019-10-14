@@ -17,20 +17,20 @@
 package edu.umn.biomedicus.rtf;
 
 import edu.umn.biomedicus.rtf.reader.RtfSink;
-import edu.umn.nlpnewt.model.Document;
-import edu.umn.nlpnewt.model.Event;
-import edu.umn.nlpnewt.model.GenericLabel;
+import edu.umn.nlpie.mtap.model.Document;
+import edu.umn.nlpie.mtap.model.Event;
+import edu.umn.nlpie.mtap.model.GenericLabel;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-public class NewtDocumentRtfSink implements RtfSink {
+public class MTAPDocumentsSink implements RtfSink {
 
   private final StringBuilder sb = new StringBuilder();
   private final List<PropertyWatcher> propertyWatchers = new ArrayList<>();
 
-  public NewtDocumentRtfSink() {
+  public MTAPDocumentsSink() {
     propertyWatchers.add(
         new PropertyWatcher("biomedicus.bold", "CharacterFormatting", "Bold", 1, false, false)
     );

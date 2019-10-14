@@ -17,9 +17,9 @@ import os
 from argparse import Namespace, ArgumentParser
 from typing import Any
 
-import nlpnewt
 import numpy as np
 import tensorflow as tf
+from mtap import run_processor, processor_parser
 
 from biomedicus.config import load_config
 from biomedicus.sentences.models import deep_hparams_parser, BiLSTMSentenceModel, DeepMapper, \
@@ -96,7 +96,7 @@ class SentenceCommands(Namespace):
 
     def run_processor(self):
         processor = self.create_processor()
-        nlpnewt.run_processor(processor, self)
+        run_processor(processor, self)
 
     def create_processor(self):
         processor = SentenceProcessor(self.sentence_model, self.mapper)
@@ -260,9 +260,9 @@ def create_parser() -> ArgumentParser:
                                              training_parser()
                                          ])
     train_parser.set_defaults(func=_train)
-    processor_parser = subparsers.add_parser('processor',
-                                             parents=[nlpnewt.processor_parser(), model_parser])
-    processor_parser.set_defaults(func=_run_processor)
+    pparse = subparsers.add_parser('processor',
+                                   parents=[processor_parser(), model_parser])
+    pparse.set_defaults(func=_run_processor)
     return parser
 
 

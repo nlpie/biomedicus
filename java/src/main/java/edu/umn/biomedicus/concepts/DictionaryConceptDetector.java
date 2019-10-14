@@ -23,10 +23,10 @@ import edu.umn.biomedicus.common.pos.PartsOfSpeech;
 import edu.umn.biomedicus.normalization.NormalizationProcessor;
 import edu.umn.biomedicus.normalization.NormalizerModel;
 import edu.umn.biomedicus.normalization.TermPos;
-import edu.umn.nlpnewt.common.JsonObject;
-import edu.umn.nlpnewt.common.JsonObjectBuilder;
-import edu.umn.nlpnewt.model.*;
-import edu.umn.nlpnewt.processing.*;
+import edu.umn.nlpie.mtap.common.JsonObject;
+import edu.umn.nlpie.mtap.common.JsonObjectBuilder;
+import edu.umn.nlpie.mtap.model.*;
+import edu.umn.nlpie.mtap.processing.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.kohsuke.args4j.CmdLineException;
@@ -325,7 +325,7 @@ class DictionaryConceptDetector extends DocumentProcessor {
       for (GenericLabel sentence : sentences) {
         LOGGER.trace("Identifying concepts in a sentence");
 
-        editedSentenceText = new StringBuilder(sentence.coveredText(documentText));
+        editedSentenceText = new StringBuilder(sentence.getText());
         editedSentenceTokens = new ArrayList<>();
         edited = new ArrayList<>();
         List<GenericLabel> sentenceTokens = posTags.inside(sentence).asList();
@@ -334,7 +334,7 @@ class DictionaryConceptDetector extends DocumentProcessor {
         List<String> sentenceNorms = new ArrayList<>();
         if (normalizerModel != null) {
           for (GenericLabel sentenceToken : sentenceTokens) {
-            String word = sentenceToken.coveredText(document).toString();
+            String word = sentenceToken.getText();
             PartOfSpeech tag = PartsOfSpeech.forTag(sentenceToken.getStringValue("tag"));
             String norm = normalizerModel.get(new TermPos(word, tag));
             if (norm == null) norm = word.toLowerCase();
@@ -356,14 +356,15 @@ class DictionaryConceptDetector extends DocumentProcessor {
           for (int subsetSize = 1; subsetSize <= window.size(); subsetSize++) {
             List<GenericLabel> windowSubset = window.subList(0, subsetSize);
             GenericLabel last = windowSubset.get(subsetSize - 1);
-            GenericLabel entire = GenericLabel.createSpan(first.getStartIndex(), last.getEndIndex());
+            GenericLabel entire = GenericLabel.withSpan(first.getStartIndex(), last.getEndIndex())
+                .withDocument(document).build();
 
             if (window.stream()
                 .map(posTag -> PartsOfSpeech.forTag(posTag.getStringValue("tag"))).allMatch(TRIVIAL_POS::contains)) {
               continue;
             }
 
-            String phrase = entire.coveredText(documentText).toString();
+            String phrase = entire.getText();
             if (checkPhrase(entire, phrase, subsetSize == 1, 0)) {
               continue;
             }

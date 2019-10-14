@@ -12,16 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
-import signal
 from pathlib import Path
-from subprocess import Popen, TimeoutExpired, PIPE
+from subprocess import Popen, PIPE
 
-import grpc
 import pytest
-from nlpnewt import EventsClient, Pipeline, RemoteProcessor, LocalProcessor
-from nlpnewt.io.serialization import get_serializer
-from nlpnewt.metrics import Accuracy, Metrics
-from nlpnewt.utils import find_free_port
+from mtap import EventsClient, Pipeline, RemoteProcessor, LocalProcessor
+from mtap.io.serialization import JsonSerializer
+from mtap.metrics import Accuracy, Metrics
+from mtap.utils import find_free_port
 
 
 @pytest.fixture(name='acronyms_service')
@@ -38,8 +36,6 @@ def fixture_acronyms_service(events_service, processor_watcher):
 @pytest.mark.performance
 def test_acronyms_performance(events_service, acronyms_service):
     input_dir = Path(os.environ['BIOMEDICUS_TEST_DATA']) / 'acronyms'
-    json_serializer = get_serializer('json')
-
     top_score_accuracy = Accuracy(name='top_score_accuracy', fields=['expansion'])
     any_accuracy = Accuracy(name='any_accuracy', mode='any', fields=['expansion'])
     detection_accuracy = Accuracy(name='detection_accuracy', mode='location', fields=['expansion'])
@@ -52,7 +48,7 @@ def test_acronyms_performance(events_service, acronyms_service):
                        component_id='all_senses_metrics', client=client)
     ) as pipeline:
         for test_file in input_dir.glob('**/*.json'):
-            with json_serializer.file_to_event(test_file, client=client) as event:
+            with JsonSerializer.file_to_event(test_file, client=client) as event:
                 document = event.documents['plaintext']
                 pipeline.run(document)
 

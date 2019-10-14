@@ -13,10 +13,11 @@
 # limitations under the License.
 import signal
 import subprocess
+import sys
 
 import grpc
 import pytest
-from nlpnewt.utils import subprocess_events_server
+from mtap.utils import subprocess_events_server
 
 
 def pytest_configure(config):
@@ -59,10 +60,12 @@ def fixture_processor_watcher():
         finally:
             process.send_signal(signal.SIGINT)
             try:
-                stdout, _ = process.communicate(timeout=1)
+                stdout, stderr = process.communicate(timeout=1)
                 print("processor exited with code: ", process.returncode)
                 if stdout is not None:
                     print(stdout.decode('utf-8'))
+                if stderr:
+                    print(stderr.decode('utf-8'), file=sys.stderr)
             except subprocess.TimeoutExpired:
                 print("timed out waiting for processor to terminate")
     return func

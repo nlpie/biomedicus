@@ -19,7 +19,7 @@ package edu.umn.biomedicus.tagging.tnt;
 import edu.umn.biomedicus.common.tuples.WordCap;
 import edu.umn.biomedicus.common.pos.PartOfSpeech;
 import edu.umn.biomedicus.common.pos.PartsOfSpeech;
-import edu.umn.nlpnewt.model.GenericLabel;
+import edu.umn.nlpie.mtap.model.GenericLabel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -115,9 +115,9 @@ public class TntModelTrainer {
    *
    * @param partOfSpeeches the part of speeches of the tokens in the sentence.
    */
-  public void addSentence(String text, List<GenericLabel> partOfSpeeches) {
+  public void addSentence(List<GenericLabel> partOfSpeeches) {
     for (GenericLabel posTag : partOfSpeeches) {
-      String tokenText = posTag.coveredText(text).toString();
+      String tokenText = posTag.getText();
       boolean isCapitalized = Character.isUpperCase(tokenText.charAt(0));
       WordCap wordCap = new WordCap(tokenText, isCapitalized);
       PartOfSpeech partOfSpeech = PartsOfSpeech.forTagWithFallback(posTag.getStringValue("tag"));
@@ -128,7 +128,7 @@ public class TntModelTrainer {
       }
     }
 
-    posCapTrigramModelTrainer.addSentence(text, partOfSpeeches);
+    posCapTrigramModelTrainer.addSentence(partOfSpeeches);
   }
 
   /**
