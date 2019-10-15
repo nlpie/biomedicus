@@ -20,7 +20,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.Map;
-import java.util.Set;
 
 public class HashSenseVectors implements SenseVectors {
 
@@ -40,16 +39,6 @@ public class HashSenseVectors implements SenseVectors {
   @Override
   public SparseVector get(String sense) {
     return vectorMap.get(sense);
-  }
-
-  @Override
-  public Set<String> senses() {
-    return vectorMap.keySet();
-  }
-
-  @Override
-  public Collection<SparseVector> vectors() {
-    return vectorMap.values();
   }
 
   @Override
