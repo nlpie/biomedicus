@@ -31,8 +31,7 @@ def fixture_pos_tags_service(events_service, processor_watcher):
                'edu.umn.biomedicus.tagging.tnt.TntPosTaggerProcessor', '-p', port,
                '--events', events_service],
               start_new_session=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
-    with processor_watcher(address, p):
-        yield address
+    yield from processor_watcher(address, p)
 
 
 @pytest.mark.performance

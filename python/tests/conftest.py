@@ -24,12 +24,19 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "performance"
     )
+    config.addinivalue_line(
+        "markers", "phi_test_data"
+    )
 
 
 def pytest_addoption(parser):
     parser.addoption(
         "--performance", action="store_true", default=False,
         help="Runs performance testing",
+    )
+    parser.addoption(
+        "--phi-test-data", action="store_true", default=False,
+        help="Runs tests "
     )
 
 
@@ -39,6 +46,11 @@ def pytest_collection_modifyitems(config, items):
         for item in items:
             if "performance" in item.keywords:
                 item.add_marker(skip_consul)
+    if not config.getoption("--phi-test-data"):
+        skip_phi_test_data = pytest.mark.skip(reason="need --phi-test-data option to run")
+        for item in items:
+            if "phi_test_data" in item.keywords:
+                item.add_marker(skip_phi_test_data)
 
 
 @pytest.fixture(name='events_service')
@@ -49,13 +61,13 @@ def fixture_events_service():
 
 @pytest.fixture(name='processor_watcher')
 def fixture_processor_watcher():
-    def func(address, process):
+    def func(address, process, timeout=20):
         try:
             if process.returncode is not None:
                 raise ValueError('subprocess terminated')
             with grpc.insecure_channel(address) as channel:
                 future = grpc.channel_ready_future(channel)
-                future.result(timeout=20)
+                future.result(timeout=timeout)
             yield address
         finally:
             process.send_signal(signal.SIGINT)

@@ -44,6 +44,7 @@ setup(
         "write_to": "python/biomedicus/version.py"
     },
     description='A biomedical and clinical NLP engine.',
+    python_requires='~=3.5',
     author='University of Minnesota NLP/IE Group',
     author_email='nlp-ie@umn.edu',
     classifiers=[
@@ -55,10 +56,10 @@ setup(
         'Operating System :: MacOS',
         'Operating System :: POSIX :: Linux',
         'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Topic :: Scientific/Engineering :: Information Analysis',
-        'Topic :: Software Development :: Libraries',
         'Topic :: Text Processing :: General',
         'Topic :: Text Processing :: Linguistic'
     ],
@@ -83,7 +84,7 @@ setup(
         'tf': 'tensorflow',
         'tf-gpu': 'tensorflow-gpu',
         'tests': ['pytest-runner', 'pytest'],
-        'docs': ['sphinx', 'sphinx_rtd_theme']
+        'docs': ['sphinx']
     },
     cmdclass={
         'test': test,

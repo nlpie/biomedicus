@@ -35,6 +35,7 @@ def fixture_sentences_service(events_service, processor_watcher):
     yield from processor_watcher(address, p)
 
 
+@pytest.mark.phi_test_data
 @pytest.mark.performance
 def test_sentence_performance(events_service, sentences_service):
     input_dir = Path(os.environ['BIOMEDICUS_TEST_DATA']) / 'sentences'

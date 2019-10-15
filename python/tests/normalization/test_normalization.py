@@ -42,11 +42,11 @@ def test_normalization(events_service, normalization_processor):
         document = event.documents['plaintext']
         pipeline.run(document)
         for norm_form in document.get_label_index('norm_forms'):
-            if norm_form.get_covered_text(document.text) == "according":
+            if norm_form.text == "according":
                 assert norm_form.norm == "accord"
-            if norm_form.get_covered_text(document.text) == "expressing":
+            if norm_form.text == "expressing":
                 assert norm_form.norm == "express"
-            if norm_form.get_covered_text(document.text) == "receiving":
+            if norm_form.text == "receiving":
                 assert norm_form.norm == "receive"
-            if norm_form.get_covered_text(document.text) == "days":
+            if norm_form.text == "days":
                 assert norm_form.norm == "day"

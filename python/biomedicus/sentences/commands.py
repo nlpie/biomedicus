@@ -96,7 +96,7 @@ class SentenceCommands(Namespace):
 
     def run_processor(self):
         processor = self.create_processor()
-        run_processor(processor, self)
+        run_processor(processor, namespace=self)
 
     def create_processor(self):
         processor = SentenceProcessor(self.sentence_model, self.mapper)
