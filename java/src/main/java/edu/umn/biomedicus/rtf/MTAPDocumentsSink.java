@@ -32,13 +32,13 @@ public class MTAPDocumentsSink implements RtfSink {
 
   public MTAPDocumentsSink() {
     propertyWatchers.add(
-        new PropertyWatcher("biomedicus.bold", "CharacterFormatting", "Bold", 1, false, false)
+        new PropertyWatcher("bold", "CharacterFormatting", "Bold", 1, false, false)
     );
     propertyWatchers.add(
-        new PropertyWatcher("biomedicus.italic", "CharacterFormatting", "Italic", 1, false, false)
+        new PropertyWatcher("italic", "CharacterFormatting", "Italic", 1, false, false)
     );
     propertyWatchers.add(
-        new PropertyWatcher("biomedicus.underline", "CharacterFormatting", "Underline", 1, false, false)
+        new PropertyWatcher("underlined", "CharacterFormatting", "Underline", 1, false, false)
     );
   }
 

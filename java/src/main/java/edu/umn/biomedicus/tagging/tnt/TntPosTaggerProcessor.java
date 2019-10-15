@@ -54,6 +54,7 @@ import java.util.List;
  * @since 1.0.0
  */
 @Processor(value = "biomedicus-tnt-tagger",
+    humanName = "TnT Part of Speech Tagger",
     description = "Labels part of speech tags on the document.",
     parameters = {
         @ParameterDescription(name = "sentences_index", dataType = "str",
@@ -61,11 +62,12 @@ import java.util.List;
         @ParameterDescription(name = "target_index", dataType = "str",
             description = "The target index to create for POS tags. Defaults to \"pos_tags\""),
         @ParameterDescription(name = "token_index", dataType = "str",
-            description = "The name of an index creating tokens. By default the processor will " +
+            description = "The name of an index of tokens. By default the processor will " +
                 "do tokenization on its own.")
     },
     inputs = {
-        @LabelIndexDescription(name = "sentences", nameFromParameter = "sentences_index"),
+        @LabelIndexDescription(name = "sentences", reference = "biomedicus-sentences/sentences",
+            nameFromParameter = "sentences_index"),
         @LabelIndexDescription(nameFromParameter = "token_index", optional = true,
             description = "Existing tokens to use. Otherwise will tokenize each sentence.")
     },

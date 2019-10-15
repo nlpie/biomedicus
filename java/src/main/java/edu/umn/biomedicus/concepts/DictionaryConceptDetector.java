@@ -53,31 +53,15 @@ import static edu.umn.biomedicus.common.pos.PartOfSpeech.*;
  * @since 1.0.0
  */
 @Processor(value = "biomedicus-concepts",
+    humanName = "UMLS Concept Detector",
     description = "Labels UMLS Concepts",
     inputs = {
-        @LabelIndexDescription(name = "sentences"),
-        @LabelIndexDescription(name = "pos_tags",
-            description = "Labeled part of speech tags on tokens.",
-            properties = {
-                @PropertyDescription(name = "tag", dataType = "str",
-                    description = "The penn-treebank tag for the token.")
-            }),
+        @LabelIndexDescription(name = "sentences", reference = "biomedicus-sentences/sentences"),
+        @LabelIndexDescription(name = "pos_tags", reference = "biomedicus-tnt-tagger/pos_tags"),
         @LabelIndexDescription(name = "norm_forms",
-            description = "The labeled normalized form of a word per token.",
-            optional = true,
-            properties = {
-                @PropertyDescription(name = "norm", dataType = "str",
-                    description = "The normal form of the word.")
-            }),
-        @LabelIndexDescription(name = "acronyms",
-            description = "The highest scoring acronym disambiguation for an acronym.",
-            properties = {
-                @PropertyDescription(name = "score", dataType = "float",
-                    description = "The acronym's score."),
-                @PropertyDescription(name = "expansion", dataType = "str",
-                    description = "The acronym's expansion.")
-            }
-        )
+            reference = "biomedicus-normalizer/norm_forms",
+            optional = true),
+        @LabelIndexDescription(name = "acronyms", reference = "biomedicus-acronyms/acronyms")
     },
     outputs = {
         @LabelIndexDescription(name = "concepts",

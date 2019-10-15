@@ -32,6 +32,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
 @Processor(value = "biomedicus-rtf-processor",
+    humanName = "RTF Reader",
     description = "Processes an RTF document into plaintext.",
     parameters = {
         @ParameterDescription(name = "binary_data_name", dataType = "str",
@@ -42,12 +43,12 @@ import java.io.IOException;
                 "Defaults to \"plaintext\"")
     },
     outputs = {
-        @LabelIndexDescription(name = "biomedicus.bold",
+        @LabelIndexDescription(name = "bold",
             description = "Rtf bold formatting."),
-        @LabelIndexDescription(name = "biomedicus.italic",
+        @LabelIndexDescription(name = "italic",
             description = "Rtf italic formatting."),
-        @LabelIndexDescription(name = "biomedicus.underline",
-            description = "Rtf underline formatting."),
+        @LabelIndexDescription(name = "underlined",
+            description = "Rtf underlined formatting."),
     })
 public class RtfProcessor extends EventProcessor {
 

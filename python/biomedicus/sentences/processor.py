@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 @processor('biomedicus-sentences',
+           human_name="Sentence Detector",
            description="Labels sentences given document text.",
            entry_point=__name__,
            parameters=[

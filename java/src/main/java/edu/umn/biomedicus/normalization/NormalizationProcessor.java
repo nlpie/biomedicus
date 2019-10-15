@@ -45,14 +45,10 @@ import java.nio.file.Paths;
  * @since 1.7.0
  */
 @Processor(value = "biomedicus-normalizer",
+    humanName = "SPECIALIST Normalizer",
     description = "Labels norm forms for words.",
     inputs = {
-        @LabelIndexDescription(name = "pos_tags", nameFromParameter = "target_index",
-            description = "Labeled part of speech tags on tokens.",
-            properties = {
-                @PropertyDescription(name = "tag", dataType = "str",
-                    description = "The penn-treebank tag for the token.")
-            })
+        @LabelIndexDescription(name = "pos_tags", reference = "biomedicus-tnt-tagger/pos_tags")
     },
     outputs = {
         @LabelIndexDescription(name = "norm_forms",

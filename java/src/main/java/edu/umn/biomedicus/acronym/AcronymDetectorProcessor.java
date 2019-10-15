@@ -51,6 +51,7 @@ import java.util.stream.Collectors;
  * An implementation of an acronym model that uses word vectors and a cosine distance metric.
  */
 @Processor(value = "biomedicus-acronyms",
+    humanName = "Acronym Detector",
     description = "Labels acronyms.",
     parameters = {
         @ParameterDescription(name = "labelOtherSenses",
@@ -58,12 +59,7 @@ import java.util.stream.Collectors;
             dataType = "bool")
     },
     inputs = {
-        @LabelIndexDescription(name = "pos_tags", nameFromParameter = "target_index",
-            description = "Labeled part of speech tags on tokens.",
-            properties = {
-                @PropertyDescription(name = "tag", dataType = "str",
-                    description = "The penn-treebank tag for the token.")
-            })
+        @LabelIndexDescription(name = "pos_tags", reference = "biomedicus-tnt-tagger/pos_tags")
     },
     outputs = {
         @LabelIndexDescription(name = "acronyms",
