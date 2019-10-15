@@ -47,20 +47,6 @@ public interface SenseVectors extends Closeable {
   SparseVector get(@Nullable String sense);
 
   /**
-   * Returns a set of all the senses in this map.
-   *
-   * @return immutable set view of all the senses
-   */
-  Set<String> senses();
-
-  /**
-   * Returns a collection of all the context vectors in this map.
-   *
-   * @return immutable collection view of all the vectors.
-   */
-  Collection<SparseVector> vectors();
-
-  /**
    * Removes the given word from this sense vectors object. May not be supported in certain
    * implementations
    *
