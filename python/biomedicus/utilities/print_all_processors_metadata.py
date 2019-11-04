@@ -42,9 +42,9 @@ def main(args=None):
               'edu.umn.biomedicus.tagging.tnt.TntPosTaggerProcessor'])
         java_meta = load(f, Loader=Loader)
 
-    java_meta += [x.metadata for x in [SentenceProcessor]]
+    all_meta = [x.metadata for x in [SentenceProcessor]] + java_meta
     with open(ns.output_file, 'w') as f:
-        dump(java_meta, f, Dumper=Dumper)
+        dump(all_meta, f, Dumper=Dumper)
 
 
 if __name__ == '__main__':
