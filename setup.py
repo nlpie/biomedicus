@@ -72,6 +72,7 @@ setup(
         'scikit_learn',
         'pyyaml',
         'h5py',
+        'tensorflow-text'
     ],
     setup_requires=[
         'pytest-runner',

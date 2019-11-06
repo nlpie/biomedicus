@@ -32,10 +32,11 @@ class Vocabulary(object):
     labels : int
         The number of labels
     """
+    PADDING = 0
 
     def __init__(self, directory, words_model_file=None, words_list=None):
         self._character_to_id = {
-            'PADDING': 0,
+            'PADDING': Vocabulary.PADDING,
             'TOKEN_BEGIN': 1,
             'TOKEN_END': 2,
             'PREV_TOKEN': 3,
@@ -87,6 +88,10 @@ class Vocabulary(object):
                 for identifier, line in enumerate(f, 1):
                     self._word_to_id[line[:-1]] = identifier
             self.words = len(self._word_to_id)
+
+    @property
+    def word_vectors(self):
+        return self._word_vectors
 
     def get_word_dimension(self) -> int:
         """Gets the dimensionality of the word embeddings.

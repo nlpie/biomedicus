@@ -25,52 +25,7 @@ from biomedicus.tokenization import Token, tokenize
 from biomedicus.utils import pad_to_length
 
 
-def deep_hparams_parser():
-    parser = ArgumentParser(add_help=False)
-    parser.add_argument('--sequence-length', type=int, default=32,
-                        help="number of words per sequence.")
-    parser.add_argument('--use-chars', type=bool, default=True,
-                        help="whether to use the character model.")
-    parser.add_argument('--word-length', type=int, default=32,
-                        help="number of characters per word.")
-    parser.add_argument('--dim-char', type=int, default=30,
-                        help="length of learned char embeddings.")
-    parser.add_argument('--use-token-boundaries', type=bool, default=True,
-                        help="whether to insert characters representing the begin and ends of "
-                             "words.")
-    parser.add_argument('--use-neighbor-boundaries', type=bool, default=True,
-                        help="whether to insert characters representing the end of the "
-                             "previous neighbor and the begin of the next neighbor token. ")
-    parser.add_argument('--use-sequence-boundaries', type=bool, default=True,
-                        help="whether to insert characters representing the begin of a "
-                             "segment (piece of text whose boundaries are guaranteed to "
-                             "not have a sentence spanning).")
-    parser.add_argument('--char-mode', choices=['cnn', 'lstm'], default='cnn',
-                        help="the method to use for character representations. either 'cnn' "
-                             "for convolutional neural networks or 'lstm' for a bidirectional "
-                             "lstm.")
-    parser.add_argument('--char-cnn-filters', type=int, default=100,
-                        help="the number of cnn character filters. if "
-                             "concatenate_words_chars = False then this"
-                             "parameter is ignored and dim_word is used.")
-    parser.add_argument('--char-cnn-kernel-size', type=int, default=4,
-                        help="the kernel size (number of character embeddings to look at). ")
-    parser.add_argument('--char-lstm-hidden-size', type=int, default=100,
-                        help="when using bi-lstm the output dimensionality of the bi-lstm.")
-    parser.add_argument('--use-words', type=bool, default=True,
-                        help="whether to use word embedding word representations.")
-    parser.add_argument('--lstm-hidden-size', type=int, default=300,
-                        help="the number of units in the bi-lstm character layer. if "
-                             "concatenate_word_chars = False then this parameter is ignored "
-                             "and dim_word is used.")
-    parser.add_argument('--dropout', type=float, default=.75,
-                        help="the input/output dropout for the bi-lstms in the network during "
-                             "training.")
-    parser.add_argument('--recurrent-dropout', type=float, default=.5,
-                        help="the recurrent dropout for the bi-lstms in the network.")
-    parser.add_argument('--concatenate-word-chars', type=bool, default=False,
-                        help="Whether to concatenate the word and character representations.")
-    return parser
+
 
 
 class SentenceModel(metaclass=ABCMeta):
@@ -161,7 +116,7 @@ class BiLSTMSentenceModel(SentenceModel):
         self.chars = self.vocabulary.characters
 
         self.words = self.vocabulary.words
-        self.word_embeddings = self.vocabulary._word_vectors
+        self.word_embeddings = self.vocabulary.word_vectors
         self.dim_word = args.dim_word or self.vocabulary.get_word_dimension()
 
         self.sequence_length = args.sequence_length
@@ -188,115 +143,10 @@ class BiLSTMSentenceModel(SentenceModel):
         self._model = self._build_model()
 
     def _build_model(self) -> tf.keras.models.Model:
-        inputs, context = self.build_layers()
 
-        normed = tf.keras.layers.BatchNormalization()(context)
-
-        logits = tf.keras.layers.TimeDistributed(
-            tf.keras.layers.Dense(1,
-                                  activation='sigmoid',
-                                  kernel_regularizer=tf.keras.regularizers.l1()),
-            name='logits'
-        )(normed)
-
-        return tf.keras.models.Model(inputs=inputs, outputs=[logits, context])
 
     def build_layers(self):
-        chars_embedding = None
-        char_input = None
-        if self.use_chars:
-            char_input = tf.keras.layers.Input(
-                shape=(self.sequence_length, self.word_length),
-                dtype='int32',
-                name='char_input')
 
-            char_embedding = tf.keras.layers.TimeDistributed(
-                tf.keras.layers.Embedding(input_dim=self.chars,
-                                          output_dim=self.dim_char,
-                                          dtype='float32',
-                                          mask_zero=self.char_mode == 'lstm',
-                                          name='char_embedding'),
-                input_shape=(self.sequence_length, self.word_length),
-                name='char_embedding_distributed'
-            )(char_input)
-
-            if self.char_mode == 'cnn':
-                cnn_filters = (self.char_cnn_filters if not self.concatenate_words_chars
-                               else self.dim_word)
-                char_cnn = tf.keras.layers.TimeDistributed(
-                    tf.keras.layers.Conv1D(
-                        cnn_filters,
-                        self.char_cnn_kernel_size,
-                        name='char_cnn'),
-                    name='char_cnn_distributed'
-                )(char_embedding)
-
-                chars_embedding = tf.keras.layers.TimeDistributed(
-                    tf.keras.layers.GlobalMaxPooling1D(name='char_pooling'),
-                    name='char_pooling_distributed'
-                )(char_cnn)
-            else:
-                char_lstm_hidden_size = (self.char_lstm_hidden_size
-                                         if not self.concatenate_words_chars else self.dim_word)
-                chars_embedding = tf.keras.layers.TimeDistributed(
-                    tf.keras.layers.Bidirectional(
-                        tf.keras.layers.LSTM(units=char_lstm_hidden_size,
-                                             dropout=self.dropout,
-                                             recurrent_dropout=self.recurrent_dropout)
-                    ),
-                    input_shape=(self.sequence_length, self.word_length, self.dim_char),
-                    name="chars_word_embedding_distributed"
-                )(char_embedding)
-        if self.use_words:
-            word_input = tf.keras.layers.Input(shape=(self.sequence_length,),
-                                               dtype='int32',
-                                               name='word_input')
-
-            if self.word_embeddings is not None:
-                word_embedding = tf.keras.layers.Embedding(input_dim=self.words,
-                                                           output_dim=self.dim_word,
-                                                           weights=[self.word_embeddings],
-                                                           mask_zero=False,
-                                                           dtype='float32',
-                                                           name='word_embedding',
-                                                           trainable=False)(word_input)
-            else:
-                word_embedding = tf.keras.layers.Embedding(input_dim=self.words,
-                                                           output_dim=self.dim_word,
-                                                           mask_zero=False,
-                                                           dtype='float32',
-                                                           name='word_embedding',
-                                                           trainable=False)(word_input)
-            if chars_embedding is not None:
-                inputs = [char_input, word_input]
-
-                if self.concatenate_words_chars:
-                    word_embedding = tf.keras.layers.Concatenate(
-                        name="word_representation"
-                    )([chars_embedding, word_embedding])
-                else:
-                    word_embedding = tf.keras.layers.Add(
-                        name="word_representation"
-                    )([chars_embedding, word_embedding])
-
-            else:
-                inputs = [word_input]
-                word_embedding = word_embedding
-
-        else:
-            inputs = [char_input]
-            word_embedding = chars_embedding
-
-        word_embedding = tf.keras.layers.BatchNormalization()(word_embedding)
-        context = tf.keras.layers.Bidirectional(
-            tf.keras.layers.LSTM(self.lstm_hidden_size,
-                                 return_sequences=True,
-                                 dropout=self.dropout,
-                                 recurrent_dropout=self.recurrent_dropout,
-                                 return_state=False),
-            name='contextual_word_representation'
-        )(word_embedding)
-        return inputs, context
 
     @property
     def model(self) -> tf.keras.models.Model:
