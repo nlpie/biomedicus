@@ -32,7 +32,13 @@ class Vocabulary(object):
     labels : int
         The number of labels
     """
+    UNKNOWN_WORD = 0
     PADDING = 0
+    TOKEN_BEGIN = 1
+    TOKEN_END = 2
+    PREV_TOKEN = 3
+    NEXT_TOKEN = 4
+    UNK_CHAR = 11
 
     def __init__(self, directory, words_model_file=None, words_list=None):
         self._character_to_id = {

@@ -14,11 +14,13 @@
 from argparse import ArgumentParser
 
 import tensorflow as tf
-from tensorflow.keras.layers import BatchNormalization, Bidirectional, Conv1D, Dense, Embedding, \
-    GlobalMaxPooling1D, Input, Layer, LSTM, TimeDistributed
+import tensorflow_text
+from tensorflow.keras.layers import Add, BatchNormalization, Bidirectional, Concatenate, Conv1D, \
+    Dense, Embedding, GlobalMaxPooling1D, Input, Layer, LSTM, TimeDistributed
 from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.regularizers import l1
-from tensorflow_text import WhitespaceTokenizer
+
+from biomedicus.sentences.vocabulary import Vocabulary
 
 
 def bi_lstm_hparams_parser():
@@ -79,63 +81,61 @@ def build_sentences_model():
     return Model(inputs=inputs, outputs=[logits, context])
 
 
-def build_layers(hparams, vocabulary):
+def build_layers(hparams, word_embeddings, char_mapping, words_file):
+    docs = Input(shape=[], dtype=tf.string, name='docs')
+    starts = Input(shape=[None], dtype=tf.int64, name='start_indices')
+    ends = Input(shape=[None], dtype=tf.int64, name='end_indices')
+
+    inputs = [docs, starts, ends]
+
+    tokens = doc_substrs(docs, starts, ends)
+
     chars_embedding = None
-    char_input = None
     if hparams.use_chars:
-        char_input = Input(shape=(None, hparams.word_length),
-                           dtype='int32',
-                           name='char_input')
-
+        char_mapping_layer = CharacterRepresentation(char_mapping)
+        char_input = char_mapping_layer([docs, tokens, starts, ends])
+        model = build_char_model(hparams)
+        chars_embedding = model(char_input)
     if hparams.use_words:
-        word_input = Input(shape=(None,),
-                           dtype='int32',
-                           name='word_input')
+        word_lookup_layer = WordLookup(words_file)
+        word_ids = word_lookup_layer(tokens)
 
-        if self.word_embeddings is not None:
-            word_embedding = Embedding(input_dim=vocabulary.words,
-                                       output_dim=hparams.dim_word,
-                                       weights=[vocabulary._word_vectors],
-                                       mask_zero=False,
-                                       dtype='float32',
-                                       name='word_embedding',
-                                       trainable=False)(word_input)
+        if word_embeddings is not None:
+            word_embedding_layer = Embedding(input_dim=word_embeddings.shape[0],
+                                             output_dim=word_embeddings.shape[1],
+                                             weights=[word_embeddings],
+                                             mask_zero=False,
+                                             dtype='float32',
+                                             name='word_embedding',
+                                             trainable=False)
         else:
-            word_embedding = Embedding(input_dim=self.words,
-                                       output_dim=self.dim_word,
-                                       mask_zero=False,
-                                       dtype='float32',
-                                       name='word_embedding',
-                                       trainable=False)(word_input)
+            with open(words_file, 'r') as f:
+                words = len(f.readlines())
+            word_embedding_layer = Embedding(input_dim=words,
+                                             output_dim=hparams.dim_word,
+                                             mask_zero=False,
+                                             dtype='float32',
+                                             name='word_embedding',
+                                             trainable=True)
+        word_embedding = word_embedding_layer(word_ids)
         if chars_embedding is not None:
-            inputs = [char_input, word_input]
-
-            if self.concatenate_words_chars:
-                word_embedding = tf.keras.layers.Concatenate(
-                    name="word_representation"
-                )([chars_embedding, word_embedding])
-            else:
-                word_embedding = tf.keras.layers.Add(
-                    name="word_representation"
-                )([chars_embedding, word_embedding])
-
+            word_representation_layer = (Concatenate(name="word_representation")
+                                         if hparams.concatenate_word_chars
+                                         else Add(name="word_representation"))
+            word_embedding = word_representation_layer([chars_embedding, word_embedding])
         else:
-            inputs = [word_input]
             word_embedding = word_embedding
-
     else:
-        inputs = [char_input]
         word_embedding = chars_embedding
 
     word_embedding = BatchNormalization()(word_embedding)
-    context = tf.keras.layers.Bidirectional(
-        tf.keras.layers.LSTM(self.lstm_hidden_size,
-                             return_sequences=True,
-                             dropout=self.dropout,
-                             recurrent_dropout=self.recurrent_dropout,
-                             return_state=False),
-        name='contextual_word_representation'
-    )(word_embedding)
+    context_layer = Bidirectional(LSTM(hparams.lstm_hidden_size,
+                                       return_sequences=True,
+                                       dropout=hparams.dropout,
+                                       recurrent_dropout=hparams.recurrent_dropout,
+                                       return_state=False),
+                                  name='contextual_word_representation')
+    context = context_layer(word_embedding)
     return inputs, context
 
 
@@ -163,21 +163,84 @@ def build_char_model(hparams):
     return model
 
 
-class WhitespaceTokenizationWithOffsets(Layer):
-    def __init__(self):
+class WordLookup(Layer):
+    def __init__(self, words_file):
         super().__init__()
-        self.tokenizer = WhitespaceTokenizer()
+        self.table = tf.lookup.StaticHashTable(
+            tf.lookup.TextFileInitializer(
+                words_file,
+                tf.string,
+                tf.lookup.TextFileIndex.WHOLE_LINE,
+                tf.int64,
+                tf.lookup.TextFileIndex.LINE_NUMBER
+            ),
+            Vocabulary.UNKNOWN_WORD
+        )
+
+    def call(self, tokens, **kwargs):
+        normed = tensorflow_text.case_fold_utf8(tokens)
+        normed = tf.strings.regex_replace(normed, "[\\pP\\pS]", "")
+        normed = tf.strings.regex_replace(normed, "\\pN", "#")
+        return self.table.lookup(normed, Vocabulary.UNKNOWN_WORD)
+
+
+class CharacterRepresentation(Layer):
+    """Constructs tokens for the character representation of words.
+
+    The tokens contain the following information concatenated:
+    - Marker for previous token
+    - Whitespace characters after the previous token and before this token
+    - Marker for start of this token
+    - This token's characters
+    - Marker for the end of this token
+    - Whitespace characters after this token and before the next
+    - Marker for the next token
+
+    It takes an input triplet of (docs [N], starts [N, (N)], ends [N, (N)])
+
+    """
+
+    def __init__(self, chars_mapping, **kwargs):
+        super().__init__(**kwargs)
+        keys, values = zip(*chars_mapping.items())
+        self.table = tf.lookup.StaticHashTable(tf.lookup.KeyValueTensorInitializer(keys, values),
+                                               Vocabulary.UNK_CHAR)
 
     def call(self, inputs, **kwargs):
-        tokens, starts, ends = self.tokenizer.tokenize_with_offsets(inputs)
-        return [tokens, starts, ends]
+        docs, tokens, starts, ends = inputs
+
+        first_prev_end = tf.fill([docs.nrows(), 1], tf.cast(0, tf.int64))
+        prev_ends = tf.concat([first_prev_end, ends[:, :-1]], -1)
+        priors = doc_substrs(docs, prev_ends, starts)
+
+        last_next_start = tf.fill(first_prev_end.shape, tf.int64.max)
+        next_starts = tf.concat([starts[:, 1:], last_next_start], -1)
+        posts = doc_substrs(docs, ends, next_starts)
+
+        return tf.concat([
+            marker_char(Vocabulary.PREV_TOKEN, tokens),
+            self._lookup_char_ids(priors),
+            marker_char(Vocabulary.TOKEN_BEGIN, tokens),
+            self._lookup_char_ids(tokens),
+            marker_char(Vocabulary.TOKEN_END, tokens),
+            self._lookup_char_ids(posts),
+            marker_char(Vocabulary.NEXT_TOKEN, tokens)
+        ], axis=-1)
+
+    def _lookup_char_ids(self, chars):
+        return tf.ragged.map_flat_values(self.table.lookup,
+                                         tf.strings.unicode_split(chars, 'UTF-8'))
 
 
-class InputMapper(Layer):
-    def __init__(self, word_length):
-        super().__init__()
-        self.word_length = word_length
+def doc_substrs(docs, starts, ends):
+    lens = ends - starts
+    return tf.RaggedTensor.from_tensor(tf.strings.substr(tf.expand_dims(docs, -1),
+                                                         starts.to_tensor(),
+                                                         lens.to_tensor()),
+                                       ends.row_lengths())
 
-    def call(self, inputs, **kwargs):
-        text, words, begins, ends = inputs
-        padded_words = tf.concat()
+
+def marker_char(int_value, like):
+    return tf.RaggedTensor.from_row_lengths(tf.fill(like.flat_values.shape,
+                                                    tf.cast(int_value, tf.int32)),
+                                            like.row_lengths())
