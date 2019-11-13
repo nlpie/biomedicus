@@ -20,6 +20,7 @@ from tensorflow.keras.layers import Add, BatchNormalization, Bidirectional, Conc
 from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.regularizers import l1
 
+from biomedicus.sentences.train import training_parser
 from biomedicus.sentences.vocabulary import Vocabulary
 
 
@@ -31,16 +32,6 @@ def bi_lstm_hparams_parser():
                         help="number of characters per word.")
     parser.add_argument('--dim-char', type=int, default=30,
                         help="length of learned char embeddings.")
-    parser.add_argument('--use-token-boundaries', type=bool, default=True,
-                        help="whether to insert characters representing the begin and ends of "
-                             "words.")
-    parser.add_argument('--use-neighbor-boundaries', type=bool, default=True,
-                        help="whether to insert characters representing the end of the "
-                             "previous neighbor and the begin of the next neighbor token. ")
-    parser.add_argument('--use-sequence-boundaries', type=bool, default=True,
-                        help="whether to insert characters representing the begin of a "
-                             "segment (piece of text whose boundaries are guaranteed to "
-                             "not have a sentence spanning).")
     parser.add_argument('--char-mode', choices=['cnn', 'lstm'], default='cnn',
                         help="the method to use for character representations. either 'cnn' "
                              "for convolutional neural networks or 'lstm' for a bidirectional "
@@ -59,7 +50,7 @@ def bi_lstm_hparams_parser():
                         help="the number of units in the bi-lstm character layer. if "
                              "concatenate_word_chars = False then this parameter is ignored "
                              "and dim_word is used.")
-    parser.add_argument('--dropout', type=float, default=.75,
+    parser.add_argument('--dropout', type=float, default=.5,
                         help="the input/output dropout for the bi-lstms in the network during "
                              "training.")
     parser.add_argument('--recurrent-dropout', type=float, default=.5,
@@ -69,14 +60,12 @@ def bi_lstm_hparams_parser():
     return parser
 
 
-def build_sentences_model():
-    inputs, context = build_layers()
-
+def build_sentences_model(hparams, word_embeddings, char_mapping, words_file):
+    inputs, context = build_layers(hparams, word_embeddings, char_mapping, words_file)
     normed = BatchNormalization()(context)
-
-    logits = TimeDistributed(Dense(1, activation='sigmoid', kernel_regularizer=l1()),
-                             name='logits'
-                             )(normed)
+    logit_layer = TimeDistributed(Dense(1, activation='sigmoid', kernel_regularizer=l1()),
+                                  name='logits')
+    logits = logit_layer(normed)
 
     return Model(inputs=inputs, outputs=[logits, context])
 
@@ -244,3 +233,22 @@ def marker_char(int_value, like):
     return tf.RaggedTensor.from_row_lengths(tf.fill(like.flat_values.shape,
                                                     tf.cast(int_value, tf.int32)),
                                             like.row_lengths())
+
+
+def train(conf):
+    pass
+
+
+def main(args):
+    parser = ArgumentParser(add_help=True, parents=[bi_lstm_hparams_parser()])
+    subparsers = parser.add_subparsers()
+
+    train_parser = subparsers.add_parser('train', parents=[training_parser()])
+    train_parser.set_defaults(func=train)
+
+    conf = parser.parse_args(args)
+    conf.func(conf)
+
+if __name__ == "__main__":
+    pass
+

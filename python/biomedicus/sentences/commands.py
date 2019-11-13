@@ -206,36 +206,6 @@ def evaluate(sentence_model, vocabulary, evaluation_dir, batch_size):
     print(print_metrics(prediction, targets, vocabulary, sample_weights=weights))
 
 
-def training_parser() -> ArgumentParser:
-    parser = ArgumentParser(add_help=False)
-    parser.add_argument('--epochs', type=int, default=100,
-                        help="number of epochs to run training.")
-    parser.add_argument('--tensorboard', action='store_true', default=False,
-                        help="whether to use a keras.callbacks.TensorBoard.")
-    parser.add_argument('--checkpoints', type=bool, default=True,
-                        help="whether to save the best model during training.")
-    parser.add_argument('--early-stopping', type=bool, default=True,
-                        help="whether to stop when the model stops improving.")
-    parser.add_argument('--early-stopping-patience', type=int, default=5,
-                        help="how many epochs without improvement before stopping.")
-    parser.add_argument('--early-stopping-delta', type=float, default=0.0001,
-                        help="the smallest amount loss needs to improve by to be considered "
-                             "improvement by early stopping.")
-    parser.add_argument('--use-class-weights', type=bool, default=True,
-                        help="whether to weight the value of class loss and accuracy based on "
-                             "their support.")
-    parser.add_argument('--validation-split', type=float, default=0.2,
-                        help="the fraction of the data to use for validation.")
-    parser.add_argument('--optimizer', default='nadam',
-                        help="the keras optimizer to use. default is 'nadam'")
-    parser.add_argument('--batch-size', default=32,
-                        help="The batch size to use during training.")
-
-    parser.add_argument('--job-dir',
-                        help="Path to the output directory where logs and models will be "
-                             "written.")
-    parser.add_argument('--input-dir', help="input directory")
-    return parser
 
 
 def create_parser() -> ArgumentParser:
