@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from argparse import ArgumentParser
+from pathlib import Path
+
+from biomedicus.tokenization import detect_space_after, Token
 
 
 def training_parser():
@@ -46,3 +49,45 @@ def training_parser():
                              "written.")
     parser.add_argument('--input-dir', help="input directory")
     return parser
+
+
+
+def directory_labels_generator(directory, repeat=False):
+    import tensorflow as tf
+    while True:
+        for doc_dir, _, docs in tf.io.gfile.walk(directory):
+            for doc in docs:
+                if not doc.endswith('.txt'):
+                    continue
+                path = Path(doc_dir, doc)
+                print("reading document {}".format(path))
+                with tf.io.gfile.GFile(str(path), 'r') as f:
+                    txt = f.read()
+
+                labels_path = path.with_suffix('.labels')
+                with tf.io.gfile.GFile(str(labels_path), 'r') as f:
+                    tokens = [_split_token_line(txt, x) for x in f]
+                yield doc, txt, tokens
+
+        if not repeat:
+            break
+
+
+def _split_token_line(txt, line):
+    """Internal method for splitting token lines from the .labels format.
+    """
+    if not line:
+        return None
+
+    split = line.split()
+
+    if len(split) < 5:
+        return None
+
+    segment = int(split[0])
+    begin = int(split[1])
+    end = int(split[2])
+    label = split[3]
+    is_identifier = split[4] == '1'
+    space_after = detect_space_after(txt, end)
+    return Token(segment, begin, end, label, is_identifier, space_after)

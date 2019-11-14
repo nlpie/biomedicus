@@ -72,7 +72,8 @@ setup(
         'scikit_learn',
         'pyyaml',
         'h5py',
-        'tensorflow-text'
+        'tensorflow-text',
+        'regex'
     ],
     setup_requires=[
         'pytest-runner',
