@@ -124,70 +124,6 @@ class SentenceCommands(Namespace):
         None
 
         """
-        log_name = build_log_name()
-
-        callbacks = []
-        metrics = Metrics(self.vocabulary)
-        callbacks.append(metrics)
-
-        if self.tensorboard:
-            log_path = os.path.join(job_dir, "logs", log_name)
-            tensorboard = tf.keras.callbacks.TensorBoard(log_dir=log_path)
-            callbacks.append(tensorboard)
-
-        if self.checkpoints:
-            checkpoint = tf.keras.callbacks.ModelCheckpoint(
-                os.path.join(job_dir, "models", log_name + ".h5"),
-                verbose=1,
-                save_best_only=True
-            )
-            callbacks.append(checkpoint)
-
-        self.sentence_model.compile_model(optimizer=self.optimizer)
-
-        if self.early_stopping:
-            stopping = tf.keras.callbacks.EarlyStopping(patience=self.early_stopping_patience,
-                                                        min_delta=self.early_stopping_delta)
-            callbacks.append(stopping)
-
-        with self.sentence_model.graph.as_default(), self.sentence_model.session.as_default():
-            self.sentence_model.model.fit(data,
-                                          {'logits': targets},
-                                          batch_size=self.batch_size,
-                                          epochs=self.epochs,
-                                          sample_weight=sample_weights,
-                                          validation_split=self.validation_split,
-                                          callbacks=callbacks)
-
-    def train_model(self):
-        """Trains a sentence detector model using a labeled training set
-
-        Returns
-        -------
-        None
-        """
-        labels_generator = directory_labels_generator(self.training_dir)
-        data, class_counts, weights, targets = self.mapper.map_input(labels_generator,
-                                                                     include_labels=True)
-
-        if self.verbose:
-            print("\nClass counts: ")
-            print(class_counts)
-
-        if self.use_class_weights:
-            print(type(class_counts))
-            total = class_counts['B'] + class_counts['I']
-            class_weights = np.array([total / (2 * class_counts['I']),
-                                      total / (2 * class_counts['B'])])
-
-            if self.verbose:
-                print("\nusing class weights: %s" % class_weights)
-        else:
-            class_weights = np.array([1., 1.])
-
-        weights = weights * np.take(class_weights, targets).reshape(weights.shape)
-
-        self.train_on_data(data, weights, targets, self.job_dir)
 
 
 def _train(commands: SentenceCommands):
@@ -204,8 +140,6 @@ def evaluate(sentence_model, vocabulary, evaluation_dir, batch_size):
     prediction, _ = sentence_model.model.predict(data, batch_size=batch_size)
 
     print(print_metrics(prediction, targets, vocabulary, sample_weights=weights))
-
-
 
 
 def create_parser() -> ArgumentParser:

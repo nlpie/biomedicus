@@ -239,7 +239,7 @@ def train(conf):
     pass
 
 
-def main(args):
+def main(args=None):
     parser = ArgumentParser(add_help=True, parents=[bi_lstm_hparams_parser()])
     subparsers = parser.add_subparsers()
 
@@ -251,5 +251,4 @@ def main(args):
 
 
 if __name__ == "__main__":
-    pass
-
+    main()
