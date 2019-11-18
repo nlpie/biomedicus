@@ -71,20 +71,18 @@ def build_sentences_model(hparams, word_embeddings, char_mapping, words_file):
 
 
 def build_layers(hparams, word_embeddings, char_mapping, words_file):
-    docs = Input(shape=[], dtype=tf.string, name='docs')
-    starts = Input(shape=[None], dtype=tf.int64, name='start_indices')
-    ends = Input(shape=[None], dtype=tf.int64, name='end_indices')
+    priors = Input(shape=[None], dtype=tf.string, name='priors')
+    tokens = Input(shape=[None], dtype=tf.string, name='tokens')
+    posts = Input(shape=[None], dtype=tf.string, name='posts')
 
-    inputs = [docs, starts, ends]
-
-    tokens = doc_substrs(docs, starts, ends)
+    inputs = [priors, tokens, posts]
 
     chars_embedding = None
     if hparams.use_chars:
         char_mapping_layer = CharacterRepresentation(char_mapping)
-        char_input = char_mapping_layer([docs, tokens, starts, ends])
+        char_ids = char_mapping_layer(inputs)
         model = build_char_model(hparams)
-        chars_embedding = model(char_input)
+        chars_embedding = model(char_ids)
     if hparams.use_words:
         word_lookup_layer = WordLookup(words_file)
         word_ids = word_lookup_layer(tokens)
@@ -196,15 +194,7 @@ class CharacterRepresentation(Layer):
                                                Vocabulary.UNK_CHAR)
 
     def call(self, inputs, **kwargs):
-        docs, tokens, starts, ends = inputs
-
-        first_prev_end = tf.fill([docs.nrows(), 1], tf.cast(0, tf.int64))
-        prev_ends = tf.concat([first_prev_end, ends[:, :-1]], -1)
-        priors = doc_substrs(docs, prev_ends, starts)
-
-        last_next_start = tf.fill(first_prev_end.shape, tf.int64.max)
-        next_starts = tf.concat([starts[:, 1:], last_next_start], -1)
-        posts = doc_substrs(docs, ends, next_starts)
+        priors, tokens, posts = inputs
 
         return tf.concat([
             marker_char(Vocabulary.PREV_TOKEN, tokens),

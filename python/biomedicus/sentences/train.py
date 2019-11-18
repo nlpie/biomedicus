@@ -11,6 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import csv
+import math
 from argparse import ArgumentParser
 from pathlib import Path, PurePath
 
@@ -55,16 +57,16 @@ def training_parser():
     parser.add_argument('--job-dir',
                         help="Path to the output directory where logs and models will be "
                              "written.")
-    parser.add_argument('--input-dir', help="input directory")
+    parser.add_argument('--input-directory', help="input directory")
     parser.add_argument('--log-name', help='A name for the tensorboard log file / checkpoints.')
     return parser
 
 
-def train_on_data(model, config, data, sample_weights, targets, job_dir):
+def train_on_data(model, config, data, targets, job_dir, is_mimic=False):
     log_name = build_log_name()
 
     callbacks = []
-    metrics = Metrics(self.vocabulary)
+    metrics = Metrics()
     callbacks.append(metrics)
 
     if config.tensorboard:
@@ -107,17 +109,6 @@ def train_on_data(model, config, data, sample_weights, targets, job_dir):
 
 def train_model(model, config):
     class_counts = {}
-    docs = []
-    starts = []
-    ends = []
-    labels = []
-    for _, txt, tokens in directory_labels_generator(config.input_dir, class_counts=class_counts):
-        doc_starts, doc_ends, doc_labels = zip(*[(token.start, token.end, token.label)
-                                                 for token in tokens])
-        docs.append(txt)
-        starts.append(doc_starts)
-        ends.append(doc_ends)
-        labels.append(doc_labels)
 
     if config.verbose:
         print("\nClass counts: ")
@@ -134,91 +125,34 @@ def train_model(model, config):
     else:
         class_weights = np.array([1., 1.])
 
-    weights = weights * np.take(class_weights, targets).reshape(weights.shape)
+    weights = np.take(class_weights, targets)
 
     train_on_data(model, config, data, weights, targets, self.job_dir)
-
-
-def directory_labels_generator(directory, repeat=False, class_counts=None):
-    import tensorflow as tf
-    while True:
-        for doc_dir, _, docs in tf.io.gfile.walk(directory):
-            for doc in docs:
-                if not doc.endswith('.txt'):
-                    continue
-                path = Path(doc_dir, doc)
-                print("reading document {}".format(path))
-                with tf.io.gfile.GFile(str(path), 'r') as f:
-                    txt = f.read()
-
-                labels_path = path.with_suffix('.labels')
-                with tf.io.gfile.GFile(str(labels_path), 'r') as f:
-                    tokens = [_split_token_line(txt, x, class_counts) for x in f]
-                yield doc, txt, tokens
-
-        if not repeat:
-            break
-
-
-def _split_token_line(txt, line, class_counts=None):
-    """Internal method for splitting token lines from the .labels format.
-    """
-    if not line:
-        return None
-
-    split = line.split()
-
-    if len(split) < 5:
-        return None
-
-    segment = int(split[0])
-    begin = int(split[1])
-    end = int(split[2])
-    label = split[3]
-    if class_counts is not None:
-        class_counts[label] += 1
-    is_identifier = split[4] == '1'
-    space_after = detect_space_after(txt, end)
-    return Token(segment, begin, end, label, is_identifier, space_after)
 
 
 class Metrics(Callback):
     """Keras callback to print out precision, recall, and f-score for each label.
 
     """
-
-    def __init__(self, vocabulary):
-        super(Metrics, self).__init__()
-        self.vocabulary = vocabulary
+    def __init__(self, inputs, targets):
+        super().__init__()
+        self.inputs = inputs
+        self.targets = targets
 
     def on_epoch_end(self, _, logs=None):
         del _
         logs = logs or {}
 
-        if len(self.validation_data) == 5:
-            inputs = [self.validation_data[0], self.validation_data[1]]
-            labels = self.validation_data[2]
-            weights = self.validation_data[3]
-        else:
-            inputs = self.validation_data[0]
-            labels = self.validation_data[1]
-            weights = self.validation_data[2]
-
-        outputs = self.model.predict(inputs)
+        outputs = self.model.predict(self.inputs)
         if len(outputs) == 2:
             scores, _ = outputs
         else:
             scores = outputs
-        vocabulary = self.vocabulary
 
-        print(print_metrics(scores, labels, vocabulary, weights, logs))
+        print(print_metrics(scores, self.targets, logs))
 
 
-def print_metrics(scores: np.ndarray,
-                  labels: np.ndarray,
-                  vocabulary: Vocabulary,
-                  sample_weights: np.ndarray,
-                  logs: Optional[Dict] = None):
+def print_metrics(scores, labels, logs, *, sample_weights=None):
     y_predict = np.rint(scores.ravel())
     y_true = labels.ravel()
     sample_weights = sample_weights.ravel()
@@ -230,10 +164,7 @@ def print_metrics(scores: np.ndarray,
     )
     by_label = zip(p, r, f1)
     results = "label, precision, recall, f1\n"
-    for i, metrics in enumerate(by_label):
-        label = vocabulary.get_label(i) if i < vocabulary.labels else 'average'
-        if label is None:
-            label = 'average'
+    for label, metrics in zip(['I', 'B', 'average'], by_label):
         if logs is not None:
             logs[label + "/precision"] = metrics[0]
             logs[label + "/recall"] = metrics[1]

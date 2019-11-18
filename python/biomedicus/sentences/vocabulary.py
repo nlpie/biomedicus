@@ -64,7 +64,7 @@ class Vocabulary(object):
         self._id_to_label = ['I', 'B']
         self.labels = len(self._label_to_id)
         self._word_to_id = {
-            'UNKNOWN': 0
+            'UNKNOWN': -1
         }
         self._word_vectors = None
 
