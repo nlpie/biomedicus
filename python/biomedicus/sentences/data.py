@@ -11,11 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import math
 import re
 from argparse import ArgumentParser
 from pathlib import Path
 
+import math
 import numpy as np
 import tensorflow as tf
 from mtap.io.brat import read_brat_document
@@ -49,6 +49,61 @@ def step_sequence(priors, tokens, posts, labels, sequence_length):
 _whitespace_pattern = re.compile(r'[\w.\']+|\[\*\*.*\*\*\]')
 
 
+def _to_ragged(sparse_tensor):
+    return tf.RaggedTensor.from_tensor(tf.expand_dims(tf.sparse.to_dense(sparse_tensor), 0))
+
+
+def train_validation(train_file, validation_file, perform_shuffle=False, repeat_count=1, batch_size=1):
+    dataset = tf.data.TFRecordDataset(filenames=[str(train_file)])
+
+    features = {
+        'priors': tf.io.VarLenFeature(tf.string),
+        'tokens': tf.io.VarLenFeature(tf.string),
+        'posts': tf.io.VarLenFeature(tf.string),
+        'labels': tf.io.VarLenFeature(tf.int64)
+    }
+
+    def _count_parse_fn(serialized):
+        parsed_example = tf.io.parse_single_example(serialized, features)
+        labels = parsed_example['labels']
+        return labels
+    count_parsed = dataset.map(_count_parse_fn)
+
+    def count_fn(current_counts, example):
+        labels = example.values
+        y, _, count = tf.unique_with_counts(labels)
+        update = tf.scatter_nd(tf.expand_dims(y, -1), count, [2])
+        return current_counts + update
+
+    counts = count_parsed.reduce([0, 0], count_fn)
+    weights, _ = tf.linalg.normalize(tf.cast(counts, tf.float64), 1)
+
+    def _parse_function(serialized):
+        parsed_example = tf.io.parse_single_example(serialized, features)
+        labels = parsed_example['labels']
+        label_weights = tf.sparse.SparseTensor(
+            indices=labels.indices,
+            values=tf.gather(weights, labels.values),
+            dense_shape=labels.dense_shape
+        )
+        return {
+                   'priors': _to_ragged(parsed_example['priors']),
+                   'tokens': _to_ragged(parsed_example['tokens']),
+                   'posts': _to_ragged(parsed_example['posts'])
+               }, _to_ragged(labels), _to_ragged(label_weights)
+
+    dataset = dataset.map(_parse_function)
+    dataset = dataset.shuffle(buffer_size=256)
+    dataset = dataset.repeat(repeat_count)
+    dataset = dataset.batch(batch_size)
+
+    validation_dataset = tf.data.TFRecordDataset(filenames=[str(validation_file)])
+    validation_dataset = validation_dataset.map(_parse_function)
+
+    return dataset, validation_dataset
+
+
+
 def examples_generator(docs, sequence_length, training):
     for doc in docs:
         priors = []
@@ -62,7 +117,8 @@ def examples_generator(docs, sequence_length, training):
                 sentences = document.get_label_index('Sentence')
             except KeyError:
                 continue
-            tokens = [(0, 0)] + [(m.start(), m.end()) for m in _whitespace_pattern.finditer(text)] + [(len(text), len(text))]
+            tokens = [(0, 0)] + [(m.start(), m.end()) for m in
+                                 _whitespace_pattern.finditer(text)] + [(len(text), len(text))]
 
             i = 1
             for sentence in sentences:
@@ -78,7 +134,8 @@ def examples_generator(docs, sequence_length, training):
                         posts = []
                         labels = []
                 is_start = True
-                while i < len(tokens) - 1 and tokens[i][0] in range(sentence.start_index, sentence.end_index):
+                while i < len(tokens) - 1 and tokens[i][0] in range(sentence.start_index,
+                                                                    sentence.end_index):
                     _, prev_end = tokens[i - 1]
                     start, end = tokens[i]
                     next_start, _ = tokens[i + 1]
