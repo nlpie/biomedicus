@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from pathlib2 import Path
+from pathlib import Path
 
 
 class Vocabulary(object):
@@ -24,7 +24,7 @@ class Vocabulary(object):
     labels : int
         The number of labels
     """
-    UNKNOWN_WORD = 0
+    UNKNOWN_WORD = -1
     PADDING = 0
     TOKEN_BEGIN = 1
     TOKEN_END = 2

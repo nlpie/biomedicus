@@ -20,6 +20,8 @@ import numpy as np
 import tensorflow as tf
 from mtap.io.brat import read_brat_document
 
+from biomedicus.sentences.vocabulary import Vocabulary
+
 
 def encode(l):
     return [x.encode() for x in l]
@@ -53,7 +55,8 @@ def _to_ragged(sparse_tensor):
     return tf.RaggedTensor.from_tensor(tf.expand_dims(tf.sparse.to_dense(sparse_tensor), 0))
 
 
-def train_validation(train_file, validation_file, perform_shuffle=False, repeat_count=1, batch_size=1):
+def train_validation(train_file, validation_file, chars_mapping, words, repeat_count=1,
+                     batch_size=1):
     dataset = tf.data.TFRecordDataset(filenames=[str(train_file)])
 
     features = {
@@ -67,6 +70,7 @@ def train_validation(train_file, validation_file, perform_shuffle=False, repeat_
         parsed_example = tf.io.parse_single_example(serialized, features)
         labels = parsed_example['labels']
         return labels
+
     count_parsed = dataset.map(_count_parse_fn)
 
     def count_fn(current_counts, example):
@@ -80,28 +84,23 @@ def train_validation(train_file, validation_file, perform_shuffle=False, repeat_
 
     def _parse_function(serialized):
         parsed_example = tf.io.parse_single_example(serialized, features)
-        labels = parsed_example['labels']
-        label_weights = tf.sparse.SparseTensor(
-            indices=labels.indices,
-            values=tf.gather(weights, labels.values),
-            dense_shape=labels.dense_shape
-        )
-        return {
-                   'priors': _to_ragged(parsed_example['priors']),
-                   'tokens': _to_ragged(parsed_example['tokens']),
-                   'posts': _to_ragged(parsed_example['posts'])
-               }, _to_ragged(labels), _to_ragged(label_weights)
+        return (parsed_example['priors'], parsed_example['tokens'], parsed_example['posts'],
+                (parsed_example['labels']))
 
-    dataset = dataset.map(_parse_function)
-    dataset = dataset.shuffle(buffer_size=256)
-    dataset = dataset.repeat(repeat_count)
-    dataset = dataset.batch(batch_size)
+    input_fn = InputFn(chars_mapping, words)
 
-    validation_dataset = tf.data.TFRecordDataset(filenames=[str(validation_file)])
-    validation_dataset = validation_dataset.map(_parse_function)
+    dataset = (dataset.map(_parse_function)
+               .shuffle(buffer_size=256)
+               .repeat(repeat_count)
+               .batch(batch_size)
+               .map(input_fn))
 
-    return dataset, validation_dataset
+    validation_dataset = (tf.data.TFRecordDataset(filenames=[str(validation_file)])
+                          .map(_parse_function)
+                          .batch(1)
+                          .map(input_fn))
 
+    return dataset, validation_dataset, weights
 
 
 def examples_generator(docs, sequence_length, training):
@@ -170,6 +169,63 @@ def convert_to_dataset(input_directory, validation_split, sequence_length):
         for example in examples_generator(validation_docs, sequence_length, False):
             serialized_example = serialize_example(*example)
             writer.write(serialized_example)
+
+
+class InputFn:
+    def __init__(self, chars_mapping, words):
+        keys, values = zip(*chars_mapping.items())
+        self.chars_table = tf.lookup.StaticHashTable(
+            tf.lookup.KeyValueTensorInitializer(keys, values),
+            Vocabulary.UNK_CHAR
+        )
+        self.words_table = tf.lookup.StaticHashTable(
+            tf.lookup.KeyValueTensorInitializer(words, range(len(words))),
+            len(words)
+        )
+
+    def __call__(self, priors, words, posts, labels):
+        priors = tf.RaggedTensor.from_sparse(priors)
+        words = tf.RaggedTensor.from_sparse(words)
+        posts = tf.RaggedTensor.from_sparse(posts)
+
+        lowered = tf.strings.lower(words.flat_values)
+        normed = words.with_flat_values(lowered)
+        normed = tf.strings.regex_replace(normed, "[\\pP\\pS]", "")
+        normed = tf.strings.regex_replace(normed, "\\pN", "#")
+        flat_lookup = self.words_table.lookup(normed.flat_values)
+        normed = normed.with_flat_values(flat_lookup)
+        word_ids = normed.to_tensor()
+
+        flat_priors = priors.flat_values
+        flat_tokens = words.flat_values
+        flat_posts = posts.flat_values
+
+        concatted = tf.concat([
+            marker_char(Vocabulary.PREV_TOKEN, flat_priors),
+            self._lookup_char_ids(flat_priors),
+            marker_char(Vocabulary.TOKEN_BEGIN, flat_priors),
+            self._lookup_char_ids(flat_tokens),
+            marker_char(Vocabulary.TOKEN_END, flat_priors),
+            self._lookup_char_ids(flat_posts),
+            marker_char(Vocabulary.NEXT_TOKEN, flat_priors)
+        ], axis=-1)
+        nested = tf.RaggedTensor.from_row_lengths(concatted,
+                                                  tf.cast(priors.row_lengths(), tf.int64))
+        character_ids = nested.to_tensor()
+
+        return {
+                   'word_ids': word_ids,
+                   'character_ids': character_ids
+               }, tf.sparse.to_dense(labels)
+
+    def _lookup_char_ids(self, chars):
+        split = tf.strings.unicode_split(chars, 'UTF-8')
+        return tf.RaggedTensor.from_row_lengths(self.chars_table.lookup(split.flat_values),
+                                                split.row_lengths())
+
+
+def marker_char(int_value, like):
+    return tf.expand_dims(tf.ones_like(like, dtype=tf.int32) * int_value, -1)
 
 
 def main(args=None):

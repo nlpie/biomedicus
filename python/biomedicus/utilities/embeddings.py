@@ -15,18 +15,19 @@
 import io
 from argparse import ArgumentParser
 
-from pathlib2 import Path
+from pathlib import Path
 
 
 def load_vectors(fname):
     with Path(fname).open('r', encoding='utf-8', newline='\n', errors='ignore') as fin:
         n, d = map(int, fin.readline().split())
-        words = []
-        vectors = []
+        words = ['']
+        vectors = [[0.0 for _ in range(d)]]
         for line in fin:
             tokens = line.rstrip().split(' ')
             words.append(tokens[0])
             vectors.append(list(map(float, tokens[1:])))
+        vectors.append([0.0 for _ in range(d)])  # for unknown words
     return words, vectors
 
 
