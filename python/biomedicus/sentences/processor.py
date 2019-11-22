@@ -12,42 +12,72 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
+import re
 from typing import Dict, Any
 
+import tensorflow as tf
 from mtap.events import Document
 from mtap.processing import DocumentProcessor
-from mtap.processing.descriptions import label_index, parameter, processor
-
-from biomedicus.sentences.models import SentenceModel, InputMapper
+from mtap.processing.descriptions import label_index, processor
 
 logger = logging.getLogger(__name__)
+
+_word_pattern = re.compile(r'[\w.\']+')
+
+
+def pre_process(text):
+    priors = []
+    words = []
+    posts = []
+    tokens = ([(0, 0)] + [(m.start(), m.end()) for m in _word_pattern.finditer(text)]
+              + [(len(text), len(text))])
+    for i in range(1, len(tokens) - 1):
+        _, prev_end = tokens[i - 1]
+        start, end = tokens[i]
+        next_start, _ = tokens[i + 1]
+        priors.append(text[prev_end:start])
+        words.append(text[start:end])
+        posts.append(text[end:next_start])
+
+    return priors, words, posts, tokens[1:-1]
+
+
+def predict(model, text, input_fn):
+    priors, words, posts, tokens = pre_process(text)
+    priors = tf.sparse.from_dense(tf.constant([priors]))
+    words = tf.sparse.from_dense(tf.constant([words]))
+    posts = tf.sparse.from_dense(tf.constant([posts]))
+    input_data, _ = input_fn(priors, words, posts)
+    scores = model.predict(input_data)
+    predictions = tf.math.rint(scores)
+    sentences = []
+    start_index = None
+    prev_end = None
+    for (start, end), prediction in zip(tokens, predictions[0]):
+        if prediction == 1:
+            if start_index is not None:
+                sentences.append((start_index, prev_end))
+            start_index = start
+        prev_end = end
+    if start_index is not None:
+        sentences.append((start_index, prev_end))
+    return sentences
 
 
 @processor('biomedicus-sentences',
            human_name="Sentence Detector",
            description="Labels sentences given document text.",
            entry_point=__name__,
-           parameters=[
-               parameter('batch_size', data_type='int',
-                         description='The batch size, number of sets of 32 tokens that are '
-                                     'processed at once.',
-                         required=False)
-           ],
            outputs=[
                label_index('sentences')
            ])
 class SentenceProcessor(DocumentProcessor):
-    def __init__(self, model: SentenceModel, input_mapper: InputMapper):
+    def __init__(self, model, input_fn):
         logger.info("Initializing sentence processor.")
         self.model = model
-        self.input_mapper = input_mapper
+        self.input_fn = input_fn
 
-    def process_document(self, document: Document,
-                         params: Dict[str, Any]):
-        batch_size = params.get('batch_size', 32)
-        text = document.text
-        sentences = self.model.predict_txt(text, batch_size, self.input_mapper,
-                                           include_tokens=False)
-        with document.get_labeler('sentences', distinct=True) as labeler:
-            for sentence in sentences:
-                labeler(sentence.start_index, sentence.end_index)
+    def process_document(self, document: Document, params: Dict[str, Any]):
+        with document.get_labeler('sentences', distinct=True) as add_sentence:
+            for start_index, end_index in predict(self.model, document.text, self.input_fn):
+                add_sentence(start_index, end_index)

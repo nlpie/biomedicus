@@ -51,58 +51,6 @@ def step_sequence(priors, tokens, posts, labels, sequence_length):
 _whitespace_pattern = re.compile(r'[\w.\']+|\[\*\*.*\*\*\]')
 
 
-def _to_ragged(sparse_tensor):
-    return tf.RaggedTensor.from_tensor(tf.expand_dims(tf.sparse.to_dense(sparse_tensor), 0))
-
-
-def train_validation(train_file, validation_file, chars_mapping, words, repeat_count=1,
-                     batch_size=1):
-    dataset = tf.data.TFRecordDataset(filenames=[str(train_file)])
-
-    features = {
-        'priors': tf.io.VarLenFeature(tf.string),
-        'tokens': tf.io.VarLenFeature(tf.string),
-        'posts': tf.io.VarLenFeature(tf.string),
-        'labels': tf.io.VarLenFeature(tf.int64)
-    }
-
-    def _count_parse_fn(serialized):
-        parsed_example = tf.io.parse_single_example(serialized, features)
-        labels = parsed_example['labels']
-        return labels
-
-    count_parsed = dataset.map(_count_parse_fn)
-
-    def count_fn(current_counts, example):
-        labels = example.values
-        y, _, count = tf.unique_with_counts(labels)
-        update = tf.scatter_nd(tf.expand_dims(y, -1), count, [2])
-        return current_counts + update
-
-    counts = count_parsed.reduce([0, 0], count_fn)
-    weights, _ = tf.linalg.normalize(tf.cast(counts, tf.float64), 1)
-
-    def _parse_function(serialized):
-        parsed_example = tf.io.parse_single_example(serialized, features)
-        return (parsed_example['priors'], parsed_example['tokens'], parsed_example['posts'],
-                (parsed_example['labels']))
-
-    input_fn = InputFn(chars_mapping, words)
-
-    dataset = (dataset.map(_parse_function)
-               .shuffle(buffer_size=256)
-               .repeat(repeat_count)
-               .batch(batch_size)
-               .map(input_fn))
-
-    validation_dataset = (tf.data.TFRecordDataset(filenames=[str(validation_file)])
-                          .map(_parse_function)
-                          .batch(1)
-                          .map(input_fn))
-
-    return dataset, validation_dataset, weights
-
-
 def examples_generator(docs, sequence_length, training):
     for doc in docs:
         priors = []
@@ -151,6 +99,54 @@ def examples_generator(docs, sequence_length, training):
                 yield from step_sequence(priors, words, posts, labels, sequence_length)
             else:
                 yield priors, words, posts, labels
+
+
+def train_validation(train_file, validation_file, chars_mapping, words, repeat_count=1,
+                     batch_size=1):
+    dataset = tf.data.TFRecordDataset(filenames=[str(train_file)])
+
+    features = {
+        'priors': tf.io.VarLenFeature(tf.string),
+        'tokens': tf.io.VarLenFeature(tf.string),
+        'posts': tf.io.VarLenFeature(tf.string),
+        'labels': tf.io.VarLenFeature(tf.int64)
+    }
+
+    def _count_parse_fn(serialized):
+        parsed_example = tf.io.parse_single_example(serialized, features)
+        labels = parsed_example['labels']
+        return labels
+
+    count_parsed = dataset.map(_count_parse_fn)
+
+    def count_fn(current_counts, example):
+        labels = example.values
+        y, _, count = tf.unique_with_counts(labels)
+        update = tf.scatter_nd(tf.expand_dims(y, -1), count, [2])
+        return current_counts + update
+
+    counts = count_parsed.reduce([0, 0], count_fn)
+    weights, _ = tf.linalg.normalize(tf.cast(counts, tf.float64), 1)
+
+    def _parse_function(serialized):
+        parsed_example = tf.io.parse_single_example(serialized, features)
+        return (parsed_example['priors'], parsed_example['tokens'], parsed_example['posts'],
+                (parsed_example['labels']))
+
+    input_fn = InputFn(chars_mapping, words)
+
+    dataset = (dataset.map(_parse_function)
+               .shuffle(buffer_size=256)
+               .repeat(repeat_count)
+               .batch(batch_size)
+               .map(input_fn))
+
+    validation_dataset = (tf.data.TFRecordDataset(filenames=[str(validation_file)])
+                          .map(_parse_function)
+                          .batch(1)
+                          .map(input_fn))
+
+    return dataset, validation_dataset, weights
 
 
 def convert_to_dataset(input_directory, validation_split, sequence_length):
@@ -216,7 +212,7 @@ class InputFn:
         return {
                    'word_ids': word_ids,
                    'character_ids': character_ids
-               }, tf.sparse.to_dense(labels)
+               }, tf.sparse.to_dense(labels) if labels is not None else None
 
     def _lookup_char_ids(self, chars):
         split = tf.strings.unicode_split(chars, 'UTF-8')

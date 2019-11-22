@@ -16,6 +16,8 @@ from argparse import ArgumentParser
 import numpy as np
 import tensorflow as tf
 from pathlib import Path
+
+from mtap import processor_parser
 from tensorflow.keras.layers import Add, BatchNormalization, Bidirectional, Concatenate, Conv1D, \
     Dense, Embedding, GlobalMaxPooling1D, Input, Layer, LSTM, TimeDistributed
 from tensorflow.keras.models import Model, Sequential
@@ -157,6 +159,14 @@ def print_model(conf):
     tf.keras.utils.plot_model(model, conf.output_file)
 
 
+def evaluate(conf):
+    pass
+
+
+def processor(conf):
+    pass
+
+
 def main(args=None):
     parser = ArgumentParser(add_help=True)
 
@@ -173,6 +183,16 @@ def main(args=None):
     print_model_parser = subparsers.add_parser('print_model', parents=[bi_lstm_hparams_parser()])
     print_model_parser.add_argument('--output-file', default='model.png')
     print_model_parser.set_defaults(func=print_model)
+
+    evaluate_parser = subparsers.add_parser('evaluate')
+    evaluate_parser.add_argument('--model-file', required=True)
+    evaluate_parser.add_argument('--test-data', required=True)
+    evaluate_parser.set_defaults(func=evaluate)
+
+    processor_subparser = subparsers.add_parser('processor', parents=[processor_parser()])
+    processor_subparser.add_argument('--model-file', required=True)
+    processor_subparser.add_argument('--words-file')
+    processor_subparser.set_defaults(func=processor)
 
     conf = parser.parse_args(args)
     conf.func(conf)
