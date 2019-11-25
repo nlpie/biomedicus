@@ -74,17 +74,9 @@ final public class NormalizationProcessor extends DocumentProcessor {
   }
 
   public static NormalizerModel loadModel(Options options) {
-    Config config = Config.loadFromDefaultLocations();
+    DataFiles.checkDataPath();
     Path dbPath = options.getDbPath();
-    if (dbPath == null) {
-      dbPath = Paths.get(config.getStringValue("normalization.db"));
-    }
-    DataFiles dataFiles = new DataFiles();
-    dbPath = dataFiles.getDataFile(dbPath);
-    Boolean inMemory = options.getInMemory();
-    if (inMemory == null) {
-      inMemory = config.getBooleanValue("normalization.inMemory");
-    }
+    boolean inMemory = options.getInMemory();
     LOGGER.info("Loading normalization dictionary from \"{}\". inMemory = {}", dbPath, inMemory);
     return RocksDBNormalizerModel.loadModel(dbPath).inMemory(inMemory);
   }
@@ -153,7 +145,13 @@ final public class NormalizationProcessor extends DocumentProcessor {
         usage = "Override boolean for whether the normalization dictionary should be loaded " +
             "into memory."
     )
-    private Boolean inMemory;
+    private boolean inMemory;
+
+    public Options() {
+      Config config = Config.loadFromDefaultLocations();
+      dbPath = Paths.get(config.getStringValue("normalization.db"));
+      inMemory = config.getBooleanValue("normalization.inMemory");
+    }
 
     public Path getDbPath() {
       return dbPath;
@@ -163,7 +161,7 @@ final public class NormalizationProcessor extends DocumentProcessor {
       this.dbPath = dbPath;
     }
 
-    public Boolean getInMemory() {
+    public boolean getInMemory() {
       return inMemory;
     }
 

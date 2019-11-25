@@ -15,15 +15,6 @@ from pathlib import Path
 
 
 class Vocabulary(object):
-    """The character, label, and word embeddings vocabulary.
-
-    Attributes
-    ----------
-    characters : int
-        The number of characters
-    labels : int
-        The number of labels
-    """
     UNKNOWN_WORD = -1
     PADDING = 0
     TOKEN_BEGIN = 1

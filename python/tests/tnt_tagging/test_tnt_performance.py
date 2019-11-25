@@ -18,7 +18,7 @@ import pytest
 from mtap import Pipeline, RemoteProcessor, EventsClient, LocalProcessor
 from mtap.io.serialization import JsonSerializer
 from mtap.metrics import Metrics, Accuracy
-from mtap.utils import find_free_port
+from mtap.utilities import find_free_port
 from pathlib import Path
 
 

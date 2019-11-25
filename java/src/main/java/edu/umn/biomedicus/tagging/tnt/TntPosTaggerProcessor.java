@@ -42,6 +42,7 @@ import org.kohsuke.args4j.spi.ExplicitBooleanOptionHandler;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -127,28 +128,12 @@ public class TntPosTaggerProcessor extends DocumentProcessor {
   public static TntPosTaggerProcessor createTaggerProcessor(
       TntOptions tntOptions
   ) throws IOException {
-    Config config = Config.loadFromDefaultLocations();
-    DataFiles dataFiles = new DataFiles();
+    DataFiles.checkDataPath();
     Path wordDB = tntOptions.getWordDB();
-    if (wordDB == null) {
-      wordDB = dataFiles.getDataFile(config.getStringValue("tnt.word.db"));
-    }
     Path wordMetadata = tntOptions.getWordMetadata();
-    if (wordMetadata == null) {
-      wordMetadata = dataFiles.getDataFile(config.getStringValue("tnt.word.metadata"));
-    }
-    Boolean inMemory = tntOptions.getInMemory();
-    if (inMemory == null) {
-      inMemory = config.getBooleanValue("tnt.word.inMemory");
-    }
+    boolean inMemory = tntOptions.isInMemory();
     Path trigram = tntOptions.getTrigram();
-    if (trigram == null) {
-      trigram = dataFiles.getDataFile(config.getStringValue("tnt.trigram"));
-    }
-    Double beamThreshold = tntOptions.getBeamThreshold();
-    if (beamThreshold == null) {
-      beamThreshold = config.getDoubleValue("tnt.beam.threshold");
-    }
+    double beamThreshold = tntOptions.getBeamThreshold();
     RocksDbDataStoreFactory dataStoreFactory = new RocksDbDataStoreFactory(wordDB, inMemory);
     TntModel tntModel = TntModel.load(trigram, wordMetadata, dataStoreFactory);
     return new TntPosTaggerProcessor(tntModel, beamThreshold);
@@ -249,28 +234,28 @@ public class TntPosTaggerProcessor extends DocumentProcessor {
         metaVar = "PATH_TO_TRIGRAM",
         usage = "Optional override path to the trigram model."
     )
-    private @Nullable Path trigram = null;
+    private @Nullable Path trigram;
 
     @Option(
         name = "--word-db-path",
         metaVar = "PATH_TO_WORD_DB",
         usage = "Optional override path to the word DB model."
     )
-    private @Nullable Path wordDB = null;
+    private @Nullable Path wordDB;
 
     @Option(
         name = "--word-metadata",
         metaVar = "PATH_TO_WORD_METADATA",
         usage = "Optional override path to the word metadata file."
     )
-    private @Nullable Path wordMetadata = null;
+    private @Nullable Path wordMetadata;
 
     @Option(
         name = "--beam-threshold",
         metaVar = "BEAM_THRESHOLD_FLOAT",
         usage = "Optional override float > 0 specifying the beam search threshold to use."
     )
-    private @Nullable Double beamThreshold = null;
+    private double beamThreshold;
 
     @Option(
         name = "--in-memory",
@@ -278,46 +263,60 @@ public class TntPosTaggerProcessor extends DocumentProcessor {
         handler = ExplicitBooleanOptionHandler.class,
         usage = "Optional override true or false whether models should be loaded into memory."
     )
-    private @Nullable Boolean inMemory = null;
+    private boolean inMemory;
 
-    public Path getTrigram() {
+    public TntOptions() {
+      Config config = Config.loadFromDefaultLocations();
+      wordDB = Paths.get(config.getStringValue("tnt.word.db"));
+      wordMetadata = Paths.get(config.getStringValue("tnt.word.metadata"));
+      inMemory = config.getBooleanValue("tnt.word.inMemory");
+      trigram = Paths.get(config.getStringValue("tnt.trigram"));
+      beamThreshold = config.getDoubleValue("tnt.beam.threshold");
+    }
+
+    public @Nullable Path getTrigram() {
       return trigram;
     }
 
-    public void setTrigram(Path trigram) {
+    public TntOptions setTrigram(Path trigram) {
       this.trigram = trigram;
+      return this;
     }
 
-    public Path getWordDB() {
+    public @Nullable Path getWordDB() {
       return wordDB;
     }
 
-    public void setWordDB(Path wordDB) {
+    public TntOptions setWordDB(Path wordDB) {
       this.wordDB = wordDB;
+      return this;
     }
 
-    public Path getWordMetadata() {
+    public @Nullable Path getWordMetadata() {
       return wordMetadata;
     }
 
-    public void setWordMetadata(Path wordMetadata) {
+    public TntOptions setWordMetadata(Path wordMetadata) {
       this.wordMetadata = wordMetadata;
+      return this;
     }
 
-    public Double getBeamThreshold() {
+    public double getBeamThreshold() {
       return beamThreshold;
     }
 
-    public void setBeamThreshold(Double beamThreshold) {
+    public TntOptions setBeamThreshold(double beamThreshold) {
       this.beamThreshold = beamThreshold;
+      return this;
     }
 
-    public Boolean getInMemory() {
+    public boolean isInMemory() {
       return inMemory;
     }
 
-    public void setInMemory(Boolean inMemory) {
+    public TntOptions setInMemory(boolean inMemory) {
       this.inMemory = inMemory;
+      return this;
     }
   }
 }

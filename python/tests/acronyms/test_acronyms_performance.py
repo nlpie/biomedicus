@@ -19,7 +19,7 @@ import pytest
 from mtap import EventsClient, Pipeline, RemoteProcessor, LocalProcessor
 from mtap.io.serialization import JsonSerializer
 from mtap.metrics import Accuracy, Metrics
-from mtap.utils import find_free_port
+from mtap.utilities import find_free_port
 
 
 @pytest.fixture(name='acronyms_service')

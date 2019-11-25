@@ -18,7 +18,7 @@ from subprocess import PIPE, Popen
 import pytest
 from mtap import EventsClient, Pipeline, RemoteProcessor
 from mtap.io.serialization import JsonSerializer
-from mtap.utils import find_free_port
+from mtap.utilities import find_free_port
 
 
 @pytest.fixture(name='normalization_processor')

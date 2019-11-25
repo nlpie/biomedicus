@@ -19,15 +19,14 @@ import pytest
 from mtap import Pipeline, RemoteProcessor, EventsClient, LocalProcessor
 from mtap.io.serialization import JsonSerializer
 from mtap.metrics import Metrics, Accuracy
-from mtap.utils import find_free_port
+from mtap.utilities import find_free_port
 
 
 @pytest.fixture(name='sentences_service')
 def fixture_sentences_service(events_service, processor_watcher):
     port = str(find_free_port())
     address = '127.0.0.1:' + port
-    p = subprocess.Popen(['python', '-m', 'biomedicus.sentences',
-                          'processor',
+    p = subprocess.Popen(['python', '-m', 'biomedicus.sentences.processor',
                           '-p', port,
                           '--events', events_service],
                          start_new_session=True, stdin=subprocess.PIPE,

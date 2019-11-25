@@ -124,9 +124,6 @@ def evaluate(model, validation_data):
     recall = true_positives / (true_positives + false_negatives)
     precision = true_positives / (true_positives + false_positives)
     f1 = 2 * (recall * precision) / (recall + precision)
-    print('True positives:', true_positives)
-    print('False negatives:', false_negatives)
-    print('False positives', false_positives)
     return precision, recall, f1
 
 

@@ -101,19 +101,33 @@ def examples_generator(docs, sequence_length, training):
                 yield priors, words, posts, labels
 
 
+_features = {
+    'priors': tf.io.VarLenFeature(tf.string),
+    'tokens': tf.io.VarLenFeature(tf.string),
+    'posts': tf.io.VarLenFeature(tf.string),
+    'labels': tf.io.VarLenFeature(tf.int64)
+}
+
+
+def _parse_function(serialized):
+    parsed_example = tf.io.parse_single_example(serialized, _features)
+    return (parsed_example['priors'], parsed_example['tokens'], parsed_example['posts'],
+            (parsed_example['labels']))
+
+
+def load_test_data(test_file, chars_mapping, words, repeat_count=1, batch_size=1):
+    dataset = tf.data.TFRecordDataset(filenames=[str(test_file)])
+    input_fn = InputFn(chars_mapping, words)
+    dataset = dataset.map(_parse_function).repeat(repeat_count).batch(batch_size).map(input_fn)
+    return dataset
+
+
 def train_validation(train_file, validation_file, chars_mapping, words, repeat_count=1,
                      batch_size=1):
     dataset = tf.data.TFRecordDataset(filenames=[str(train_file)])
 
-    features = {
-        'priors': tf.io.VarLenFeature(tf.string),
-        'tokens': tf.io.VarLenFeature(tf.string),
-        'posts': tf.io.VarLenFeature(tf.string),
-        'labels': tf.io.VarLenFeature(tf.int64)
-    }
-
     def _count_parse_fn(serialized):
-        parsed_example = tf.io.parse_single_example(serialized, features)
+        parsed_example = tf.io.parse_single_example(serialized, _features)
         labels = parsed_example['labels']
         return labels
 
@@ -127,11 +141,6 @@ def train_validation(train_file, validation_file, chars_mapping, words, repeat_c
 
     counts = count_parsed.reduce([0, 0], count_fn)
     weights, _ = tf.linalg.normalize(tf.cast(counts, tf.float64), 1)
-
-    def _parse_function(serialized):
-        parsed_example = tf.io.parse_single_example(serialized, features)
-        return (parsed_example['priors'], parsed_example['tokens'], parsed_example['posts'],
-                (parsed_example['labels']))
 
     input_fn = InputFn(chars_mapping, words)
 

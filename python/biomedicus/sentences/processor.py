@@ -13,12 +13,19 @@
 # limitations under the License.
 import logging
 import re
+from argparse import ArgumentParser
 from typing import Dict, Any
 
 import tensorflow as tf
+from mtap import processor_parser, run_processor
 from mtap.events import Document
 from mtap.processing import DocumentProcessor
 from mtap.processing.descriptions import label_index, processor
+
+from biomedicus.config import load_config
+from biomedicus.sentences.data import InputFn
+from biomedicus.sentences.vocabulary import load_char_mapping
+from biomedicus.utilities.embeddings import load_words
 
 logger = logging.getLogger(__name__)
 
@@ -81,3 +88,31 @@ class SentenceProcessor(DocumentProcessor):
         with document.get_labeler('sentences', distinct=True) as add_sentence:
             for start_index, end_index in predict(self.model, document.text, self.input_fn):
                 add_sentence(start_index, end_index)
+
+
+def main(args=None):
+    biomedicus_config = load_config()
+    parser = ArgumentParser('processor', parents=[processor_parser()])
+    parser.add_argument('--model-file',
+                        required=True,
+                        default=biomedicus_config['sentences.modelFile'],
+                        help="Override path to the serialized Tensorflow model file.")
+    parser.add_argument('--words-file',
+                        required=True,
+                        default=biomedicus_config['sentences.wordsFile'],
+                        help="Override path to the list of words.")
+    parser.add_argument('--chars-file',
+                        required=True,
+                        default=biomedicus_config['sentences.charsFile'],
+                        help="Override path to the list of characters.")
+    conf = parser.parse_args(args)
+    words = load_words(conf.words_file)
+    chars_mapping = load_char_mapping(conf.chars_file)
+    input_fn = InputFn(chars_mapping, words)
+    model = tf.keras.models.load_model(conf.model_file)
+    processor = SentenceProcessor(model, input_fn)
+    run_processor(processor, namespace=conf)
+
+
+if __name__ == '__main__':
+    pass

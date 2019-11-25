@@ -31,6 +31,14 @@ def load_vectors(fname):
     return words, vectors
 
 
+def load_words(fname):
+    words = ['']
+    with Path(fname).open('r') as fin:
+        for line in fin:
+            words.append(line)
+    return words
+
+
 def main(args=None):
     parser = ArgumentParser()
     parser.add_argument('input_file')

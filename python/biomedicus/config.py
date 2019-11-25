@@ -33,17 +33,6 @@ def _collapse(d, path, v):
     return d
 
 
-_DEFAULT_CONFIG = _collapse({}, None, {
-    'sentences': {
-        'model': 'deep',
-        'hparams_file': '${BIOMEDICUS_DATA}/sentences/hparams.yaml',
-        'model_file': '${BIOMEDICUS_DATA}/sentences/model.h5',
-        'words_list': '${BIOMEDICUS_DATA}/sentences/vocab/words.txt',
-        'vocab_dir': '${BIOMEDICUS_DATA}/sentences/vocab/',
-    }
-})
-
-
 def _load_config(f):
     from yaml import load
     try:
@@ -54,6 +43,9 @@ def _load_config(f):
     if not isinstance(config, dict):
         raise TypeError("Failed to load configuration from file: " + str(f))
     return _collapse({}, None, config)
+
+
+_DEFAULT_CONFIG = _load_config(str(Path(__file__).parent / 'defaultConfig.yml'))
 
 
 def load_config():

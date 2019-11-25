@@ -12,20 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from argparse import ArgumentParser
+from pathlib import Path
 
 import numpy as np
 import tensorflow as tf
-from pathlib import Path
-
-from mtap import processor_parser
 from tensorflow.keras.layers import Add, BatchNormalization, Bidirectional, Concatenate, Conv1D, \
-    Dense, Embedding, GlobalMaxPooling1D, Input, Layer, LSTM, TimeDistributed
+    Dense, Embedding, GlobalMaxPooling1D, Input, LSTM, TimeDistributed
 from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.regularizers import l1
 
-from biomedicus.sentences.train import training_parser, train_model
-from biomedicus.sentences.vocabulary import Vocabulary, load_char_mapping
-from biomedicus.utilities.embeddings import load_vectors
+from biomedicus.sentences.data import load_test_data
+from biomedicus.sentences.train import training_parser, train_model, evaluate as eval
+from biomedicus.sentences.vocabulary import load_char_mapping
+from biomedicus.utilities.embeddings import load_vectors, load_words
 
 
 def bi_lstm_hparams_parser():
@@ -160,11 +159,12 @@ def print_model(conf):
 
 
 def evaluate(conf):
-    pass
-
-
-def processor(conf):
-    pass
+    words = load_words(conf.words_file)
+    chars_mapping = load_char_mapping(conf.chars_file)
+    test_data = load_test_data(conf.test_data, chars_mapping, words)
+    model = tf.keras.models.load_model(conf.model_file)
+    precision, recall, f1 = eval(model, test_data)
+    print('precision: {} - recall: {} - f1: {}'.format(precision, recall, f1))
 
 
 def main(args=None):
@@ -177,7 +177,8 @@ def main(args=None):
 
     subparsers = parser.add_subparsers()
 
-    train_parser = subparsers.add_parser('train', parents=[training_parser(), bi_lstm_hparams_parser()])
+    train_parser = subparsers.add_parser('train',
+                                         parents=[training_parser(), bi_lstm_hparams_parser()])
     train_parser.set_defaults(func=train)
 
     print_model_parser = subparsers.add_parser('print_model', parents=[bi_lstm_hparams_parser()])
@@ -187,12 +188,9 @@ def main(args=None):
     evaluate_parser = subparsers.add_parser('evaluate')
     evaluate_parser.add_argument('--model-file', required=True)
     evaluate_parser.add_argument('--test-data', required=True)
+    evaluate_parser.add_argument('--words-file', required=True)
+    evaluate_parser.add_argument('--chars-file', required=True)
     evaluate_parser.set_defaults(func=evaluate)
-
-    processor_subparser = subparsers.add_parser('processor', parents=[processor_parser()])
-    processor_subparser.add_argument('--model-file', required=True)
-    processor_subparser.add_argument('--words-file')
-    processor_subparser.set_defaults(func=processor)
 
     conf = parser.parse_args(args)
     conf.func(conf)

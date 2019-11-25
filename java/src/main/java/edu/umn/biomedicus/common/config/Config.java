@@ -16,6 +16,7 @@
 
 package edu.umn.biomedicus.common.config;
 
+import org.apache.commons.text.StringSubstitutor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -33,6 +34,8 @@ import java.util.List;
 import java.util.Map;
 
 public class Config {
+  private static final StringSubstitutor SUBSTITUTOR = new StringSubstitutor(System.getenv());
+
   private static final Logger LOGGER = LoggerFactory.getLogger(Config.class);
 
   private final Map<String, Object> config;
@@ -149,6 +152,9 @@ public class Config {
       if (value instanceof Map) {
         flattenConfig((Map<String, Object>) value, newPrefix, targetMap);
       } else {
+        if (value instanceof String) {
+          value = SUBSTITUTOR.replace(value);
+        }
         targetMap.put(newPrefix, value);
       }
     }
