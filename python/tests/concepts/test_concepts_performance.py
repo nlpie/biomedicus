@@ -23,14 +23,14 @@ from mtap.utilities import find_free_port
 
 
 @pytest.fixture(name='concepts_service')
-def fixture_concepts_service(events_service, processor_watcher):
+def fixture_concepts_service(events_service, processor_watcher, processor_timeout):
     port = str(find_free_port())
     address = '127.0.0.1:' + port
     biomedicus_jar = os.environ['BIOMEDICUS_JAR']
     p = Popen(['java', '-cp', biomedicus_jar,
                'edu.umn.biomedicus.concepts.DictionaryConceptDetector', '-p', port,
                '--events', events_service], stdin=PIPE, stdout=PIPE, stderr=PIPE)
-    yield from processor_watcher(address, p)
+    yield from processor_watcher(address, p, timeout=processor_timeout)
 
 
 @pytest.mark.performance

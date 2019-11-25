@@ -28,8 +28,10 @@ def _collapse(d, path, v):
         pass
     except TypeError:
         raise ValueError('Failed to load configuration')
-
-    d[path] = os.path.expandvars(v)
+    try:
+        d[path] = os.path.expandvars(v)
+    except TypeError:
+        d[path] = v
     return d
 
 
@@ -45,7 +47,12 @@ def _load_config(f):
     return _collapse({}, None, config)
 
 
-_DEFAULT_CONFIG = _load_config(str(Path(__file__).parent / 'defaultConfig.yml'))
+def _load_default_config():
+    with (Path(__file__).parent / 'defaultConfig.yml').open('rb') as f:
+        return _load_config(f)
+
+
+_DEFAULT_CONFIG = _load_default_config()
 
 
 def load_config():
@@ -65,4 +72,4 @@ def load_config():
         except FileNotFoundError:
             pass
 
-    return {k: os.path.expandvars(v) for k, v in _DEFAULT_CONFIG.items()}
+    return {k: v for k, v in _DEFAULT_CONFIG.items()}

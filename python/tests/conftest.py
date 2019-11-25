@@ -36,7 +36,10 @@ def pytest_addoption(parser):
     )
     parser.addoption(
         "--phi-test-data", action="store_true", default=False,
-        help="Runs tests "
+        help="Runs tests which require the internal UMN PHI test data."
+    )
+    parser.addoption(
+        "--timeout", type=float, default=20, help="The timeout for processors"
     )
 
 
@@ -51,6 +54,11 @@ def pytest_collection_modifyitems(config, items):
         for item in items:
             if "phi_test_data" in item.keywords:
                 item.add_marker(skip_phi_test_data)
+
+
+@pytest.fixture(name='processor_timeout')
+def fixture_processor_timeout(request):
+    return request.config.getoption("--timeout")
 
 
 @pytest.fixture(name='events_service')

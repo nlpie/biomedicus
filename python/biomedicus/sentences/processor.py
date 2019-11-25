@@ -109,7 +109,9 @@ def main(args=None):
     words = load_words(conf.words_file)
     chars_mapping = load_char_mapping(conf.chars_file)
     input_fn = InputFn(chars_mapping, words)
+    logger.info('Loading sentences model:', conf.model_file)
     model = tf.keras.models.load_model(conf.model_file)
+    logger.info('Finished loading sentences model.')
     processor = SentenceProcessor(model, input_fn)
     run_processor(processor, namespace=conf)
 

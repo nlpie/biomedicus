@@ -23,7 +23,7 @@ from mtap.utilities import find_free_port
 
 
 @pytest.fixture(name='sentences_service')
-def fixture_sentences_service(events_service, processor_watcher):
+def fixture_sentences_service(events_service, processor_watcher, processor_timeout):
     port = str(find_free_port())
     address = '127.0.0.1:' + port
     p = subprocess.Popen(['python', '-m', 'biomedicus.sentences.processor',
@@ -31,7 +31,7 @@ def fixture_sentences_service(events_service, processor_watcher):
                           '--events', events_service],
                          start_new_session=True, stdin=subprocess.PIPE,
                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    yield from processor_watcher(address, p)
+    yield from processor_watcher(address, p, timeout=processor_timeout)
 
 
 @pytest.mark.phi_test_data
