@@ -92,24 +92,24 @@ class SentenceProcessor(DocumentProcessor):
 
 def main(args=None):
     biomedicus_config = load_config()
-    parser = ArgumentParser('processor', parents=[processor_parser()])
+    logging.basicConfig(level=logging.INFO)
+    parser = ArgumentParser(parents=[processor_parser()])
     parser.add_argument('--model-file',
-                        required=True,
                         default=biomedicus_config['sentences.modelFile'],
                         help="Override path to the serialized Tensorflow model file.")
     parser.add_argument('--words-file',
-                        required=True,
                         default=biomedicus_config['sentences.wordsFile'],
                         help="Override path to the list of words.")
     parser.add_argument('--chars-file',
-                        required=True,
                         default=biomedicus_config['sentences.charsFile'],
                         help="Override path to the list of characters.")
     conf = parser.parse_args(args)
+    logger.info('Loading words file: %s', conf.words_file)
     words = load_words(conf.words_file)
+    logger.info('Loading chars file: %s', conf.chars_file)
     chars_mapping = load_char_mapping(conf.chars_file)
     input_fn = InputFn(chars_mapping, words)
-    logger.info('Loading sentences model:', conf.model_file)
+    logger.info('Loading sentences model: %s', conf.model_file)
     model = tf.keras.models.load_model(conf.model_file)
     logger.info('Finished loading sentences model.')
     processor = SentenceProcessor(model, input_fn)
@@ -117,4 +117,4 @@ def main(args=None):
 
 
 if __name__ == '__main__':
-    pass
+    main()

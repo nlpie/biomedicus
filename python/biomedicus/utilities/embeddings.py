@@ -47,7 +47,8 @@ def main(args=None):
     words, vectors = load_vectors(config.input_file)
 
     with open(config.output_file, 'w') as f:
-        f.writelines(words)
+        for word in words:
+            f.write(word + '\n')
 
 
 if __name__ == '__main__':
