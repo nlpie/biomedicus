@@ -17,7 +17,7 @@ import sys
 
 import grpc
 import pytest
-from mtap.utils import subprocess_events_server
+from mtap.utilities import subprocess_events_server
 
 
 def pytest_configure(config):

@@ -66,6 +66,9 @@ setup(
     keywords='nlp biomedical text',
     package_dir={'': 'python'},
     packages=find_packages(where='python', exclude=['tests']),
+    package_data={
+        'biomedicus': ['defaultConfig.yml']
+    },
     install_requires=[
         'mtap',
         'numpy',
