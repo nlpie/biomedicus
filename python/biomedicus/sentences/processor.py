@@ -51,10 +51,13 @@ def pre_process(text):
 
 def predict(model, text, input_fn):
     priors, words, posts, tokens = pre_process(text)
-    priors = tf.sparse.from_dense(tf.constant([priors]))
-    words = tf.sparse.from_dense(tf.constant([words]))
-    posts = tf.sparse.from_dense(tf.constant([posts]))
-    input_data, _ = input_fn(priors, words, posts)
+    indices = tf.range(0, limit=len(priors), dtype=tf.int64)
+    indices = tf.expand_dims(indices, -1)
+    indices = tf.concat([tf.zeros((len(priors), 1), dtype=tf.int64), indices], -1)
+    priors = tf.sparse.SparseTensor(indices=indices, values=priors, dense_shape=[1, len(priors)])
+    words = tf.sparse.SparseTensor(indices=indices, values=words, dense_shape=[1, len(words)])
+    posts = tf.sparse.SparseTensor(indices=indices, values=posts, dense_shape=[1, len(posts)])
+    input_data, _ = input_fn(priors, words, posts, None)
     scores = model.predict(input_data)
     predictions = tf.math.rint(scores)
     sentences = []
@@ -87,7 +90,8 @@ class SentenceProcessor(DocumentProcessor):
     def process_document(self, document: Document, params: Dict[str, Any]):
         with document.get_labeler('sentences', distinct=True) as add_sentence:
             for start_index, end_index in predict(self.model, document.text, self.input_fn):
-                add_sentence(start_index, end_index)
+                sentence = add_sentence(start_index, end_index)
+                print('S:', beisentence.text)
 
 
 def main(args=None):

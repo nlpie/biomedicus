@@ -32,7 +32,7 @@ def load_vectors(fname):
 
 
 def load_words(fname):
-    words = ['']
+    words = []
     with Path(fname).open('r') as fin:
         for line in fin:
             words.append(line)
