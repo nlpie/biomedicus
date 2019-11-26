@@ -146,7 +146,7 @@ def train(conf):
     char_mappings = load_char_mapping(conf.chars_file)
 
     model = build_sentences_model(conf, vectors, char_mappings)
-    train_model(model, conf, char_mappings, words)
+    train_model(model, conf)
 
 
 def print_model(conf):

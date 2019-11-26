@@ -75,7 +75,6 @@ setup(
         'scikit_learn',
         'pyyaml',
         'h5py',
-        'tensorflow-text',
         'regex'
     ],
     setup_requires=[

@@ -74,6 +74,9 @@ def predict(model, text, input_fn):
     return sentences
 
 
+_split = re.compile(r'(?!\n\n|^_+$|^-+$|^=+$)(.*\w.*)', re.MULTILINE)
+
+
 @processor('biomedicus-sentences',
            human_name="Sentence Detector",
            description="Labels sentences given document text.",
@@ -89,9 +92,10 @@ class SentenceProcessor(DocumentProcessor):
 
     def process_document(self, document: Document, params: Dict[str, Any]):
         with document.get_labeler('sentences', distinct=True) as add_sentence:
-            for start_index, end_index in predict(self.model, document.text, self.input_fn):
-                sentence = add_sentence(start_index, end_index)
-                print('S:', beisentence.text)
+            for match in _split.finditer(document.text):
+                start = match.start()
+                for start_index, end_index in predict(self.model, match.group(0), self.input_fn):
+                    add_sentence(start + start_index, start + end_index)
 
 
 def main(args=None):

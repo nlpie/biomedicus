@@ -63,7 +63,7 @@ def training_parser():
 def train_on_data(model, config, train_data, validation_data, job_dir, class_weights):
     log_name = build_log_name()
 
-    callbacks = [PrecisionRecallF1(validation_data)]
+    callbacks = []
 
     if config.tensorboard:
         log_path = str(PurePath(job_dir) / "logs" / log_name)
@@ -73,14 +73,14 @@ def train_on_data(model, config, train_data, validation_data, job_dir, class_wei
     if config.checkpoints:
         checkpoint_dir = Path(job_dir) / "models"
         checkpoint_dir.mkdir(parents=True, exist_ok=True)
-        checkpoint = ModelCheckpoint(str(checkpoint_dir / (log_name + ".h5")),
+        checkpoint = ModelCheckpoint(str(checkpoint_dir / (log_name + '.h5')),
                                      verbose=1,
                                      save_best_only=True)
         callbacks.append(checkpoint)
 
     model.compile(optimizer=config.optimizer,
                   loss='binary_crossentropy',
-                  weighted_metrics=['binary_accuracy'])
+                  metrics=['binary_accuracy', 'Precision', 'Recall'])
 
     if config.early_stopping:
         stopping = EarlyStopping(patience=config.early_stopping_patience,
@@ -94,11 +94,9 @@ def train_on_data(model, config, train_data, validation_data, job_dir, class_wei
               class_weight=class_weights)
 
 
-def train_model(model, config, chars_mapping, words):
+def train_model(model, config):
     train, validation, class_weights = train_validation(config.input_directory / 'train.tfrecord',
                                                         config.input_directory / 'validation.tfrecord',
-                                                        chars_mapping,
-                                                        words,
                                                         batch_size=config.batch_size)
     train_on_data(model, config, train, validation, config.job_dir, class_weights)
 
@@ -116,7 +114,8 @@ def evaluate(model, validation_data):
         predictions = tf.cast(tf.math.rint(scores), labels.dtype)
         for prediction, label in zip(predictions, labels[0]):
             if prediction == label:
-                true_positives += 1
+                if label == 1:
+                    true_positives += 1
             elif label == 0:
                 false_positives += 1
             elif label == 1:
@@ -125,20 +124,3 @@ def evaluate(model, validation_data):
     precision = true_positives / (true_positives + false_positives)
     f1 = 2 * (recall * precision) / (recall + precision)
     return precision, recall, f1
-
-
-class PrecisionRecallF1(Callback):
-    def __init__(self, validation_data):
-        super().__init__()
-        self.validation_data = validation_data
-
-    def on_epoch_end(self, epoch, logs=None):
-        model = self.model
-        validation_data = self.validation_data
-        precision, recall, f1 = evaluate(model, validation_data)
-        if logs is not None:
-            logs['val_recall'] = recall
-            logs['val_precision'] = precision
-            logs['val_f1'] = f1
-        print('\nEpoch {}: precision: {} - recall: {} - f1: {}'.format(epoch, precision, recall,
-                                                                       f1), end='')

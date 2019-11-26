@@ -35,7 +35,7 @@ def load_words(fname):
     words = []
     with Path(fname).open('r') as fin:
         for line in fin:
-            words.append(line)
+            words.append(line[:-1])
     return words
 
 

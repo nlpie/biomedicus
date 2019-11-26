@@ -21,6 +21,8 @@ class Vocabulary(object):
     TOKEN_END = 2
     PREV_TOKEN = 3
     NEXT_TOKEN = 4
+    BEGIN_SEQUENCE = 5
+    END_SEQUENCE = 6
     UNK_CHAR = 11
 
 
@@ -30,6 +32,8 @@ character_to_id = {
     'TOKEN_END': Vocabulary.TOKEN_END,
     'PREV_TOKEN': Vocabulary.PREV_TOKEN,
     'NEXT_TOKEN': Vocabulary.NEXT_TOKEN,
+    'BEGIN_SEQUENCE': Vocabulary.BEGIN_SEQUENCE,
+    'END_SEQUENCE': Vocabulary.END_SEQUENCE,
     '\n': 7,
     '\t': 8,
     ' ': 9
@@ -40,5 +44,5 @@ def load_char_mapping(tokens_file):
     char_mappings = dict(character_to_id)
     with Path(tokens_file).open('r') as f:
         for char in f:
-            char_mappings[char] = len(char_mappings)
+            char_mappings[char[:-1]] = len(char_mappings)
     return char_mappings
