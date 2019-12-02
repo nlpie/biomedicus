@@ -11,11 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import os
-import sys
 from argparse import ArgumentParser
 
-from mtap import events, EventsClient, Pipeline, RemoteProcessor, Event
+import sys
+from mtap import EventsClient, Pipeline, RemoteProcessor, Event
 
 
 def main(args=None):

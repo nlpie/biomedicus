@@ -18,7 +18,7 @@ normalization:
   db: ${BIOMEDICUS_DATA}/normalization
   inMemory: no
 sentences:
-  modelFile: ${BIOMEDICUS_DATA}/sentences/model.h5
+  modelFile: ${BIOMEDICUS_DATA}/sentences/1575307858.45559.h5
   wordsFile: ${BIOMEDICUS_DATA}/sentences/words.txt
   charsFile: ${BIOMEDICUS_DATA}/sentences/chars.txt
 tnt:

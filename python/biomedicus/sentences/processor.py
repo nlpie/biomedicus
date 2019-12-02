@@ -30,6 +30,7 @@ from biomedicus.utilities.embeddings import load_words
 logger = logging.getLogger(__name__)
 
 _word_pattern = re.compile(r'[\w.\']+')
+_punct = re.compile(r'[\W]+')
 
 
 def pre_process(text):
@@ -58,7 +59,7 @@ def predict(model, text, input_fn):
     words = tf.sparse.SparseTensor(indices=indices, values=words, dense_shape=[1, len(words)])
     posts = tf.sparse.SparseTensor(indices=indices, values=posts, dense_shape=[1, len(posts)])
     input_data, _ = input_fn(priors, words, posts, None)
-    scores = model.predict(input_data)
+    scores = model.predict_on_batch(input_data)
     predictions = tf.math.rint(scores)
     sentences = []
     start_index = None
@@ -66,6 +67,9 @@ def predict(model, text, input_fn):
     for (start, end), prediction in zip(tokens, predictions[0]):
         if prediction == 1:
             if start_index is not None:
+                end_punct = _punct.match(text, prev_end)
+                if end_punct is not None:
+                    prev_end = end_punct.end()
                 sentences.append((start_index, prev_end))
             start_index = start
         prev_end = end

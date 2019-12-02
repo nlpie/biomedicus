@@ -15,8 +15,7 @@ from argparse import ArgumentParser
 from pathlib import Path, PurePath
 
 import tensorflow as tf
-
-from tensorflow.keras.callbacks import Callback, EarlyStopping, ModelCheckpoint, TensorBoard
+from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, TensorBoard
 from time import time
 
 from biomedicus.sentences.data import train_validation
@@ -32,9 +31,9 @@ def training_parser():
                         help="whether to save the best model during training.")
     parser.add_argument('--early-stopping', type=bool, default=True,
                         help="whether to stop when the model stops improving.")
-    parser.add_argument('--early-stopping-patience', type=int, default=5,
+    parser.add_argument('--early-stopping-patience', type=int, default=2,
                         help="how many epochs without improvement before stopping.")
-    parser.add_argument('--early-stopping-delta', type=float, default=0.0001,
+    parser.add_argument('--early-stopping-delta', type=float, default=0.01,
                         help="the smallest amount loss needs to improve by to be considered "
                              "improvement by early stopping.")
     parser.add_argument('--use-class-weights', type=bool, default=True,
