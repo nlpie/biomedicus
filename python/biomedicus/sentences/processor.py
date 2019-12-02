@@ -30,7 +30,7 @@ from biomedicus.utilities.embeddings import load_words
 logger = logging.getLogger(__name__)
 
 _word_pattern = re.compile(r'[\w.\']+')
-_punct = re.compile(r'[\W]+')
+_punct = re.compile(r'[.:!,;"\']')
 
 
 def pre_process(text):
