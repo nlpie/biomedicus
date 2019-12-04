@@ -49,7 +49,8 @@ def test_sentence_performance(events_service, sentences_service):
             with JsonSerializer.file_to_event(test_file, client=client) as event:
                 document = event.documents['plaintext']
                 results = pipeline.run(document)
-                print('Accuracy for event - ', event.event_id, ':', results[1].results['accuracy'])
+                print('Accuracy for event - ', event.event_id, ':', results[1].results['accuracy'],
+                      '- elapsed:', results[0].timing_info['process_method'])
 
         print('Accuracy:', accuracy.value)
         pipeline.print_times()

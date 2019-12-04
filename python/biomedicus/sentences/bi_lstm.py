@@ -42,17 +42,17 @@ def bi_lstm_hparams_parser():
                         help="the method to use for character representations. either 'cnn' "
                              "for convolutional neural networks or 'lstm' for a bidirectional "
                              "lstm.")
-    parser.add_argument('--char-cnn-filters', type=int, default=100,
+    parser.add_argument('--char-cnn-filters', type=int, default=50,
                         help="the number of cnn character filters. if "
                              "concatenate_words_chars = False then this"
                              "parameter is ignored and dim_word is used.")
     parser.add_argument('--char-cnn-kernel-size', type=int, default=4,
                         help="the kernel size (number of character embeddings to look at). ")
-    parser.add_argument('--char-lstm-hidden-size', type=int, default=100,
+    parser.add_argument('--char-lstm-hidden-size', type=int, default=50,
                         help="when using bi-lstm the output dimensionality of the bi-lstm.")
     parser.add_argument('--use-words', type=bool, default=True,
                         help="whether to use word embedding word representations.")
-    parser.add_argument('--lstm-hidden-size', type=int, default=200,
+    parser.add_argument('--lstm-hidden-size', type=int, default=100,
                         help="the number of units in the bi-lstm character layer. if "
                              "concatenate_word_chars = False then this parameter is ignored "
                              "and dim_word is used.")
