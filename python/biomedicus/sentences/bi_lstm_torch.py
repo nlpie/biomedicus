@@ -15,7 +15,7 @@ import re
 from argparse import ArgumentParser
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 
 import numpy as np
 import torch
@@ -23,14 +23,13 @@ import yaml
 from mtap import processor_parser, Document, processor
 from mtap.processing import DocumentProcessor
 from mtap.processing.descriptions import label_index
-
-from biomedicus.sentences.input import InputMapping
 from time import time
 from torch import nn, optim
 from torch.nn import functional as F
 from torch.nn.utils.rnn import pad_packed_sequence, pack_padded_sequence, \
     PackedSequence
 
+from biomedicus.sentences.input import InputMapping
 from biomedicus.sentences.vocabulary import load_char_mapping
 from biomedicus.utilities.embeddings import load_vectors
 
@@ -237,19 +236,35 @@ def train_on_data(model: BiLSTM, conf, train, validation, pos_weight):
 
 
 _split = re.compile(r'\n\n+|^_+$|^-+$|^=+|\n[A-Z].*:$|\Z', re.MULTILINE)
+_punct = re.compile(r'[.:!,;"\']')
 
 
-def predict_text(model, input_mapper, text):
-    sentences = []
+def predict_segment(model: BiLSTM, input_mapper, text):
+    if len(text) == 0 or text.isspace():
+        return []
+    tokens, char_ids, word_ids = input_mapper.transform_text(text)
+    predictions = model.predict(char_ids, word_ids)
+    start_index = None
+    prev_end = None
+    for (start, end), prediction in zip(tokens, predictions[0]):
+        if prediction == 1:
+            if start_index is not None:
+                end_punct = _punct.match(text, prev_end)
+                if end_punct is not None:
+                    prev_end = end_punct.end()
+                yield start_index, prev_end
+            start_index = start
+        prev_end = end
+    yield start_index, prev_end
+
+
+def predict_text(model: BiLSTM, input_mapper, text):
     prev = 0
     for match in _split.finditer(text):
         start = match.start()
         local_text = text[prev:start]
-        if len(text) == 0 or text.isspace():
-            continue
-        tokens, char_ids, word_ids = input_mapper.transform_text(local_text)
-
-
+        yield from predict_segment(model, input_mapper, local_text)
+        prev = match.end()
 
 
 @processor('biomedicus-sentences',
@@ -265,7 +280,9 @@ class Processor(DocumentProcessor):
         self.model = model
 
     def process_document(self, document: Document, params: Dict[str, Any]):
-        pass
+        with document.get_labeler('sentences', distinct=True) as add_sentence:
+            for start, end in predict_text(self.model, self.input_mapper, document.text):
+                add_sentence(start, end)
 
 
 def bi_lstm_hparams_parser():
