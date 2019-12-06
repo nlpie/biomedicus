@@ -22,7 +22,7 @@ from torch.nn.utils.rnn import pad_sequence
 
 from biomedicus.sentences.vocabulary import Vocabulary
 
-_whitespace_pattern = re.compile(r'((?!_)[\w.\'])+|\[\*\*.*\*\*\]')
+_whitespace_pattern = re.compile(r'((?!_)[\w.\'])+|\[\*\*.*?\*\*\]')
 _digit = re.compile(r'[0-9]')
 _punct = re.compile(r'[.\']')
 _identifier = re.compile(r'\[\*\*.*\*\*\]')

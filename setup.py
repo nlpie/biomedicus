@@ -72,9 +72,7 @@ setup(
     install_requires=[
         'mtap',
         'numpy',
-        'scikit_learn',
         'pyyaml',
-        'h5py',
         'regex'
     ],
     setup_requires=[
@@ -85,8 +83,8 @@ setup(
         'pytest'
     ],
     extras_require={
-        'tf': 'tensorflow',
-        'tf-gpu': 'tensorflow-gpu',
+        'torch': 'torch',
+        'torch-gpu': 'torch-gpu',
         'tests': ['pytest-runner', 'pytest'],
         'docs': ['sphinx']
     },

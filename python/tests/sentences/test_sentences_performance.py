@@ -26,7 +26,7 @@ from mtap.utilities import find_free_port
 def fixture_sentences_service(events_service, processor_watcher, processor_timeout):
     port = str(find_free_port())
     address = '127.0.0.1:' + port
-    p = subprocess.Popen(['python', '-m', 'biomedicus.sentences.processor',
+    p = subprocess.Popen(['python', '-m', 'biomedicus.sentences.bi_lstm', 'processor',
                           '-p', port,
                           '--events', events_service],
                          start_new_session=True, stdin=subprocess.PIPE,
