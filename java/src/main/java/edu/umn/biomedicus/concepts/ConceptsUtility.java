@@ -44,11 +44,10 @@ public class ConceptsUtility {
     Scanner scanner = new Scanner(System.in);
     System.out.println("Reading concepts from database");
 
-    Config config = Config.loadFromDefaultLocations();
     DictionaryConceptDetector.ConceptsOptions conceptsOptions = new DictionaryConceptDetector.ConceptsOptions();
     conceptsOptions.setDbPath(dbPath);
     conceptsOptions.setInMemory(true);
-    ConceptDictionary dictionary = DictionaryConceptDetector.loadConceptsDictionary(conceptsOptions, config);
+    ConceptDictionary dictionary = DictionaryConceptDetector.loadConceptsDictionary(conceptsOptions);
 
     while (true) {
       System.out.print("Q: ");

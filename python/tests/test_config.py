@@ -11,17 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import logging
-
-from biomedicus.sentences.commands import SentenceCommands, create_parser
-
-logging.basicConfig(level=logging.INFO)
 
 
-def main(args=None):
-    parser = create_parser()
-    commands = parser.parse_args(args=args, namespace=SentenceCommands())
-    commands.func(commands)
-
-
-main()
+def test_load_default_config():
+    from biomedicus import config
+    c = config.load_config()
+    assert isinstance(c, dict)

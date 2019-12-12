@@ -19,18 +19,18 @@ import pytest
 from mtap import EventsClient, Pipeline, RemoteProcessor, LocalProcessor
 from mtap.io.serialization import JsonSerializer
 from mtap.metrics import Accuracy, Metrics
-from mtap.utils import find_free_port
+from mtap.utilities import find_free_port
 
 
 @pytest.fixture(name='acronyms_service')
-def fixture_acronyms_service(events_service, processor_watcher):
+def fixture_acronyms_service(events_service, processor_watcher, processor_timeout):
     port = str(find_free_port())
     address = '127.0.0.1:' + port
     biomedicus_jar = os.environ['BIOMEDICUS_JAR']
     p = Popen(['java', '-cp', biomedicus_jar, 'edu.umn.biomedicus.acronym.AcronymDetectorProcessor',
                '-p', port, '--events', events_service],
               start_new_session=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
-    yield from processor_watcher(address, p)
+    yield from processor_watcher(address, p, timeout=processor_timeout)
 
 
 @pytest.mark.phi_test_data

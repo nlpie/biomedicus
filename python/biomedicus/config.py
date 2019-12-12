@@ -28,20 +28,11 @@ def _collapse(d, path, v):
         pass
     except TypeError:
         raise ValueError('Failed to load configuration')
-
-    d[path] = os.path.expandvars(v)
+    try:
+        d[path] = os.path.expandvars(v)
+    except TypeError:
+        d[path] = v
     return d
-
-
-_DEFAULT_CONFIG = _collapse({}, None, {
-    'sentences': {
-        'model': 'deep',
-        'hparams_file': '${BIOMEDICUS_DATA}/sentences/hparams.yaml',
-        'model_file': '${BIOMEDICUS_DATA}/sentences/model.h5',
-        'words_list': '${BIOMEDICUS_DATA}/sentences/vocab/words.txt',
-        'vocab_dir': '${BIOMEDICUS_DATA}/sentences/vocab/',
-    }
-})
 
 
 def _load_config(f):
@@ -54,6 +45,14 @@ def _load_config(f):
     if not isinstance(config, dict):
         raise TypeError("Failed to load configuration from file: " + str(f))
     return _collapse({}, None, config)
+
+
+def _load_default_config():
+    with (Path(__file__).parent / 'defaultConfig.yml').open('rb') as f:
+        return _load_config(f)
+
+
+_DEFAULT_CONFIG = _load_default_config()
 
 
 def load_config():
@@ -73,4 +72,4 @@ def load_config():
         except FileNotFoundError:
             pass
 
-    return {k: os.path.expandvars(v) for k, v in _DEFAULT_CONFIG.items()}
+    return {k: v for k, v in _DEFAULT_CONFIG.items()}

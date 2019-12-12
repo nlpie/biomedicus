@@ -18,12 +18,12 @@ import pytest
 from mtap import Pipeline, RemoteProcessor, EventsClient, LocalProcessor
 from mtap.io.serialization import JsonSerializer
 from mtap.metrics import Metrics, Accuracy
-from mtap.utils import find_free_port
+from mtap.utilities import find_free_port
 from pathlib import Path
 
 
 @pytest.fixture(name='pos_tags_service')
-def fixture_pos_tags_service(events_service, processor_watcher):
+def fixture_pos_tags_service(events_service, processor_watcher, processor_timeout):
     port = str(find_free_port())
     address = '127.0.0.1:' + port
     biomedicus_jar = os.environ['BIOMEDICUS_JAR']
@@ -31,7 +31,7 @@ def fixture_pos_tags_service(events_service, processor_watcher):
                'edu.umn.biomedicus.tagging.tnt.TntPosTaggerProcessor', '-p', port,
                '--events', events_service],
               start_new_session=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
-    yield from processor_watcher(address, p)
+    yield from processor_watcher(address, p, timeout=processor_timeout)
 
 
 @pytest.mark.performance

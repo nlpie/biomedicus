@@ -66,12 +66,14 @@ setup(
     keywords='nlp biomedical text',
     package_dir={'': 'python'},
     packages=find_packages(where='python', exclude=['tests']),
+    package_data={
+        'biomedicus': ['defaultConfig.yml']
+    },
     install_requires=[
         'mtap',
         'numpy',
-        'scikit_learn',
         'pyyaml',
-        'h5py',
+        'regex'
     ],
     setup_requires=[
         'pytest-runner',
@@ -81,8 +83,8 @@ setup(
         'pytest'
     ],
     extras_require={
-        'tf': 'tensorflow',
-        'tf-gpu': 'tensorflow-gpu',
+        'torch': 'torch',
+        'torch-gpu': 'torch-gpu',
         'tests': ['pytest-runner', 'pytest'],
         'docs': ['sphinx']
     },

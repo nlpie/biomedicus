@@ -39,6 +39,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 import static edu.umn.biomedicus.common.pos.PartOfSpeech.*;
@@ -128,14 +129,10 @@ class DictionaryConceptDetector extends DocumentProcessor {
   public static @NotNull DictionaryConceptDetector createConceptDetector(
       @NotNull ConceptsOptions conceptsOptions
   ) throws IOException, RocksDBException {
-    Config config = Config.loadFromDefaultLocations();
-    ConceptDictionary conceptDictionary = loadConceptsDictionary(conceptsOptions, config);
+
+    ConceptDictionary conceptDictionary = loadConceptsDictionary(conceptsOptions);
     NormalizerModel normalizerModel = null;
-    Boolean normalizeLocally = conceptsOptions.getNormalizeLocally();
-    if (normalizeLocally == null) {
-      normalizeLocally = config.getBooleanValue("concepts.normalizeLocally");
-    }
-    if (normalizeLocally) {
+    if (conceptsOptions.getNormalizeLocally()) {
       NormalizationProcessor.Options normalizerOptions = new NormalizationProcessor.Options();
       normalizerOptions.setDbPath(conceptsOptions.getNormalizerModel());
       normalizerOptions.setInMemory(conceptsOptions.getNormalizerModelInMemory());
@@ -146,19 +143,9 @@ class DictionaryConceptDetector extends DocumentProcessor {
 
   @NotNull
   public static ConceptDictionary loadConceptsDictionary(
-      @NotNull DictionaryConceptDetector.ConceptsOptions conceptsOptions,
-      Config config
+      @NotNull DictionaryConceptDetector.ConceptsOptions conceptsOptions
   ) throws RocksDBException, IOException {
-    DataFiles dataFiles = new DataFiles();
-    Path dbPath = conceptsOptions.getDbPath();
-    if (dbPath == null) {
-      dbPath = dataFiles.getDataFile(config.getStringValue("concepts.db"));
-    }
-    Boolean inMemory = conceptsOptions.getInMemory();
-    if (inMemory == null) {
-      inMemory = config.getBooleanValue("concepts.inMemory");
-    }
-    return RocksDbConceptDictionary.loadModel(dbPath, inMemory);
+    return RocksDbConceptDictionary.loadModel(conceptsOptions.getDbPath(), conceptsOptions.getInMemory());
   }
 
   public static void runDictionaryConceptDetector(
@@ -203,7 +190,7 @@ class DictionaryConceptDetector extends DocumentProcessor {
         metaVar = "PATH_TO",
         usage = "Optional override path to the concepts dictionary."
     )
-    private @Nullable Path dbPath = null;
+    private @Nullable Path dbPath;
 
     @Option(
         name = "--in-memory",
@@ -211,7 +198,7 @@ class DictionaryConceptDetector extends DocumentProcessor {
         handler = ExplicitBooleanOptionHandler.class,
         usage = "Optional override whether to load the concept dictionary into memory."
     )
-    private @Nullable Boolean inMemory = null;
+    private boolean inMemory;
 
     @Option(
         name = "--normalize-locally",
@@ -219,14 +206,14 @@ class DictionaryConceptDetector extends DocumentProcessor {
         handler = ExplicitBooleanOptionHandler.class,
         usage = "Normalize here in the concept detector instead of using a norms index."
     )
-    private @Nullable Boolean normalizeLocally = null;
+    private boolean normalizeLocally;
 
     @Option(
         name = "--normalizer-model",
         metaVar = "PATH_TO_NORMALIZER_MODEL",
         usage = "Optional override for the normalizer model path"
     )
-    private @Nullable Path normalizerModel = null;
+    private @Nullable Path normalizerModel;
 
     @Option(
         name = "--normalizer-model-in-memory",
@@ -234,17 +221,27 @@ class DictionaryConceptDetector extends DocumentProcessor {
         handler = ExplicitBooleanOptionHandler.class,
         usage = "Optional override for whether to load the normalization model into memory."
     )
-    private @Nullable Boolean normalizerModelInMemory = null;
+    private boolean normalizerModelInMemory;
+
+    public ConceptsOptions() {
+      DataFiles.checkDataPath();
+      Config config = Config.loadFromDefaultLocations();
+      dbPath = Paths.get(config.getStringValue("concepts.db"));
+      inMemory = config.getBooleanValue("concepts.inMemory");
+      normalizeLocally = config.getBooleanValue("concepts.normalizeLocally");
+      normalizerModel = Paths.get(config.getStringValue("normalization.db"));
+      normalizerModelInMemory = config.getBooleanValue("normalization.inMemory");
+    }
 
     public @Nullable Path getDbPath() {
       return dbPath;
     }
 
-    public @Nullable Boolean getInMemory() {
+    public boolean getInMemory() {
       return inMemory;
     }
 
-    public @Nullable Boolean getNormalizeLocally() {
+    public boolean getNormalizeLocally() {
       return normalizeLocally;
     }
 
@@ -252,7 +249,7 @@ class DictionaryConceptDetector extends DocumentProcessor {
       return normalizerModel;
     }
 
-    public @Nullable Boolean getNormalizerModelInMemory() {
+    public boolean getNormalizerModelInMemory() {
       return normalizerModelInMemory;
     }
 
@@ -260,11 +257,11 @@ class DictionaryConceptDetector extends DocumentProcessor {
       this.dbPath = dbPath;
     }
 
-    public void setInMemory(@Nullable Boolean inMemory) {
+    public void setInMemory(boolean inMemory) {
       this.inMemory = inMemory;
     }
 
-    public void setNormalizeLocally(@Nullable Boolean normalizeLocally) {
+    public void setNormalizeLocally(boolean normalizeLocally) {
       this.normalizeLocally = normalizeLocally;
     }
 
@@ -272,7 +269,7 @@ class DictionaryConceptDetector extends DocumentProcessor {
       this.normalizerModel = normalizerModel;
     }
 
-    public void setNormalizerModelInMemory(@Nullable Boolean normalizerModelInMemory) {
+    public void setNormalizerModelInMemory(boolean normalizerModelInMemory) {
       this.normalizerModelInMemory = normalizerModelInMemory;
     }
   }
@@ -301,7 +298,6 @@ class DictionaryConceptDetector extends DocumentProcessor {
     }
 
     public void run() {
-      String documentText = document.getText();
       LabelIndex<GenericLabel> norms = null;
       if (normalizerModel == null) {
         norms = document.getLabelIndex("norm_forms");

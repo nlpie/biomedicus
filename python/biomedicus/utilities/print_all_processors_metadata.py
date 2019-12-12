@@ -17,7 +17,7 @@ from argparse import ArgumentParser
 from subprocess import call
 from tempfile import NamedTemporaryFile
 
-from biomedicus.sentences.processor import SentenceProcessor
+from biomedicus.sentences.bi_lstm import SentenceProcessor
 
 
 def main(args=None):

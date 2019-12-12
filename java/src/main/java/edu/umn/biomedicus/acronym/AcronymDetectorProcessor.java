@@ -404,21 +404,17 @@ public class AcronymDetectorProcessor extends DocumentProcessor {
     }
 
     public AcronymDetectorProcessor build() throws IOException {
-      DataFiles dataFiles = new DataFiles();
-      Path vectorSpace = dataFiles.getDataFile(this.vectorSpace);
+      DataFiles.checkDataPath();
       LOGGER.info("Loading acronym vector space: {}", vectorSpace);
       WordVectorSpace wordVectorSpace = WordVectorSpace.load(vectorSpace);
-      Path senseMap = dataFiles.getDataFile(this.senseMap);
       LOGGER.info("Loading acronym sense map: {}. inMemory = {}", senseMap, sensesInMemory);
       SenseVectors senseVectors = new RocksDBSenseVectors(senseMap, false)
           .inMemory(sensesInMemory);
       AlignmentModel alignment = null;
       if (useAlignment) {
-        Path alignmentModel = dataFiles.getDataFile(this.alignmentModel);
         LOGGER.info("Loading alignment model: {}", alignmentModel);
         alignment = AlignmentModel.load(alignmentModel);
       }
-      Path expansionsModel = dataFiles.getDataFile(this.expansionsModel);
       LOGGER.info("Loading acronym expansions: {}", expansionsModel);
       Map<String, Collection<String>> expansions = new HashMap<>();
       Pattern splitter = Pattern.compile("\\|");
@@ -429,7 +425,6 @@ public class AcronymDetectorProcessor extends DocumentProcessor {
           expansions.put(Acronyms.standardAcronymForm(acronym), Arrays.asList(acronymExpansions));
         }
       }
-      Path orthographicModel = dataFiles.getDataFile(this.orthographicModel);
       LOGGER.info("Loading orthographic model: {}", orthographicModel);
       OrthographicAcronymModel orthographicAcronymModel = OrthographicAcronymModel.load(orthographicModel);
       return new AcronymDetectorProcessor(wordVectorSpace, senseVectors, expansions,
