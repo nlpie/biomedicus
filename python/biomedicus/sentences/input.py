@@ -89,8 +89,10 @@ class InputMapping:
                                                                   False, class_counts):
             validation.append(char_ids, word_ids, labels)
 
-        total = class_counts[0] + class_counts[1]
-        pos_weight = 1 / (class_counts[1] / total) / (1 / (class_counts[0] / total))
+        # there are many more negative examples (label == 0) than positive examples, so we weight
+        # positive values according to the ratios, so that precision and recall end up being equally
+        # important during training
+        pos_weight = class_counts[0] / class_counts[1]
 
         train.build()
         validation.build()

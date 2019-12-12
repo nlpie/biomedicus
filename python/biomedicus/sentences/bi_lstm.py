@@ -163,17 +163,19 @@ def train_on_data(model: BiLSTM, conf, train, validation, pos_weight):
         total_fn = torch.tensor(0, dtype=torch.int64)
         total_fp = torch.tensor(0, dtype=torch.int64)
 
+        model.train(True)
         for i, ((char_ids, word_ids), labels, lengths) in enumerate(train.batches()):
-            model.train(True)
             step += 1
             model.zero_grad()
 
+            # compute the logits for the batch
             logits = model(char_ids, word_ids, lengths)
 
             maxlen = labels.shape[1]
             mask = torch.arange(maxlen).view(1, -1) < lengths.view(-1, 1)
             mask = mask.view(-1)
 
+            # compute loss using sequence masking and a special weight for positive labels
             loss_fn = torch.nn.BCEWithLogitsLoss(weight=mask, pos_weight=pos_weight)
             flat_logits = logits.view(-1)
             flat_labels = labels.view(-1).float()
@@ -186,10 +188,7 @@ def train_on_data(model: BiLSTM, conf, train, validation, pos_weight):
             optimizer.step()
 
             flat_predictions = torch.round(torch.sigmoid(flat_logits))
-            true = flat_labels == 1
-            tp = torch.sum(flat_predictions[true * mask] == 1., dtype=torch.int64)
-            fn = torch.sum(flat_predictions[true * mask] == 0., dtype=torch.int64)
-            fp = torch.sum(flat_predictions[(~true) * mask] == 1., dtype=torch.int64)
+            tp, fp, fn = confusion_matrix(flat_predictions, flat_labels, mask)
             total_tp += tp
             total_fn += fn
             total_fp += fp
@@ -211,20 +210,11 @@ def train_on_data(model: BiLSTM, conf, train, validation, pos_weight):
             val_fn = torch.tensor(0, dtype=torch.int64)
             val_fp = torch.tensor(0, dtype=torch.int64)
             for (char_ids, word_ids), labels, lengths in validation.batches():
-                logits = model(char_ids, word_ids, lengths)
+                # validation batches are shape = [1, sequence_length] with no padding
+                predictions = model.predict(char_ids, word_ids)
 
-                maxlen = labels.shape[1]
-                mask = torch.arange(maxlen)[None, :] < lengths[:, None]
-                mask = mask.view(-1)
-
-                flat_logits = logits.view(-1)
-                flat_labels = labels.view(-1)
-                flat_predictions = torch.round(torch.sigmoid(flat_logits))
-
-                true = flat_labels == 1
-                tp = torch.sum(flat_predictions[true * mask] == 1., dtype=torch.int64)
-                fn = torch.sum(flat_predictions[true * mask] == 0., dtype=torch.int64)
-                fp = torch.sum(flat_predictions[(~true) * mask] == 1., dtype=torch.int64)
+                mask = torch.ones_like(labels)  # there is no padding in the validation batch
+                tp, fp, fn = confusion_matrix(predictions, labels, mask)
                 val_tp += tp
                 val_fn += fn
                 val_fp += fp
@@ -240,7 +230,15 @@ def train_on_data(model: BiLSTM, conf, train, validation, pos_weight):
                 break
 
 
-_split = re.compile(r'\n\n+|^_+$|^-+$|^=+|\n[A-Z].*:$|\Z', re.MULTILINE)
+def confusion_matrix(predictions, labels, mask):
+    true = labels == 1
+    tp = torch.sum(predictions[true * mask] == 1., dtype=torch.int64)
+    fp = torch.sum(predictions[(~true) * mask] == 1., dtype=torch.int64)
+    fn = torch.sum(predictions[true * mask] == 0., dtype=torch.int64)
+    return tp, fp, fn
+
+
+_split = re.compile(r'\n\n+|^_+$|^-+$|^=+$|\n[A-Z].*:$|\Z', re.MULTILINE)
 _punct = re.compile(r'[.:!,;"\']')
 
 
@@ -281,7 +279,7 @@ def predict_text(model: BiLSTM, input_mapper, text):
            outputs=[
                label_index('sentences')
            ])
-class Processor(DocumentProcessor):
+class SentenceProcessor(DocumentProcessor):
     def __init__(self, input_mapper: InputMapping, model: BiLSTM):
         self.input_mapper = input_mapper
         self.model = model
@@ -373,7 +371,7 @@ def processor(conf):
     with conf.model_file.open('rb') as f:
         state_dict = torch.load(f)
         model.load_state_dict(state_dict)
-    proc = Processor(input_mapping, model)
+    proc = SentenceProcessor(input_mapping, model)
     run_processor(proc, namespace=conf)
 
 

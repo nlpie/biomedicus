@@ -18,8 +18,9 @@ normalization:
   db: ${BIOMEDICUS_DATA}/normalization
   inMemory: no
 sentences:
-  modelFile: ${BIOMEDICUS_DATA}/sentences/1575307858.45559.h5
-  wordsFile: ${BIOMEDICUS_DATA}/sentences/words.txt
+  hparamsFile: ${BIOMEDICUS_DATA}/sentences/1575655743.708996.yml
+  modelFile: ${BIOMEDICUS_DATA}/sentences/1575655743.708996.pt
+  wordEmbeddings: ${BIOMEDICUS_DATA}/sentences/mimic100.vec
   charsFile: ${BIOMEDICUS_DATA}/sentences/chars.txt
 tnt:
   trigram: ${BIOMEDICUS_DATA}/tnt/trigram.yml
