@@ -88,7 +88,7 @@ class BiLSTM(nn.Module):
 
         concatted_word_rep_features = pretrained.shape[1] + conf.char_cnn_output_channels
         self.lstm = nn.LSTM(concatted_word_rep_features,
-                            conf.lstm_hidden_size, num_layers=2,
+                            conf.lstm_hidden_size,
                             dropout=conf.dropout,
                             bidirectional=True, batch_first=True)
         self.batch_norm = nn.BatchNorm1d(concatted_word_rep_features)
