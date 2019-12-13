@@ -26,7 +26,43 @@ def gitVersion = { ->
         commandLine 'git', 'describe', '--tags', '--dirty'
         standardOutput = stdout
     }
-    return stdout.toString().replaceFirst('^v', "").trim()
+    def pattern = ~/v([0-9]+)(?:.([0-9]+))?(?:.([0-9]+))?(?:-(alpha|beta|pre|rc).([0-9]+))?(?:-([0-9]+)-([a-g0-9]+))?(-dirty)?/
+    def newVersion = stdout.toString().trim().replaceFirst(pattern) { _,major,minor,patch,pre,preVersion,com,hash,dirty ->
+        def incremented = false
+        def result = ''
+        if (com != null || hash != null || dirty != null) {
+            result = '-SNAPSHOT'
+        } else {
+            incremented = true
+        }
+        if (pre != null && preVersion != null) {
+            if (!incremented) {
+                preVersion = (preVersion as int) + 1
+                incremented = true
+            }
+            result = "-${pre}${preVersion}${result}"
+        }
+        if (patch != null) {
+            if (!incremented) {
+                patch = (patch as int) + 1
+                incremented = true
+            }
+            result = ".${patch}${result}"
+        }
+        if (minor != null) {
+            if (!incremented) {
+                minor = (minor as int) + 1
+                incremented = true
+            }
+            result = ".${minor}${result}"
+        }
+        if (!incremented) {
+            major = (major as int) + 1
+        }
+        result = "${major}${result}"
+        return result
+    }
+    return newVersion
 }
 
 version gitVersion()
@@ -76,8 +112,7 @@ test {
 task fatJar(type: Jar) {
     manifest {
         attributes 'Implementation-Title': 'NLP-NEWT',
-                'Implementation-Version': version,
-                'Main-Class': 'edu.umn.nlpie.mtap.MTAP'
+                'Implementation-Version': archiveVersion
     }
     setArchiveBaseName project.name + '-all'
     from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
@@ -92,4 +127,8 @@ task execute(type: JavaExec) {
 task conceptsUtility(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     main 'edu.umn.biomedicus.concepts.ConceptsUtility'
+}
+
+task writeVersion() {
+    new File(buildDir, "version.txt").text = "$version\n"
 }

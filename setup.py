@@ -13,11 +13,39 @@
 # limitations under the License.
 """A biomedical and clinical NLP engine developed by the University of
 Minnesota NLP/IE Group."""
-
+import os
+import shutil
 import sys
+from pathlib import Path
+from subprocess import call, Popen, STDOUT, PIPE, CalledProcessError
 
 from setuptools import setup, find_packages
 from setuptools.command.test import test as _test
+from setuptools.command.build_py import build_py as _build_py
+
+
+def build_java():
+    """Builds the java source code and includes the jar with the python modules.
+    """
+    cwd = Path(__file__).parent / 'java'
+    p = Popen(['./gradlew', 'clean', 'build', 'fatJar'], cwd=str(cwd), stdout=PIPE, stderr=STDOUT)
+    for line in p.stdout:
+        print(line.decode(), end='')
+    return_code = p.wait()
+    if return_code:
+        raise IOError('Java build failed.')
+    call(['./gradlew', 'writeVersion'], cwd=str(cwd))
+    with (cwd / 'build' / 'version.txt').open('r') as f:
+        version = f.read()[:-1]
+    jar_file = cwd / 'build' / 'libs' / ('biomedicus-all-' + version + '.jar')
+    jar_out = Path(__file__).parent / 'python' / 'biomedicus' / 'biomedicus-all.jar'
+    shutil.copy2(str(jar_file), str(jar_out))
+
+
+class build_py(_build_py):
+    def run(self):
+        build_java()
+        super().run()
 
 
 class test(_test):
@@ -67,7 +95,7 @@ setup(
     package_dir={'': 'python'},
     packages=find_packages(where='python', exclude=['tests']),
     package_data={
-        'biomedicus': ['defaultConfig.yml']
+        'biomedicus': ['defaultConfig.yml', 'biomedicus-all.jar']
     },
     install_requires=[
         'mtap',
@@ -90,5 +118,6 @@ setup(
     },
     cmdclass={
         'test': test,
+        'build_py': build_py
     }
 )
