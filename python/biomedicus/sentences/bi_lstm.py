@@ -16,6 +16,7 @@ import re
 from argparse import ArgumentParser
 from datetime import datetime
 from pathlib import Path
+from time import time
 from typing import Dict, Any
 
 import numpy as np
@@ -24,7 +25,6 @@ import yaml
 from mtap import processor_parser, Document, processor, run_processor
 from mtap.processing import DocumentProcessor
 from mtap.processing.descriptions import label_index
-from time import time
 from torch import nn, optim
 from torch.nn import functional as F
 from torch.nn.utils.rnn import pad_packed_sequence, pack_padded_sequence, \
@@ -87,10 +87,9 @@ class BiLSTM(nn.Module):
         self.word_embeddings = nn.Embedding.from_pretrained(pretrained, padding_idx=0)
 
         concatted_word_rep_features = pretrained.shape[1] + conf.char_cnn_output_channels
-        self.lstm = nn.LSTM(concatted_word_rep_features,
-                            conf.lstm_hidden_size,
-                            dropout=conf.dropout,
-                            bidirectional=True, batch_first=True)
+        self.lstm = nn.LSTM(concatted_word_rep_features, conf.lstm_hidden_size,
+                            bidirectional=True,
+                            batch_first=True)
         self.batch_norm = nn.BatchNorm1d(concatted_word_rep_features)
 
         # projection from hidden to the "begin of sentence" score
@@ -102,38 +101,36 @@ class BiLSTM(nn.Module):
         assert chars.shape[0] == words.shape[0]
         assert chars.shape[1] == words.shape[1]
         # flatten the batch and sequence dims into words (batch * sequence, word_len, 1)
-        word_chars = pack_padded_sequence(chars, sequence_lengths, batch_first=True,
-                                          enforce_sorted=False)
+        sequence_lengths, sorted_indices = torch.sort(sequence_lengths, descending=True)
+        chars = chars.index_select(0, sorted_indices)
+        words = words.index_select(0, sorted_indices)
+        word_chars = pack_padded_sequence(chars, sequence_lengths, batch_first=True)
         # run the char_cnn on it and then reshape back to [batch, sequence, ...]
-        char_pools = PackedSequence(self.char_cnn(word_chars.data), word_chars.batch_sizes,
-                                    word_chars.sorted_indices, word_chars.unsorted_indices)
-        char_pools, _ = pad_packed_sequence(char_pools, batch_first=True)
+        char_pools = self.char_cnn(word_chars.data)
         char_pools = torch.squeeze(char_pools, -1)
 
         # Look up the word embeddings
-        embeddings = self.word_embeddings(words)
-        embeddings = self.dropout(embeddings)
+        words = pack_padded_sequence(words, sequence_lengths, batch_first=True)
+        embeddings = self.word_embeddings(words.data)
 
         # Create word representations from the concatenation of the char-cnn derived representation
         # and the word embedding representation
         word_reps = torch.cat((char_pools, embeddings), -1)
 
         # bath normalization, batch-normalize all words
-        word_reps = word_reps.view(-1, word_reps.shape[-1])
         word_reps = self.batch_norm(word_reps)
-        word_reps = word_reps.view(embeddings.shape[0], embeddings.shape[1], -1)
-        word_reps = self.dropout(word_reps)
 
         # Run LSTM on the sequences of word representations to create contextual word
         # representations
-        packed_word_reps = pack_padded_sequence(word_reps, sequence_lengths,
-                                                batch_first=True,
-                                                enforce_sorted=False)
-        packed_contextual_word_reps, _ = self.lstm(packed_word_reps)
-        contextual_word_reps, _ = pad_packed_sequence(packed_contextual_word_reps, batch_first=True)
+        word_reps = PackedSequence(word_reps, sequence_lengths, sorted_indices=sorted_indices)
+        contextual_word_reps, _ = self.lstm(word_reps)
         # Project to the "begin of sentence" space for each word
+        contextual_word_reps = contextual_word_reps.data
         contextual_word_reps = self.dropout(contextual_word_reps)
-        return self.hidden2bos(contextual_word_reps)
+        bos = self.hidden2bos(contextual_word_reps)
+        bos = PackedSequence(bos, sequence_lengths, sorted_indices=sorted_indices)
+        bos, _ = pad_packed_sequence(bos, batch_first=True)
+        return torch.squeeze(bos, -1)
 
     def predict(self, char_ids, word_ids):
         with torch.no_grad():
@@ -142,10 +139,19 @@ class BiLSTM(nn.Module):
             return predictions
 
 
+def update_sum(prev, current, decay=0.01):
+    return current + (1 - decay) * prev
+
+
+def exponential_moving_average(current, step, decay=0.01):
+    weighted_count = (1 - (1 - decay) ** step) / (1 - (1 - decay))
+    return current / weighted_count
+
+
 def train_on_data(model: BiLSTM, conf, train, validation, pos_weight):
     model_name = "{}".format(time())
 
-    with (Path(conf.job_dir) / (model_name + '.hparyml')).open('w') as f:
+    with (Path(conf.job_dir) / (model_name + '.yml')).open('w') as f:
         yaml.dump(model.hparams, f)
 
     optimizer = optim.Adam(model.parameters())
@@ -153,16 +159,15 @@ def train_on_data(model: BiLSTM, conf, train, validation, pos_weight):
 
     pos_weight = torch.tensor(pos_weight)
     step = 0
-    average_loss = 0
+    weighted_loss_sum = torch.tensor(0, dtype=torch.float64)
+    weighted_precision_sum = torch.tensor(0, dtype=torch.float64)
+    weighted_recall_sum = torch.tensor(0, dtype=torch.float64)
+    weighted_f1_sum = torch.tensor(0, dtype=torch.float64)
 
     last_report = datetime.min
 
     print('STARTING TRAINING')
     for epoch in range(conf.epochs):
-        total_tp = torch.tensor(0, dtype=torch.int64)
-        total_fn = torch.tensor(0, dtype=torch.int64)
-        total_fp = torch.tensor(0, dtype=torch.int64)
-
         model.train(True)
         for i, ((char_ids, word_ids), labels, lengths) in enumerate(train.batches()):
             step += 1
@@ -181,7 +186,8 @@ def train_on_data(model: BiLSTM, conf, train, validation, pos_weight):
             flat_labels = labels.view(-1).float()
             loss = loss_fn(flat_logits, flat_labels)
 
-            l1_regularization = 0.01 * torch.norm(torch.cat([x.view(-1) for x in model.hidden2bos.parameters()]))
+            l1_regularization = 0.01 * torch.norm(
+                torch.cat([x.view(-1) for x in model.hidden2bos.parameters()]))
             loss += l1_regularization
 
             loss.backward()
@@ -189,20 +195,29 @@ def train_on_data(model: BiLSTM, conf, train, validation, pos_weight):
 
             flat_predictions = torch.round(torch.sigmoid(flat_logits))
             tp, fp, fn = confusion_matrix(flat_predictions, flat_labels, mask)
-            total_tp += tp
-            total_fn += fn
-            total_fp += fp
+            f1, precision, recall = f1_precision_recall(tp, fp, fn)
+
+            weighted_loss_sum = update_sum(weighted_loss_sum, loss)
+            weighted_f1_sum = update_sum(weighted_f1_sum, f1)
+            weighted_precision_sum = update_sum(weighted_precision_sum, precision)
+            weighted_recall_sum = update_sum(weighted_recall_sum, recall)
 
             now = datetime.now()
             if (now - last_report).total_seconds() > 1:
                 last_report = now
-                f1, precision, recall = f1_precision_recall(total_tp, total_fp, total_fn)
 
-                average_loss = (loss + (step - 1) * average_loss) / step
+                average_loss = exponential_moving_average(weighted_loss_sum, step)
+                average_f1 = exponential_moving_average(weighted_f1_sum, step)
+                average_precision = exponential_moving_average(weighted_precision_sum, step)
+                average_recall = exponential_moving_average(weighted_recall_sum, step)
 
-                print(
-                    '\rEpoch [{}]:  {}/{} loss: {:.3f} - precision: {:.3%} - recall: {:.3%} - f1: {:.3%}'
-                    .format(epoch + 1, i, train.n_batches, average_loss, precision, recall, f1))
+                print('\rEpoch [{}]:  {}/{} loss: {:.3f} '
+                      '- precision: {:.3%} - recall: {:.3%} - f1: {:.3%}'.format(epoch + 1, i,
+                                                                                 train.n_batches,
+                                                                                 average_loss,
+                                                                                 average_precision,
+                                                                                 average_recall,
+                                                                                 average_f1))
 
         with torch.no_grad():
             model.train(False)
@@ -212,16 +227,17 @@ def train_on_data(model: BiLSTM, conf, train, validation, pos_weight):
             for (char_ids, word_ids), labels, lengths in validation.batches():
                 # validation batches are shape = [1, sequence_length] with no padding
                 predictions = model.predict(char_ids, word_ids)
-
-                mask = torch.ones_like(labels)  # there is no padding in the validation batch
-                tp, fp, fn = confusion_matrix(predictions, labels, mask)
+                flat_predictions = predictions.view(-1)
+                flat_labels = labels.view(-1)
+                mask = torch.ones_like(flat_labels)  # there is no padding in the validation batch
+                tp, fp, fn = confusion_matrix(flat_predictions, flat_labels, mask)
                 val_tp += tp
                 val_fn += fn
                 val_fp += fp
             f1, precision, recall = f1_precision_recall(val_tp, val_fp, val_fn)
             print(
-                'Epoch [{:3d}]: val_precision: {:.3%} -  val_recall: {:.3%} - val_f1: {:.3%}'
-                .format(epoch, precision, recall, f1))
+                'Epoch [{:3d}]: val_precision: {:.3%} -  val_recall: {:.3%} '
+                '- val_f1: {:.3%}'.format(epoch, precision, recall, f1))
             if f1 > old_f1:
                 print('Epoch [{:3d}]: F1 improved from {:.3%} to {:.3%}'.format(epoch, old_f1, f1))
                 torch.save(model.state_dict(), str(Path(conf.job_dir) / (model_name + '.pt')))
@@ -356,6 +372,7 @@ def processor(conf):
 
         class Hparams:
             pass
+
         hparams = Hparams()
         hparams.__dict__.update(d)
 
@@ -385,13 +402,17 @@ def main(args=None):
 
     config = load_config()
     processor_subparser = subparsers.add_parser('processor', parents=[processor_parser()])
-    processor_subparser.add_argument('--embeddings', type=Path, default=Path(config['sentences.wordEmbeddings']),
+    processor_subparser.add_argument('--embeddings', type=Path,
+                                     default=Path(config['sentences.wordEmbeddings']),
                                      help='Optional override for the embeddings file to use.')
-    processor_subparser.add_argument('--chars-file', type=Path, default=Path(config['sentences.charsFile']),
+    processor_subparser.add_argument('--chars-file', type=Path,
+                                     default=Path(config['sentences.charsFile']),
                                      help='Optional override for the chars file to use')
-    processor_subparser.add_argument('--hparams-file', type=Path, default=Path(config['sentences.hparamsFile']),
+    processor_subparser.add_argument('--hparams-file', type=Path,
+                                     default=Path(config['sentences.hparamsFile']),
                                      help='Optional override for model hyperparameters file')
-    processor_subparser.add_argument('--model-file', type=Path, default=Path(config['sentences.modelFile']),
+    processor_subparser.add_argument('--model-file', type=Path,
+                                     default=Path(config['sentences.modelFile']),
                                      help='Optional override for model weights file.')
     processor_subparser.set_defaults(f=processor)
 

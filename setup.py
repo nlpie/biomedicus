@@ -13,15 +13,14 @@
 # limitations under the License.
 """A biomedical and clinical NLP engine developed by the University of
 Minnesota NLP/IE Group."""
-import os
 import shutil
 import sys
 from pathlib import Path
-from subprocess import call, Popen, STDOUT, PIPE, CalledProcessError
+from subprocess import call, Popen, STDOUT, PIPE
 
 from setuptools import setup, find_packages
-from setuptools.command.test import test as _test
 from setuptools.command.build_py import build_py as _build_py
+from setuptools.command.test import test as _test
 
 
 def build_java():
@@ -88,7 +87,7 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Topic :: Scientific/Engineering :: Information Analysis',
-        'Topic :: Text Processing :: General',
+        'Topic :: Text Processing :: Geedu.umn.biomedicus.rtf.RtfProcessorneral',
         'Topic :: Text Processing :: Linguistic'
     ],
     keywords='nlp biomedical text',

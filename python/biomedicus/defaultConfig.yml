@@ -29,3 +29,5 @@ tnt:
     db: ${BIOMEDICUS_DATA}/tnt/words
     metadata: ${BIOMEDICUS_DATA}/tnt/wordMetadata.yml
   beam.threshold: 2.0
+data:
+  data_url: https://
