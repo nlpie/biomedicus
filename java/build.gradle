@@ -15,6 +15,7 @@
  */
 
 plugins {
+    id 'com.github.johnrengelman.shadow' version '5.2.0'
     id 'java'
 }
 
@@ -109,14 +110,13 @@ test {
     useJUnitPlatform()
 }
 
-task fatJar(type: Jar) {
+shadowJar {
     manifest {
-        attributes 'Implementation-Title': 'NLP-NEWT',
+        attributes 'Implementation-Title': 'BioMedICUS',
+                'Description': 'A system for large-scale text analysis and processing of biomedical and clinical reports.',
                 'Implementation-Version': archiveVersion
     }
-    setArchiveBaseName project.name + '-all'
-    from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
-    with jar
+    mergeServiceFiles()
 }
 
 task execute(type: JavaExec) {

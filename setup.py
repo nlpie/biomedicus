@@ -27,7 +27,7 @@ def build_java():
     """Builds the java source code and includes the jar with the python modules.
     """
     cwd = Path(__file__).parent / 'java'
-    p = Popen(['./gradlew', 'clean', 'build', 'fatJar'], cwd=str(cwd), stdout=PIPE, stderr=STDOUT)
+    p = Popen(['./gradlew', 'clean', 'build', 'shadowJar'], cwd=str(cwd), stdout=PIPE, stderr=STDOUT)
     for line in p.stdout:
         print(line.decode(), end='')
     return_code = p.wait()
@@ -36,7 +36,7 @@ def build_java():
     call(['./gradlew', 'writeVersion'], cwd=str(cwd))
     with (cwd / 'build' / 'version.txt').open('r') as f:
         version = f.read()[:-1]
-    jar_file = cwd / 'build' / 'libs' / ('biomedicus-all-' + version + '.jar')
+    jar_file = cwd / 'build' / 'libs' / ('biomedicus-' + version + '-all.jar')
     jar_out = Path(__file__).parent / 'python' / 'biomedicus' / 'biomedicus-all.jar'
     shutil.copy2(str(jar_file), str(jar_out))
 
@@ -91,6 +91,7 @@ setup(
         'Topic :: Text Processing :: Linguistic'
     ],
     keywords='nlp biomedical text',
+    entry_points={'console_scripts': ['biomedicus=biomedicus.cli:main'], },
     package_dir={'': 'python'},
     packages=find_packages(where='python', exclude=['tests']),
     package_data={
@@ -100,7 +101,8 @@ setup(
         'mtap',
         'numpy',
         'pyyaml',
-        'regex'
+        'regex',
+        'tqdm'
     ],
     setup_requires=[
         'pytest-runner',

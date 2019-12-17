@@ -13,12 +13,19 @@
 #  limitations under the License.
 import os
 import signal
+import urllib.request
 from argparse import ArgumentParser
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from subprocess import Popen, STDOUT, PIPE
 from threading import Event
 from typing import Callable
+from zipfile import ZipFile
+
+import grpc
+from tqdm import tqdm
+
+from biomedicus.config import load_config
 
 
 def listener(process: Popen) -> Callable[[], int]:
@@ -26,47 +33,93 @@ def listener(process: Popen) -> Callable[[], int]:
         for line in process.stdout:
             print(line.decode(), end='')
         return process.wait()
+
     return listen
 
 
 def check_data():
     try:
-        data = Path(os.environ['data'])
+        data = Path(os.environ['BIOMEDICUS_DATA'])
     except KeyError:
         data = Path.home() / '.biomedicus' / 'data'
+        os.environ['BIOMEDICUS_DATA'] = str(data)
 
     if not data.exists():
+        print(
+            'It looks like you do not have the set of models distributed for BioMedICUS.\n'
+            'The models are available from our website (https://nlpie.umn.edu/downloads)\n'
+            'and can be installed by specifying the environment variable BIOMEDICUS_DATA\n'
+            'or by placing the extracted models in ~/.biomedicus/data'
+        )
+        ans = input('Would you like to download the model files to ~/.biomedicus/data (Y/N)? ')
+        if ans in ['Y', 'y', 'Yes', 'yes']:
+            download_data_to(data)
+        else:
+            raise ValueError('No biomedicus data folder.')
 
 
+def download_data_to(data):
+    config = load_config()
+    download_url = config['data.data_url']
+
+    def report(_, read, total):
+        if report.bar is None:
+            report.bar = tqdm(total=total, unit='b', unit_scale=True, unit_divisor=10 ** 6)
+        report.bar.update(read)
+
+    report.bar = None
+    try:
+        print('Starting download: ', download_url)
+        local_filename, headers = urllib.request.urlretrieve(download_url, reporthook=report)
+    finally:
+        report.bar.close()
+    try:
+        data.mkdir(parents=True, exist_ok=True)
+        with ZipFile(local_filename) as zf:
+            print('Extracting...')
+            zf.extractall(path=str(data))
+    finally:
+        os.unlink(local_filename)
 
 
 def deploy(conf):
-    check_data()
-    events_address = '127.0.0.1:' + conf.events_port
+    try:
+        check_data()
+    except ValueError:
+        return
     jar_path = str(Path(__file__).parent.parent / 'biomedicus-all.jar')
     calls = [
-        ['python', '-m', 'mtap', 'events', '-p', conf.events_port],
-        ['python', '-m', 'biomedicus.sentences.bi_lstm', 'processor',
-         '-p', conf.sentences_port, '--events', events_address],
-        ['java', '-cp', jar_path, 'edu.umn.biomedicus.tagging.tnt.TntPosTaggerProcessor',
-         '-p', conf.tagger_port, '--events', events_address],
-        ['java', '-cp', jar_path, 'edu.umn.biomedicus.acronym.AcronymDetectorProcessor',
-         '-p', conf.acronyms_port, '--events', events_address],
-        ['java', '-cp', jar_path, 'edu.umn.biomedicus.concepts.DictionaryConceptDetector',
-         '-p', conf.concepts_port, '--events', events_address],
+        (['python', '-m', 'biomedicus.sentences.bi_lstm', 'processor'],
+         conf.sentences_port),
+        (['java', '-cp', jar_path, 'edu.umn.biomedicus.tagging.tnt.TntPosTaggerProcessor'],
+         conf.tagger_port),
+        (['java', '-cp', jar_path, 'edu.umn.biomedicus.acronym.AcronymDetectorProcessor'],
+         conf.acronyms_port),
+        (['java', '-cp', jar_path, 'edu.umn.biomedicus.concepts.DictionaryConceptDetector'],
+         conf.concepts_port)
     ]
+    if conf.events_address is None:
+        calls.insert(0, (['python', '-m', 'mtap', 'events'], conf.events_port))
+        events_address = '127.0.0.1:' + conf.events_port
+    else:
+        events_address = conf.events_address
     if conf.include_rtf:
         calls.append(['java', '-cp', jar_path, 'edu.umn.biomedicus.rtf.RtfProcessor',
                       '-p', conf.rtf_port, '--events', events_address])
+
+    for i, (call, port) in enumerate(calls):
+        call.extend(['-p', port])
+        if events_address is None or i > 0:
+            call.extend(['--events', events_address])
+        if conf.discovery:
+            call.append('--register')
     process_listeners = ThreadPoolExecutor(max_workers=len(calls))
     processes = []
     futures = []
-    for call in calls:
+    for call, _ in calls:
         p = Popen(call, stdout=PIPE, stderr=STDOUT)
-        processes.append(p)
         futures.append(process_listeners.submit(listener(p)))
-
-    e = Event()
+        processes.append(p)
 
     def handler(_a, _b):
         print("Shutting down all processors", flush=True)
@@ -77,6 +130,18 @@ def deploy(conf):
         e.set()
 
     signal.signal(signal.SIGINT, handler)
+
+    for call, port in calls:
+        with grpc.insecure_channel('127.0.0.1:' + port) as channel:
+            future = grpc.channel_ready_future(channel)
+            try:
+                future.result(timeout=20)
+            except grpc.FutureTimeoutError:
+                print('Failed to launch: {}'.format(call))
+                handler(None, None)
+
+    print('Done starting all processors')
+    e = Event()
     e.wait()
     print("Done shutting down all processors")
 
@@ -84,10 +149,18 @@ def deploy(conf):
 def deployment_parser():
     parser = ArgumentParser(add_help=False)
     parser.add_argument('--config-file')
-    parser.add_argument('--events-port', default='10100')
-    parser.add_argument('--include-rtf', action='store_true')
-    parser.add_argument('--rtf-port', default='10101')
-    parser.add_argument('--sentences-port', default='10102')
+    parser.add_argument('--events-address', default=None,
+                        help="An existing events service to use instead of launching one.")
+    parser.add_argument('--events-port', default='10100',
+                        help="The port to launch the events service on")
+    parser.add_argument('--include-rtf', action='store_true',
+                        help='Also launch the RTF processor.')
+    parser.add_argument('--discovery', action='store_true',
+                        help='Register the services with consul.')
+    parser.add_argument('--rtf-port', default='10101',
+                        help="The port to launch the RTF processor on.")
+    parser.add_argument('--sentences-port', default='10102',
+                        help="")
     parser.add_argument('--tagger-port', default='10103')
     parser.add_argument('--acronyms-port', default='10104')
     parser.add_argument('--concepts-port', default='10105')

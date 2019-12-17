@@ -12,16 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from biomedicus import version
 
-def main(args=None):
-    from argparse import ArgumentParser
-    from biomedicus.deployment.deploy_biomedicus import deployment_parser, deploy
-    parser = ArgumentParser()
-    parser.set_defaults(f=lambda _: parser.print_help())
-    subparsers = parser.add_subparsers()
-    deployment_subparser = subparsers.add_parser('deploy', parents=[deployment_parser()])
-    deployment_subparser.set_defaults(f=deploy)
-    conf = parser.parse_args(args)
-    f = conf.f
-    del conf.f
-    f(conf)
+__version__ = version.version

@@ -188,15 +188,19 @@ public class TntPosTaggerProcessor extends DocumentProcessor {
           for (TokenResult token : Tokenizer.tokenize(sentenceText)) {
             int startIndex = sentence.getStartIndex() + token.getStartIndex();
             int endIndex = sentence.getStartIndex() + token.getEndIndex();
-            tokens.add(GenericLabel.withSpan(startIndex, endIndex).build());
+            tokens.add(GenericLabel.withSpan(startIndex, endIndex).withDocument(document).build());
           }
           if (tokens.size() > 0) {
             GenericLabel lastToken = tokens.remove(tokens.size() - 1);
             if (lastToken.getEndIndex() - lastToken.getStartIndex() > 1) {
               CharSequence tokenText = lastToken.getText();
               if (Arrays.asList('!', '?', '.').contains(tokenText.charAt(tokenText.length() - 1))) {
-                tokens.add(GenericLabel.withSpan(lastToken.getStartIndex(), lastToken.getEndIndex() - 1).build());
-                tokens.add(GenericLabel.withSpan(lastToken.getEndIndex() - 1, lastToken.getEndIndex()).build());
+                tokens.add(
+                    GenericLabel.withSpan(lastToken.getStartIndex(), lastToken.getEndIndex() - 1)
+                        .withDocument(document).build());
+                tokens.add(
+                    GenericLabel.withSpan(lastToken.getEndIndex() - 1, lastToken.getEndIndex())
+                        .withDocument(document).build());
               } else {
                 tokens.add(lastToken);
               }
