@@ -91,11 +91,11 @@ def deploy(conf):
     calls = [
         (['python', '-m', 'biomedicus.sentences.bi_lstm', 'processor'],
          conf.sentences_port),
-        (['java', '-cp', jar_path, 'edu.umn.biomedicus.tagging.tnt.TntPosTaggerProcessor'],
+        (['java', '-Xms128m', '-Xmx8g', '-cp', jar_path, 'edu.umn.biomedicus.tagging.tnt.TntPosTaggerProcessor'],
          conf.tagger_port),
-        (['java', '-cp', jar_path, 'edu.umn.biomedicus.acronym.AcronymDetectorProcessor'],
+        (['java', '-Xms128m', '-Xmx8g', '-cp', jar_path, 'edu.umn.biomedicus.acronym.AcronymDetectorProcessor'],
          conf.acronyms_port),
-        (['java', '-cp', jar_path, 'edu.umn.biomedicus.concepts.DictionaryConceptDetector'],
+        (['java', '-Xms128m', '-Xmx8g', '-cp', jar_path, 'edu.umn.biomedicus.concepts.DictionaryConceptDetector'],
          conf.concepts_port)
     ]
     if conf.events_address is None:
