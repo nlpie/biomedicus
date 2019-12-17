@@ -21,12 +21,14 @@ from mtap.metrics import Metrics, Accuracy
 from mtap.utilities import find_free_port
 from pathlib import Path
 
+import biomedicus
+
 
 @pytest.fixture(name='pos_tags_service')
 def fixture_pos_tags_service(events_service, processor_watcher, processor_timeout):
     port = str(find_free_port())
     address = '127.0.0.1:' + port
-    biomedicus_jar = os.environ['BIOMEDICUS_JAR']
+    biomedicus_jar = biomedicus.biomedicus_jar()
     p = Popen(['java', '-cp', biomedicus_jar,
                'edu.umn.biomedicus.tagging.tnt.TntPosTaggerProcessor', '-p', port,
                '--events', events_service],

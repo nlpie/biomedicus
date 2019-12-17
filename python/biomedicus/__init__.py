@@ -15,3 +15,8 @@
 from biomedicus import version
 
 __version__ = version.version
+
+
+def biomedicus_jar():
+    from pathlib import Path
+    return str(Path(__file__).parent / 'biomedicus-all.jar')
