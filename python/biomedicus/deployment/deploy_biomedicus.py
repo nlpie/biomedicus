@@ -37,7 +37,7 @@ def listener(process: Popen) -> Callable[[], int]:
     return listen
 
 
-def check_data():
+def check_data(download=False):
     try:
         data = Path(os.environ['BIOMEDICUS_DATA'])
     except KeyError:
@@ -51,8 +51,8 @@ def check_data():
             'and can be installed by specifying the environment variable BIOMEDICUS_DATA\n'
             'or by placing the extracted models in ~/.biomedicus/data'
         )
-        ans = input('Would you like to download the model files to ~/.biomedicus/data (Y/N)? ')
-        if ans in ['Y', 'y', 'Yes', 'yes']:
+        prompt = 'Would you like to download the model files to ~/.biomedicus/data (Y/N)? '
+        if download or input(prompt) in ['Y', 'y', 'Yes', 'yes']:
             download_data_to(data)
         else:
             raise ValueError('No biomedicus data folder.')
@@ -84,7 +84,7 @@ def download_data_to(data):
 
 def deploy(conf):
     try:
-        check_data()
+        check_data(conf.download_data)
     except ValueError:
         return
     jar_path = str(Path(__file__).parent.parent / 'biomedicus-all.jar')
@@ -160,8 +160,14 @@ def deployment_parser():
     parser.add_argument('--rtf-port', default='10101',
                         help="The port to launch the RTF processor on.")
     parser.add_argument('--sentences-port', default='10102',
-                        help="")
-    parser.add_argument('--tagger-port', default='10103')
-    parser.add_argument('--acronyms-port', default='10104')
-    parser.add_argument('--concepts-port', default='10105')
+                        help="The port to launch the sentences processor on.")
+    parser.add_argument('--tagger-port', default='10103',
+                        help="The port to launch the tnt pos tagger on.")
+    parser.add_argument('--acronyms-port', default='10104',
+                        help="The port to launch the acronym detector on.")
+    parser.add_argument('--concepts-port', default='10105',
+                        help="The port to launch the concepts detector on.")
+    parser.add_argument('--download-data', action='store_true',
+                        help="If this flag is specified, automatically download the biomedicus "
+                             "data if it is missing.")
     return parser

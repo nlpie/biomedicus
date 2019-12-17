@@ -30,4 +30,4 @@ tnt:
     metadata: ${BIOMEDICUS_DATA}/tnt/wordMetadata.yml
   beam.threshold: 2.0
 data:
-  data_url: https://github.com/nlpie/biomedicus3/releases/download/v3.0-beta.0/biomedicus-data-3.0-beta0-umls.zip
+  data_url: https://github.com/nlpie/biomedicus3/releases/download/v3.0-beta.0/biomedicus-3.0-beta0-umls-data.zip

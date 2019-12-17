@@ -21,6 +21,7 @@ from typing import Dict, Any
 import numpy as np
 import torch
 import yaml
+from biomedicus.deployment.deploy_biomedicus import check_data
 from mtap import processor_parser, Document, processor, run_processor
 from mtap.processing import DocumentProcessor
 from mtap.processing.descriptions import label_index
@@ -367,6 +368,7 @@ def train(conf):
 
 def processor(conf):
     logging.basicConfig(level=logging.INFO)
+    check_data(conf.download_data)
     logger.info('Loading hparams from: {}'.format(conf.hparams_file))
     with conf.hparams_file.open('r') as f:
         d = yaml.load(f, Loader)
@@ -415,6 +417,9 @@ def main(args=None):
     processor_subparser.add_argument('--model-file', type=Path,
                                      default=Path(config['sentences.modelFile']),
                                      help='Optional override for model weights file.')
+    processor_subparser.add_argument('--download-data', action="store_true",
+                                     help="Automatically Download the latest model files if they "
+                                          "are not found.")
     processor_subparser.set_defaults(f=processor)
 
     conf = parser.parse_args(args)
