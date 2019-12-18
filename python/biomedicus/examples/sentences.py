@@ -19,8 +19,8 @@ from mtap import EventsClient, Pipeline, RemoteProcessor, Event
 
 def main(args=None):
     parser = ArgumentParser()
-    parser.add_argument('events_service', default='localhost:8500')
-    parser.add_argument('sentences_service', default='localhost:8501')
+    parser.add_argument('--events-service', default='localhost:10100')
+    parser.add_argument('--sentences-service', default='localhost:10102')
     conf = parser.parse_args(args)
     with Pipeline(
         RemoteProcessor('biomedicus-sentences', address=conf.sentences_service)
@@ -28,9 +28,11 @@ def main(args=None):
         text = sys.stdin.read()
         with Event(client=events_client) as event:
             doc = event.create_document('plaintext', text)
-            pipeline.run(doc)
+            result = pipeline.run(doc)
             for sentence in doc.get_label_index('sentences'):
                 print('S: "', sentence.text, '"')
+            for k, v in result[0].timing_info.items():
+                print('{}: {}'.format(k, v))
 
 
 if __name__ == '__main__':

@@ -11,3 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+from biomedicus import version
+
+__version__ = version.version
+
+
+def biomedicus_jar():
+    from pathlib import Path
+    return str(Path(__file__).parent / 'biomedicus-all.jar')

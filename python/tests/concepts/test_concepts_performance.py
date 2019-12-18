@@ -21,12 +21,14 @@ from mtap.io.serialization import JsonSerializer
 from mtap.metrics import Accuracy, Metrics
 from mtap.utilities import find_free_port
 
+import biomedicus
+
 
 @pytest.fixture(name='concepts_service')
 def fixture_concepts_service(events_service, processor_watcher, processor_timeout):
     port = str(find_free_port())
     address = '127.0.0.1:' + port
-    biomedicus_jar = os.environ['BIOMEDICUS_JAR']
+    biomedicus_jar = biomedicus.biomedicus_jar()
     p = Popen(['java', '-cp', biomedicus_jar,
                'edu.umn.biomedicus.concepts.DictionaryConceptDetector', '-p', port,
                '--events', events_service], stdin=PIPE, stdout=PIPE, stderr=PIPE)

@@ -20,12 +20,14 @@ from mtap import EventsClient, Pipeline, RemoteProcessor
 from mtap.io.serialization import JsonSerializer
 from mtap.utilities import find_free_port
 
+import biomedicus
+
 
 @pytest.fixture(name='normalization_processor')
 def fixture_normalization_processor(events_service, processor_watcher, processor_timeout):
     port = str(find_free_port())
     address = '127.0.0.1:' + port
-    biomedicus_jar = os.environ['BIOMEDICUS_JAR']
+    biomedicus_jar = biomedicus.biomedicus_jar()
     p = Popen(['java', '-cp', biomedicus_jar,
                'edu.umn.biomedicus.normalization.NormalizationProcessor',
                '-p', port, '--events', events_service],
