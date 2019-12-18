@@ -14,6 +14,7 @@
 from argparse import ArgumentParser
 from pathlib import Path
 
+import grpc
 from mtap import Pipeline, Event, EventsClient, RemoteProcessor
 from mtap.io.serialization import JsonSerializer, get_serializer
 
@@ -67,9 +68,17 @@ class DefaultPipeline:
 
     def process_text(self, text: str, *, event_id: str = None) -> Event:
         event = Event(event_id=event_id, client=self.events_client)
-        document = event.create_document('plaintext', text=text)
-        self.pipeline.run(document)
-        return event
+        try:
+            document = event.create_document('plaintext', text=text)
+            self.pipeline.run(document)
+        except grpc.RpcError as e:
+            print("Error processing event {}".format(event.event_id))
+            event.close()
+            raise e
+        except (KeyboardInterrupt, InterruptedError) as e:
+            event.close()
+            raise e
+        return event  # Hand off event to caller
 
     def __enter__(self):
         return self
@@ -114,6 +123,7 @@ def run_default_pipeline(conf: DefaultPipelineConf):
             txt = f.read()
         relative_path = str(txt_file.relative_to(conf.input_directory))
         with default_pipeline.process_text(txt, event_id=relative_path) as event:
+            print('Processed document: "{}"'.format(relative_path))
             output_file = Path(conf.output_directory) / (relative_path + serializer.extension)
             output_file.parent.mkdir(parents=True, exist_ok=True)
             serializer.event_to_file(event, output_file)
