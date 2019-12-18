@@ -64,6 +64,9 @@ class test(_test):
         sys.exit(errno)
 
 
+with (Path(__file__).parent / 'README.md').open(encoding='utf-8') as f:
+    long_description = f.read()
+
 setup(
     name='biomedicus',
     use_scm_version={
@@ -71,23 +74,33 @@ setup(
         "write_to": "python/biomedicus/version.py"
     },
     description='A biomedical and clinical NLP engine.',
+    url='https://nlpie.github.io/biomedicus',
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     python_requires='~=3.5',
     author='University of Minnesota NLP/IE Group',
     author_email='nlp-ie@umn.edu',
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: 4 - Beta',
+        'Environment :: Console',
         'Intended Audience :: Healthcare Industry',
         'Intended Audience :: Information Technology',
         'Intended Audience :: Science/Research',
         'License :: OSI Approved :: Apache Software License',
-        'Operating System :: MacOS',
+        'Natural Language :: English',
+        'Operating System :: MacOS :: MacOS X',
         'Operating System :: POSIX :: Linux',
-        'Programming Language :: Python :: 3',
+        'Programming Language :: Java',
+        'Programming Language :: Python :: 3 :: Only',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: Implementation :: CPython',
         'Topic :: Scientific/Engineering :: Information Analysis',
-        'Topic :: Text Processing :: Geedu.umn.biomedicus.rtf.RtfProcessorneral',
+        'Topic :: Scientific/Engineering :: Medical Science Apps.',
+        'Topic :: Text Processing :: General',
         'Topic :: Text Processing :: Linguistic'
     ],
     keywords='nlp biomedical text',

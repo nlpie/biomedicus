@@ -16,7 +16,7 @@ from pathlib import Path
 
 import grpc
 from mtap import Pipeline, Event, EventsClient, RemoteProcessor
-from mtap.io.serialization import JsonSerializer, get_serializer
+from mtap.io.serialization import get_serializer
 
 
 class DefaultPipelineConf:
