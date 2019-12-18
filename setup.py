@@ -27,18 +27,19 @@ def build_java():
     """Builds the java source code and includes the jar with the python modules.
     """
     cwd = Path(__file__).parent / 'java'
-    p = Popen(['./gradlew', 'clean', 'build', 'shadowJar'], cwd=str(cwd), stdout=PIPE, stderr=STDOUT)
-    for line in p.stdout:
-        print(line.decode(), end='')
-    return_code = p.wait()
-    if return_code:
-        raise IOError('Java build failed.')
-    call(['./gradlew', 'writeVersion'], cwd=str(cwd))
-    with (cwd / 'build' / 'version.txt').open('r') as f:
-        version = f.read()[:-1]
-    jar_file = cwd / 'build' / 'libs' / ('biomedicus-' + version + '-all.jar')
-    jar_out = Path(__file__).parent / 'python' / 'biomedicus' / 'biomedicus-all.jar'
-    shutil.copy2(str(jar_file), str(jar_out))
+    if cwd.exists():
+        p = Popen(['./gradlew', 'clean', 'build', 'shadowJar'], cwd=str(cwd), stdout=PIPE, stderr=STDOUT)
+        for line in p.stdout:
+            print(line.decode(), end='')
+        return_code = p.wait()
+        if return_code:
+            raise IOError('Java build failed.')
+        call(['./gradlew', 'writeVersion'], cwd=str(cwd))
+        with (cwd / 'build' / 'version.txt').open('r') as f:
+            version = f.read()[:-1]
+        jar_file = cwd / 'build' / 'libs' / ('biomedicus-' + version + '-all.jar')
+        jar_out = Path(__file__).parent / 'python' / 'biomedicus' / 'biomedicus-all.jar'
+        shutil.copy2(str(jar_file), str(jar_out))
 
 
 class build_py(_build_py):

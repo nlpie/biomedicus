@@ -14,7 +14,7 @@ More information about BioMedICUS can be found on our [website](https://nlpie.gi
 ## Installation
 
 ```bash
-pip install biomedicus
+pip install biomedicus\[torch]
 ```
 
 ## Deploying the default BioMedICUS Pipeline
