@@ -32,6 +32,7 @@ class DefaultPipelineConf:
         self.concepts_id = 'biomedicus-concepts'
         self.concepts_address = '127.0.0.1:10105'
         self.include_label_text = False
+        self.threads = 4
 
         self.serializer = None
         self.input_directory = None
@@ -59,17 +60,17 @@ class DefaultPipeline:
         if conf.use_discovery:
             self.pipeline = Pipeline(
                 *[RemoteProcessor(identifier) for identifier, _ in pipeline],
-                n_threads=10
+                n_threads=conf.threads
             )
-
         else:
             self.pipeline = Pipeline(
                 *[RemoteProcessor(identifier, address=addr) for identifier, addr in pipeline],
-                n_threads=10
+                n_threads=conf.threads
             )
         if conf.serializer is not None:
             serialization_proc = SerializationProcessor(get_serializer(conf.serializer),
-                                                        conf.output_directory)
+                                                        conf.output_directory,
+                                                        include_label_text=conf.include_label_text)
             ser_comp = LocalProcessor(serialization_proc, component_id='serializer',
                                       client=self.events_client)
             self.pipeline.append(ser_comp)
@@ -107,9 +108,12 @@ def default_pipeline_parser():
     parser.add_argument('--use_discovery', action='store_true',
                         help="If this flag is specified, all ports will be ignored and instead "
                              "service discovery will be used to connect to services.")
-    parser.add_argument('--serializer', default=None, choices=['json', 'yml', 'pickle'],
+    parser.add_argument('--serializer', default='yml', choices=['json', 'yml', 'pickle'],
                         help="The identifier for the serializer to use, see MTAP serializers.")
-    parser.add_argument('--include-label-text', action='store_true')
+    parser.add_argument('--include-label-text', action='store_true',
+                        help="Flag to include the covered text for every label")
+    parser.add_argument('--threads', default=defaults.threads, type=int,
+                        help="The number of threads to use for processing")
     return parser
 
 
@@ -122,11 +126,12 @@ def run_default_pipeline(conf: DefaultPipelineConf):
 
         def source():
             for path in input_dir.rglob('*.txt'):
-                with path.open('r') as f:
+                with path.open('r', errors='replace') as f:
                     txt = f.read()
                 relative = str(path.relative_to(input_dir))
                 e = Event(event_id=relative, client=default_pipeline.events_client)
                 doc = e.create_document('plaintext', txt)
                 yield doc
 
-        default_pipeline.pipeline.run_multithread(source(), default_pipeline.events_client)
+        default_pipeline.pipeline.run_multithread(source())
+        default_pipeline.pipeline.print_times()

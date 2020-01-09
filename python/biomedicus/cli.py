@@ -11,6 +11,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+import logging
 
 
 def main(args=None):
@@ -19,6 +20,7 @@ def main(args=None):
     from biomedicus.pipeline.default_pipeline import default_pipeline_parser, run_default_pipeline
     parser = ArgumentParser()
     parser.set_defaults(f=lambda _: parser.print_help())
+    parser.add_argument('--log-level', default='INFO')
     subparsers = parser.add_subparsers()
 
     deployment_subparser = subparsers.add_parser('deploy', parents=[deployment_parser()],
@@ -31,6 +33,6 @@ def main(args=None):
     run_subparser.set_defaults(f=run_default_pipeline)
 
     conf = parser.parse_args(args)
+    logging.basicConfig(level=conf.log_level)
     f = conf.f
-    del conf.f
     f(conf)
