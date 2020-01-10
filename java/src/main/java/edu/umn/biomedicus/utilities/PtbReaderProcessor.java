@@ -89,7 +89,7 @@ public class PtbReaderProcessor extends EventProcessor {
       throw new IllegalStateException(e);
     }
 
-    Document target = event.addDocument(targetDocumentName, documentBuilder.toString());
+    Document target = event.createDocument(targetDocumentName, documentBuilder.toString());
     String sentencesIndex = (String) params.getOrDefault("sentences_index", "sentences");
     target.addLabels(sentencesIndex, true, sentences);
     String posTagsIndex = (String) params.getOrDefault("pos_tags_index", "pos_tags");

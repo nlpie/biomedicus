@@ -68,7 +68,7 @@ public class MTAPDocumentsSink implements RtfSink {
   }
 
   Document done(Event event, String documentName) {
-    Document document = event.addDocument(documentName, sb.toString());
+    Document document = event.createDocument(documentName, sb.toString());
     for (PropertyWatcher propertyWatcher : propertyWatchers) {
       propertyWatcher.done(document);
     }
