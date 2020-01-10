@@ -112,7 +112,7 @@ setup(
         'biomedicus': ['defaultConfig.yml', 'biomedicus-all.jar']
     },
     install_requires=[
-        'mtap',
+        'mtap>=0.3.0',
         'numpy',
         'pyyaml',
         'regex',

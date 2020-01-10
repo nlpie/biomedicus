@@ -106,7 +106,7 @@ public class RtfProcessor extends EventProcessor {
         while ((code = bis.read()) != -1) {
           sb.append((char) code);
         }
-        event.addDocument(outputDocumentName, sb.toString());
+        event.createDocument(outputDocumentName, sb.toString());
       }
     } catch (IOException e) {
       throw new IllegalStateException(e);
