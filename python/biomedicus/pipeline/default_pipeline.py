@@ -123,6 +123,7 @@ def run_default_pipeline(conf: DefaultPipelineConf):
     conf = _conf
     with DefaultPipeline(conf) as default_pipeline:
         input_dir = Path(conf.input_directory)
+        total = sum(1 for _ in input_dir.rglob('*.txt'))
 
         def source():
             for path in input_dir.rglob('*.txt'):
@@ -133,5 +134,5 @@ def run_default_pipeline(conf: DefaultPipelineConf):
                 doc = e.create_document('plaintext', txt)
                 yield doc
 
-        default_pipeline.pipeline.run_multithread(source())
+        default_pipeline.pipeline.run_multithread(source(), total=total)
         default_pipeline.pipeline.print_times()
