@@ -14,9 +14,9 @@
 from argparse import ArgumentParser
 from pathlib import Path
 
-import grpc
-from mtap import Pipeline, Event, EventsClient, RemoteProcessor
-from mtap.io.serialization import get_serializer
+from mtap import Pipeline, Event, EventsClient, RemoteProcessor, LocalProcessor
+from mtap.io.serialization import get_serializer, SerializationProcessor
+from mtap.processing import ProcessingResult
 
 
 class DefaultPipelineConf:
@@ -31,32 +31,17 @@ class DefaultPipelineConf:
         self.acronyms_address = '127.0.0.1:10104'
         self.concepts_id = 'biomedicus-concepts'
         self.concepts_address = '127.0.0.1:10105'
-        self.serializer = 'json'
+        self.include_label_text = False
+        self.threads = 4
 
+        self.serializer = None
         self.input_directory = None
         self.output_directory = None
-
-    def pipeline(self):
-        pipeline = [
-            (self.sentences_id, self.sentences_address),
-            (self.tagger_id, self.tagger_address),
-            (self.acronyms_id, self.acronyms_address),
-            (self.concepts_id, self.concepts_address)
-        ]
-        if self.use_discovery:
-            return Pipeline(
-                *[RemoteProcessor(identifier) for identifier, _ in pipeline]
-            )
-        else:
-            return Pipeline(
-                *[RemoteProcessor(identifier, address=addr) for identifier, addr in pipeline]
-            )
 
 
 class DefaultPipeline:
     def __init__(self, conf: DefaultPipelineConf,
                  *, events_client: EventsClient = None):
-        self.pipeline = conf.pipeline()
         if events_client is not None:
             self.close_client = False
             self.events_client = events_client
@@ -66,19 +51,35 @@ class DefaultPipeline:
         else:
             raise ValueError("Events client or address not specified.")
 
-    def process_text(self, text: str, *, event_id: str = None) -> Event:
-        event = Event(event_id=event_id, client=self.events_client)
-        try:
+        pipeline = [
+            (conf.sentences_id, conf.sentences_address),
+            (conf.tagger_id, conf.tagger_address),
+            (conf.acronyms_id, conf.acronyms_address),
+            (conf.concepts_id, conf.concepts_address)
+        ]
+        if conf.use_discovery:
+            self.pipeline = Pipeline(
+                *[RemoteProcessor(identifier) for identifier, _ in pipeline],
+                n_threads=conf.threads
+            )
+        else:
+            self.pipeline = Pipeline(
+                *[RemoteProcessor(identifier, address=addr) for identifier, addr in pipeline],
+                n_threads=conf.threads
+            )
+        if conf.serializer is not None:
+            serialization_proc = SerializationProcessor(get_serializer(conf.serializer),
+                                                        conf.output_directory,
+                                                        include_label_text=conf.include_label_text)
+            ser_comp = LocalProcessor(serialization_proc, component_id='serializer',
+                                      client=self.events_client)
+            self.pipeline.append(ser_comp)
+
+    def process_text(self, text: str, *, event_id: str = None) -> ProcessingResult:
+        with Event(event_id=event_id, client=self.events_client) as event:
             document = event.create_document('plaintext', text=text)
-            self.pipeline.run(document)
-        except grpc.RpcError as e:
-            print("Error processing event {}".format(event.event_id))
-            event.close()
-            raise e
-        except (KeyboardInterrupt, InterruptedError) as e:
-            event.close()
-            raise e
-        return event  # Hand off event to caller
+            f = self.pipeline.run(document)
+        return f
 
     def __enter__(self):
         return self
@@ -107,8 +108,12 @@ def default_pipeline_parser():
     parser.add_argument('--use_discovery', action='store_true',
                         help="If this flag is specified, all ports will be ignored and instead "
                              "service discovery will be used to connect to services.")
-    parser.add_argument('--serializer', default=defaults.serializer, choices=['json'],
+    parser.add_argument('--serializer', default='yml', choices=['json', 'yml', 'pickle'],
                         help="The identifier for the serializer to use, see MTAP serializers.")
+    parser.add_argument('--include-label-text', action='store_true',
+                        help="Flag to include the covered text for every label")
+    parser.add_argument('--threads', default=defaults.threads, type=int,
+                        help="The number of threads to use for processing")
     return parser
 
 
@@ -116,16 +121,18 @@ def run_default_pipeline(conf: DefaultPipelineConf):
     _conf = DefaultPipelineConf()
     vars(_conf).update(vars(conf))
     conf = _conf
-    default_pipeline = DefaultPipeline(conf)
-    serializer = get_serializer(conf.serializer)
-    for txt_file in Path(conf.input_directory).rglob('*.txt'):
-        with txt_file.open() as f:
-            txt = f.read()
-        relative_path = str(txt_file.relative_to(conf.input_directory))
-        with default_pipeline.process_text(txt, event_id=relative_path) as event:
-            print('Processed document: "{}"'.format(relative_path))
-            output_file = Path(conf.output_directory) / (relative_path + serializer.extension)
-            output_file.parent.mkdir(parents=True, exist_ok=True)
-            serializer.event_to_file(event, output_file)
+    with DefaultPipeline(conf) as default_pipeline:
+        input_dir = Path(conf.input_directory)
+        total = sum(1 for _ in input_dir.rglob('*.txt'))
 
-    default_pipeline.pipeline.print_times()
+        def source():
+            for path in input_dir.rglob('*.txt'):
+                with path.open('r', errors='replace') as f:
+                    txt = f.read()
+                relative = str(path.relative_to(input_dir))
+                e = Event(event_id=relative, client=default_pipeline.events_client)
+                doc = e.create_document('plaintext', txt)
+                yield doc
+
+        default_pipeline.pipeline.run_multithread(source(), total=total)
+        default_pipeline.pipeline.print_times()
