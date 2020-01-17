@@ -99,7 +99,8 @@ dependencies {
     implementation group: 'org.simpleframework', name: 'simple-xml', version: '2.7.1'
 
     runtimeOnly group: 'org.glassfish.jaxb', name: 'jaxb-runtime', version: jaxbVersion
-    runtimeOnly group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version: '2.11.2'
+    runtimeOnly group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version: '2.13.0'
+    runtimeOnly group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.13.0'
 
     testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: junitVersion
     testImplementation group: 'org.mockito', name: 'mockito-core', version: '2.+'

@@ -12,6 +12,42 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 import logging
+import os
+import sys
+from concurrent.futures import thread
+from concurrent.futures.thread import ThreadPoolExecutor
+from pathlib import Path
+from subprocess import STDOUT, PIPE, Popen
+from threading import Thread
+
+
+class ProcessListener(Thread):
+    def __init__(self, p: Popen, **kwargs):
+        super().__init__(**kwargs)
+        self.p = p
+        self.return_code = None
+
+    def run(self):
+        for line in self.p.stdout:
+            print(line.decode(), end='')
+        self.return_code = self.p.wait()
+
+
+def run_java(conf):
+    jar_path = str(Path(__file__).parent / 'biomedicus-all.jar')
+    cp = os.environ.get('CLASSPATH', None)
+    if cp is not None:
+        cp = cp + ':' + jar_path
+    else:
+        cp = jar_path
+    call_args = ['java', '-cp', cp] + conf.args
+    p = Popen(call_args, stdout=PIPE, stderr=STDOUT)
+    listener = ProcessListener(p)
+    listener.start()
+    try:
+        listener.join()
+    except KeyboardInterrupt:
+        pass
 
 
 def main(args=None):
@@ -31,6 +67,12 @@ def main(args=None):
                                           help="Runs the default biomedicus pipeline on files "
                                                "in a directory.")
     run_subparser.set_defaults(f=run_default_pipeline)
+
+    run_java_subparser = subparsers.add_parser('java',
+                                               help="Calls Java with the biomedicus jar on "
+                                                    "the classpath.")
+    run_java_subparser.add_argument('args', nargs='+')
+    run_java_subparser.set_defaults(f=run_java)
 
     conf = parser.parse_args(args)
     logging.basicConfig(level=conf.log_level)
