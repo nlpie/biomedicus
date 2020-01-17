@@ -44,7 +44,10 @@ def run_java(conf):
     p = Popen(call_args, stdout=PIPE, stderr=STDOUT)
     listener = ProcessListener(p)
     listener.start()
-    listener.join()
+    try:
+        listener.join()
+    except KeyboardInterrupt:
+        pass
 
 
 def main(args=None):
@@ -65,7 +68,7 @@ def main(args=None):
                                                "in a directory.")
     run_subparser.set_defaults(f=run_default_pipeline)
 
-    run_java_subparser = subparsers.add_parser('run_java',
+    run_java_subparser = subparsers.add_parser('java',
                                                help="Calls Java with the biomedicus jar on "
                                                     "the classpath.")
     run_java_subparser.add_argument('args', nargs='+')
