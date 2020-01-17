@@ -379,3 +379,4 @@ gradle-app.setting
 .project
 .classpath
 Pipfile
+Pipfile.lock
