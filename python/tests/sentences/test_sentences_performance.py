@@ -36,7 +36,7 @@ def fixture_sentences_service(events_service, processor_watcher, processor_timeo
 
 @pytest.mark.phi_test_data
 @pytest.mark.performance
-def test_sentence_performance(events_service, sentences_service):
+def test_sentence_performance(events_service, sentences_service, test_results):
     input_dir = Path(os.environ['BIOMEDICUS_TEST_DATA']) / 'sentences'
 
     accuracy = Accuracy()
@@ -54,4 +54,10 @@ def test_sentence_performance(events_service, sentences_service):
 
         print('Accuracy:', accuracy.value)
         pipeline.print_times()
+        timing_info = pipeline.processor_timer_stats()[0].timing_info
+        test_results['Sentences'] = {
+            'Accuracy': accuracy.value,
+            'Remote Call Duration': str(timing_info['remote_call'].mean),
+            'Process Method Duration': str(timing_info['process_method'].mean)
+        }
         assert accuracy.value > 0.7

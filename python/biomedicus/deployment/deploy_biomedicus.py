@@ -15,11 +15,9 @@ import os
 import signal
 import urllib.request
 from argparse import ArgumentParser
-from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from subprocess import Popen, STDOUT, PIPE
-from threading import Event
-from typing import Callable
+from threading import Event, Thread
 from zipfile import ZipFile
 
 import grpc
@@ -28,13 +26,10 @@ from tqdm import tqdm
 from biomedicus.config import load_config
 
 
-def listener(process: Popen) -> Callable[[], int]:
-    def listen():
-        for line in process.stdout:
-            print(line.decode(), end='')
-        return process.wait()
-
-    return listen
+def _listen(process: Popen) -> int:
+    for line in process.stdout:
+        print(line.decode(), end='', flush=True)
+    return process.wait()
 
 
 def check_data(download=False):
@@ -113,20 +108,23 @@ def deploy(conf):
             call.extend(['--events', events_address])
         if conf.discovery:
             call.append('--register')
-    process_listeners = ThreadPoolExecutor(max_workers=len(calls))
+    process_listeners = []
     processes = []
-    futures = []
     for call, _ in calls:
         p = Popen(call, stdout=PIPE, stderr=STDOUT)
-        futures.append(process_listeners.submit(listener(p)))
+        listener = Thread(target=_listen, args=(p,))
+        listener.start()
+        process_listeners.append(listener)
         processes.append(p)
+
+    e = Event()
 
     def handler(_a, _b):
         print("Shutting down all processors", flush=True)
         for p in processes:
             p.send_signal(signal.SIGINT)
-        for future in futures:
-            future.result(timeout=5)
+        for listener in process_listeners:
+            listener.join(timeout=5)
         e.set()
 
     signal.signal(signal.SIGINT, handler)
@@ -140,8 +138,7 @@ def deploy(conf):
                 print('Failed to launch: {}'.format(call))
                 handler(None, None)
 
-    print('Done starting all processors')
-    e = Event()
+    print('Done starting all processors', flush=True)
     e.wait()
     print("Done shutting down all processors")
 

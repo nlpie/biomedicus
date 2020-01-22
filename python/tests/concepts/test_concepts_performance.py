@@ -36,7 +36,7 @@ def fixture_concepts_service(events_service, processor_watcher, processor_timeou
 
 
 @pytest.mark.performance
-def test_concepts_performance(events_service, concepts_service):
+def test_concepts_performance(events_service, concepts_service, test_results):
     input_dir = Path(os.environ['BIOMEDICUS_TEST_DATA']) / 'concepts'
     recall = Accuracy(name='recall', mode='any', fields=['cui'])
     precision = Accuracy(name='precision', mode='any', fields=['cui'])
@@ -55,4 +55,11 @@ def test_concepts_performance(events_service, concepts_service):
 
     print('Precision:', precision.value)
     print('Recall:', recall.value)
+    timing_info = pipeline.processor_timer_stats()[0].timing_info
+    test_results['Concepts'] = {
+        'Precision': precision.value,
+        'Recall': recall.value,
+        'Remote Call Duration': str(timing_info['remote_call'].mean),
+        'Process Method Duration': str(timing_info['process_method'].mean)
+    }
     assert recall.value > 0.6

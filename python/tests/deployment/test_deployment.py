@@ -15,10 +15,10 @@ import signal
 import threading
 from pathlib import Path
 from subprocess import Popen, PIPE, STDOUT, call
-from tempfile import NamedTemporaryFile, mkdtemp
+from tempfile import NamedTemporaryFile, mkdtemp, TemporaryDirectory
 
 import pytest
-from mtap.io.serialization import JsonSerializer
+from mtap.io.serialization import YamlSerializer
 
 
 @pytest.fixture(name='deploy_all')
@@ -27,31 +27,31 @@ def fixture_deploy_all():
 
     e = threading.Event()
 
-    def listen():
+    def listen(p, e):
+        print("Starting listener")
         for line in p.stdout:
             line = line.decode()
-            print(line, end='')
-            if line[:-1] == 'Done starting all processors':
+            print(line, end='', flush=True)
+            if 'Done starting all processors' in line:
                 e.set()
-        e.set()
 
-    listener = threading.Thread(target=listen)
+    listener = threading.Thread(target=listen, args=(p, e))
     listener.start()
-    yield p, e
+    e.wait()
+    yield p
     p.send_signal(signal.SIGINT)
     listener.join()
 
 
 def test_deploy_run(deploy_all):
-    p, e = deploy_all
-    e.wait()
-    tmpdir = mkdtemp()
-    code = call(['python', '-m', 'biomedicus', 'run', str(Path(__file__).parent / 'in'), tmpdir])
-    assert code == 0
-    with JsonSerializer.file_to_event(Path(tmpdir) / '97_204.txt.json') as event:
-        document = event.documents['plaintext']
-        assert len(document.get_label_index('sentences')) > 0
-        assert len(document.get_label_index('pos_tags')) > 0
-        assert len(document.get_label_index('acronyms')) > 0
-        assert len(document.get_label_index('umls_concepts')) > 0
-
+    print("testing deployment")
+    with TemporaryDirectory() as tmpdir:
+        code = call(['python', '-m', 'biomedicus', 'run', str(Path(__file__).parent / 'in'),
+                     tmpdir])
+        assert code == 0
+        with YamlSerializer.file_to_event(Path(tmpdir) / '97_204.txt.yml') as event:
+            document = event.documents['plaintext']
+            assert len(document.get_label_index('sentences')) > 0
+            assert len(document.get_label_index('pos_tags')) > 0
+            assert len(document.get_label_index('acronyms')) > 0
+            assert len(document.get_label_index('umls_concepts')) > 0

@@ -13,9 +13,6 @@
 #  limitations under the License.
 import logging
 import os
-import sys
-from concurrent.futures import thread
-from concurrent.futures.thread import ThreadPoolExecutor
 from pathlib import Path
 from subprocess import STDOUT, PIPE, Popen
 from threading import Thread

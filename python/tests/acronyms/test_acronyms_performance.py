@@ -37,16 +37,20 @@ def fixture_acronyms_service(events_service, processor_watcher, processor_timeou
 
 @pytest.mark.phi_test_data
 @pytest.mark.performance
-def test_acronyms_performance(events_service, acronyms_service):
+def test_acronyms_performance(events_service, acronyms_service, test_results):
     input_dir = Path(os.environ['BIOMEDICUS_TEST_DATA']) / 'acronyms'
     top_score_accuracy = Accuracy(name='top_score_accuracy', fields=['expansion'])
     any_accuracy = Accuracy(name='any_accuracy', mode='any', fields=['expansion'])
-    detection_accuracy = Accuracy(name='detection_accuracy', mode='location', fields=['expansion'])
+    detection_recall = Accuracy(name='detection_recall', mode='location', fields=['expansion'])
+    detection_precision = Accuracy(name='detection_precision', mode='location',
+                                   fields=['expansion'])
     with EventsClient(address=events_service) as client, Pipeline(
         RemoteProcessor(processor_id='biomedicus-acronyms', address=acronyms_service),
-        LocalProcessor(Metrics(top_score_accuracy, detection_accuracy, tested='acronyms',
+        LocalProcessor(Metrics(top_score_accuracy, detection_recall, tested='acronyms',
                                target='gold_acronyms'),
                        component_id='top_score_metrics', client=client),
+        LocalProcessor(Metrics(detection_precision, tested='gold_acronyms', target='acronyms'),
+                       component_id='top_score_reverse', client=client),
         LocalProcessor(Metrics(any_accuracy, tested='all_acronym_senses', target='gold_acronyms'),
                        component_id='all_senses_metrics', client=client)
     ) as pipeline:
@@ -57,8 +61,18 @@ def test_acronyms_performance(events_service, acronyms_service):
 
         print('Top Sense Accuracy:', top_score_accuracy.value)
         print('Any Sense Accuracy:', any_accuracy.value)
-        print('Detection Accuracy:', detection_accuracy.value)
+        print('Detection Recall:', detection_recall.value)
+        print('Detection Precision:', detection_precision.value)
         pipeline.print_times()
+        timing_info = pipeline.processor_timer_stats()[0].timing_info
+        test_results['acronyms'] = {
+            'Top sense accuracy': top_score_accuracy.value,
+            'Any sense accuracy': any_accuracy.value,
+            'Detection Recall': detection_recall.value,
+            'Detection Precision': detection_precision.value,
+            'Remote Call Duration': str(timing_info['remote_call'].mean),
+            'Process Method Duration': str(timing_info['process_method'].mean)
+        }
         assert top_score_accuracy.value > 0.4
         assert any_accuracy.value > 0.4
-        assert detection_accuracy.value > 0.65
+        assert detection_recall.value > 0.65
