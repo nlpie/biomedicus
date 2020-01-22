@@ -23,7 +23,6 @@ class Vocabulary(object):
     NEXT_TOKEN = 4
     BEGIN_SEQUENCE = 5
     END_SEQUENCE = 6
-    UNK_CHAR = 11
 
 
 character_to_id = {
@@ -46,3 +45,11 @@ def load_char_mapping(tokens_file):
         for char in f:
             char_mappings[char[:-1]] = len(char_mappings)
     return char_mappings
+
+
+def get_char(char_mapping, char):
+    return char_mapping.get(char, len(char_mapping))
+
+
+def n_chars(char_mapping):
+    return len(char_mapping) + 1

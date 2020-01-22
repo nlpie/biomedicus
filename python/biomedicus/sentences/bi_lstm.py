@@ -33,7 +33,7 @@ from torch.nn.utils.rnn import pad_packed_sequence, pack_padded_sequence, \
 
 from biomedicus.config import load_config
 from biomedicus.sentences.input import InputMapping
-from biomedicus.sentences.vocabulary import load_char_mapping
+from biomedicus.sentences.vocabulary import load_char_mapping, n_chars
 from biomedicus.utilities.embeddings import load_vectors
 
 try:
@@ -155,7 +155,9 @@ class Training:
     def run(self):
         model_name = "{}".format(time())
 
-        with (Path(self.conf.job_dir) / (model_name + '.yml')).open('w') as f:
+        job_dir = Path(self.conf.job_dir)
+        job_dir.mkdir(parents=True, exist_ok=True)
+        with (job_dir / (model_name + '.yml')).open('w') as f:
             yaml.dump(self.model.hparams, f)
 
         old_f1 = 0.
@@ -164,7 +166,7 @@ class Training:
             self._run_epoch(epoch)
             f1 = self._evaluate(epoch)
             if f1 > old_f1:
-                model_path = str(Path(self.conf.job_dir) / (model_name + '.pt'))
+                model_path = str(job_dir / (model_name + '.pt'))
                 print('Epoch [{}]: F1 improved from {:.3%} to {:.3%}'
                       ', saving model to {}'.format(epoch, old_f1, f1, model_path))
                 torch.save(self.model.state_dict(), model_path)
@@ -357,7 +359,7 @@ def train(conf):
     char_mapping = load_char_mapping(conf.chars_file)
 
     input_mapping = InputMapping(char_mapping, words, conf.word_length)
-    model = BiLSTM(conf, characters=len(char_mapping), pretrained=vectors)
+    model = BiLSTM(conf, characters=n_chars(char_mapping), pretrained=vectors)
     train, validation, pos_weight = input_mapping.load_dataset(conf.input_directory,
                                                                conf.validation_split,
                                                                conf.batch_size,
@@ -369,6 +371,11 @@ def train(conf):
 def processor(conf):
     logging.basicConfig(level=logging.INFO)
     check_data(conf.download_data)
+    proc = create_processor(conf)
+    run_processor(proc, namespace=conf)
+
+
+def create_processor(conf):
     logger.info('Loading hparams from: {}'.format(conf.hparams_file))
     with conf.hparams_file.open('r') as f:
         d = yaml.load(f, Loader)
@@ -378,21 +385,20 @@ def processor(conf):
 
         hparams = Hparams()
         hparams.__dict__.update(d)
-
     logger.info('Loading word embeddings from: "{}"'.format(conf.embeddings))
     words, vectors = load_vectors(conf.embeddings)
     vectors = np.array(vectors)
     logger.info('Loading chararacters from: {}'.format(conf.chars_file))
     char_mapping = load_char_mapping(conf.chars_file)
     input_mapping = InputMapping(char_mapping, words, hparams.word_length)
-    model = BiLSTM(hparams, len(char_mapping), vectors)
+    model = BiLSTM(hparams, n_chars(char_mapping), vectors)
     model.train(False)
     logger.info('Loading model weights from: {}'.format(conf.model_file))
     with conf.model_file.open('rb') as f:
         state_dict = torch.load(f)
         model.load_state_dict(state_dict)
     proc = SentenceProcessor(input_mapping, model)
-    run_processor(proc, namespace=conf)
+    return proc
 
 
 def main(args=None):
