@@ -20,7 +20,7 @@ import torch
 from mtap.io.brat import read_brat_document
 from torch.nn.utils.rnn import pad_sequence
 
-from biomedicus.sentences.vocabulary import Vocabulary
+from biomedicus.sentences.vocabulary import Vocabulary, get_char
 
 _whitespace_pattern = re.compile(r'((?!_)[\w.\'])+|\[\*\*.*?\*\*\]')
 _digit = re.compile(r'[0-9]')
@@ -176,11 +176,11 @@ class InputMapping:
 
     def lookup_char_ids(self, prior, word, post, start_of_sequence):
         char_ids = ([Vocabulary.BEGIN_SEQUENCE if start_of_sequence else Vocabulary.PREV_TOKEN]
-                    + [self.char_mapping[c] for c in prior]
+                    + [get_char(self.char_mapping, c) for c in prior]
                     + [Vocabulary.TOKEN_BEGIN]
-                    + [self.char_mapping[c] for c in word]
+                    + [get_char(self.char_mapping, c) for c in word]
                     + [Vocabulary.TOKEN_END]
-                    + [self.char_mapping[c] for c in post]
+                    + [get_char(self.char_mapping, c) for c in post]
                     + [Vocabulary.NEXT_TOKEN])
         if len(char_ids) > self.word_length:
             return char_ids[:self.word_length]
