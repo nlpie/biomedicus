@@ -37,7 +37,7 @@ def fixture_pos_tags_service(events_service, processor_watcher, processor_timeou
 
 
 @pytest.mark.performance
-def test_tnt_performance(events_service, pos_tags_service):
+def test_tnt_performance(events_service, pos_tags_service, test_results):
     input_dir = Path(os.environ['BIOMEDICUS_TEST_DATA']) / 'pos_tags'
     accuracy = Accuracy()
     with EventsClient(address=events_service) as client, Pipeline(
@@ -55,4 +55,10 @@ def test_tnt_performance(events_service, pos_tags_service):
 
         print('Accuracy:', accuracy.value)
         pipeline.print_times()
+        timing_info = pipeline.processor_timer_stats()[0].timing_info
+        test_results['TnT Pos Tagger'] = {
+            'Accuracy': accuracy.value,
+            'Remote Call Duration': str(timing_info['remote_call'].mean),
+            'Process Method Duration': str(timing_info['process_method'].mean)
+        }
         assert accuracy.value > 0.9

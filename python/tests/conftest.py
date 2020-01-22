@@ -14,6 +14,7 @@
 import signal
 import subprocess
 import sys
+from threading import Thread
 
 import grpc
 import pytest
@@ -67,9 +68,17 @@ def fixture_events_service():
         yield address
 
 
+def _listen(process: subprocess.Popen):
+    for line in process.stdout:
+        print(line.decode(), end='')
+    return process.wait()
+
+
 @pytest.fixture(name='processor_watcher')
 def fixture_processor_watcher():
     def func(address, process, timeout=20):
+        listener = Thread(target=_listen, args=(process,))
+        listener.start()
         try:
             if process.returncode is not None:
                 raise ValueError('subprocess terminated')
@@ -79,13 +88,19 @@ def fixture_processor_watcher():
             yield address
         finally:
             process.send_signal(signal.SIGINT)
-            try:
-                stdout, stderr = process.communicate(timeout=1)
-                print("processor exited with code: ", process.returncode)
-                if stdout is not None:
-                    print(stdout.decode('utf-8'))
-                if stderr:
-                    print(stderr.decode('utf-8'), file=sys.stderr)
-            except subprocess.TimeoutExpired:
-                print("timed out waiting for processor to terminate")
+            listener.join()
+            print("processor exited with code: ", process.returncode)
     return func
+
+
+@pytest.fixture(name='test_results', scope='session')
+def fixture_test_results():
+    results = {}
+    yield results
+    import yaml
+    try:
+        from yaml import CDumper as Dumper
+    except ImportError:
+        from yaml import Dumper
+    with open('test-results.yml', 'w') as f:
+        yaml.dump(results, f, Dumper=Dumper)
