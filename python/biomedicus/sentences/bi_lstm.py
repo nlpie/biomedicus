@@ -21,6 +21,8 @@ from typing import Dict, Any
 import numpy as np
 import torch
 import yaml
+from mtap.processing.base import Processor
+
 from biomedicus.deployment.deploy_biomedicus import check_data
 from mtap import processor_parser, Document, processor, run_processor
 from mtap.processing import DocumentProcessor
@@ -134,6 +136,8 @@ class BiLSTM(nn.Module):
         return bos
 
     def predict(self, char_ids, word_ids):
+        if len(char_ids[0]) == 0:
+            return []
         with torch.no_grad():
             logits = self(char_ids, word_ids, torch.tensor([len(char_ids[0])]))
             predictions = torch.round(torch.sigmoid(logits))
@@ -264,31 +268,38 @@ _punct = re.compile(r'[.:!,;"\']')
 def predict_segment(model: BiLSTM, input_mapper, text):
     if len(text) == 0 or text.isspace():
         return []
-    tokens, char_ids, word_ids = input_mapper.transform_text(text)
-    predictions = model.predict(char_ids, word_ids)
+    with Processor.started_stopwatch('input_mapping'):
+        tokens, char_ids, word_ids = input_mapper.transform_text(text)
+    with Processor.started_stopwatch('model_predict'):
+        predictions = model.predict(char_ids, word_ids)
     start_index = None
     prev_end = None
-    for (start, end), prediction in zip(tokens, predictions[0]):
-        if prediction == 1:
-            if start_index is not None:
-                end_punct = _punct.match(text, prev_end)
-                if end_punct is not None:
-                    prev_end = end_punct.end()
-                yield start_index, prev_end
-            start_index = start
-        prev_end = end
+    if len(predictions) > 0:
+        for (start, end), prediction in zip(tokens, predictions[0]):
+            if prediction == 1:
+                if start_index is not None:
+                    end_punct = _punct.match(text, prev_end)
+                    if end_punct is not None:
+                        prev_end = end_punct.end()
+                    yield start_index, prev_end
+                start_index = start
+            prev_end = end
     if start_index is not None and prev_end is not None:
         yield start_index, prev_end
 
 
 def predict_text(model: BiLSTM, input_mapper, text):
     prev = 0
+    split_timer = Processor.started_stopwatch('segment_splitting')
     for match in _split.finditer(text):
+        split_timer.stop()
         start = match.start()
         local_text = text[prev:start]
         for ss, se in predict_segment(model, input_mapper, local_text):
             yield prev + ss, prev + se
         prev = match.end()
+        split_timer.start()
+    split_timer.stop()
 
 
 @processor('biomedicus-sentences',
