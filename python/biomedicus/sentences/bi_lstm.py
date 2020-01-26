@@ -290,16 +290,15 @@ def predict_segment(model: BiLSTM, input_mapper, text):
 
 def predict_text(model: BiLSTM, input_mapper, text):
     prev = 0
-    split_timer = Processor.started_stopwatch('segment_splitting')
-    for match in _split.finditer(text):
-        split_timer.stop()
-        start = match.start()
-        local_text = text[prev:start]
-        for ss, se in predict_segment(model, input_mapper, local_text):
-            yield prev + ss, prev + se
-        prev = match.end()
-        split_timer.start()
-    split_timer.stop()
+    with Processor.started_stopwatch('segment_splitting') as split_timer:
+        for match in _split.finditer(text):
+            split_timer.stop()
+            start = match.start()
+            local_text = text[prev:start]
+            for ss, se in predict_segment(model, input_mapper, local_text):
+                yield prev + ss, prev + se
+            prev = match.end()
+            split_timer.start()
 
 
 @processor('biomedicus-sentences',
@@ -381,12 +380,26 @@ def train(conf):
 
 def processor(conf):
     logging.basicConfig(level=logging.INFO)
+    if conf.pydevd_pcharm_port is not None:
+        import pydevd_pycharm
+        pydevd_pycharm.settrace('localhost', port=conf.pydevd_pcharm_port, stdoutToServer=True,
+                                stderrToServer=True)
     check_data(conf.download_data)
     proc = create_processor(conf)
     run_processor(proc, namespace=conf)
 
 
 def create_processor(conf):
+    config = load_config()
+    if conf.embeddings is None:
+        conf.embeddings = Path(config['sentences.wordEmbeddings'])
+    if conf.chars_file is None:
+        conf.chars_file = Path(config['sentences.charsFile'])
+    if conf.hparams_file is None:
+        conf.hparams_file = Path(config['sentences.hparamsFile'])
+    if conf.model_file is None:
+        conf.model_file = Path(config['sentences.modelFile'])
+
     logger.info('Loading hparams from: {}'.format(conf.hparams_file))
     with conf.hparams_file.open('r') as f:
         d = yaml.load(f, Loader)
@@ -420,23 +433,24 @@ def main(args=None):
                                                                  training_parser()])
     training_subparser.set_defaults(f=train)
 
-    config = load_config()
     processor_subparser = subparsers.add_parser('processor', parents=[processor_parser()])
     processor_subparser.add_argument('--embeddings', type=Path,
-                                     default=Path(config['sentences.wordEmbeddings']),
+                                     default=None,
                                      help='Optional override for the embeddings file to use.')
     processor_subparser.add_argument('--chars-file', type=Path,
-                                     default=Path(config['sentences.charsFile']),
+                                     default=None,
                                      help='Optional override for the chars file to use')
     processor_subparser.add_argument('--hparams-file', type=Path,
-                                     default=Path(config['sentences.hparamsFile']),
+                                     default=None,
                                      help='Optional override for model hyperparameters file')
     processor_subparser.add_argument('--model-file', type=Path,
-                                     default=Path(config['sentences.modelFile']),
+                                     default=None,
                                      help='Optional override for model weights file.')
     processor_subparser.add_argument('--download-data', action="store_true",
                                      help="Automatically Download the latest model files if they "
                                           "are not found.")
+    processor_subparser.add_argument('--pydevd-pycharm-port', type=int, default=None,
+                                     help="If specified will start a pydevd pcharm port.")
     processor_subparser.set_defaults(f=processor)
 
     conf = parser.parse_args(args)
