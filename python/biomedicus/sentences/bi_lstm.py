@@ -262,7 +262,8 @@ def confusion_matrix(predictions, labels, mask):
 
 
 _split = re.compile(r'\n\n+|^_+$|^-+$|^=+$|\Z', re.MULTILINE)
-_punct = re.compile(r'[.:!,;"\']')
+_punct = re.compile(r'[.:!?,;"\'\])]')
+_max_sequence_length = 128
 
 
 def predict_segment(model: BiLSTM, input_mapper, text):
@@ -270,20 +271,35 @@ def predict_segment(model: BiLSTM, input_mapper, text):
         return []
     with Processor.started_stopwatch('input_mapping'):
         tokens, char_ids, word_ids = input_mapper.transform_text(text)
-    with Processor.started_stopwatch('model_predict'):
-        predictions = model.predict(char_ids, word_ids)
+
+    if len(char_ids) == 0:
+        return []
+
+    all_ids = []
+    i = 0
+    while i < len(char_ids):
+        lim = max(len(char_ids[0]), i + _max_sequence_length)
+        all_ids.append((
+            char_ids[0:1, i:lim],
+            word_ids[0:1, i:lim]
+        ))
+        i += _max_sequence_length
+    predictions = []
+    for char_ids, word_ids in all_ids:
+        with Processor.started_stopwatch('model_predict'):
+            local_predictions = model.predict(char_ids, word_ids)
+        predictions.extend(local_predictions[0])
     start_index = None
     prev_end = None
-    if len(predictions) > 0:
-        for (start, end), prediction in zip(tokens, predictions[0]):
-            if prediction == 1:
-                if start_index is not None:
-                    end_punct = _punct.match(text, prev_end)
-                    if end_punct is not None:
-                        prev_end = end_punct.end()
-                    yield start_index, prev_end
-                start_index = start
-            prev_end = end
+    for (start, end), prediction in zip(tokens, predictions):
+        if prediction == 1:
+            if start_index is not None:
+                end_punct = _punct.match(text, prev_end)
+                if end_punct is not None:
+                    prev_end = end_punct.end()
+                yield start_index, prev_end
+            start_index = start
+        prev_end = end
     if start_index is not None and prev_end is not None:
         yield start_index, prev_end
 
