@@ -261,7 +261,7 @@ def confusion_matrix(predictions, labels, mask):
     return tp, fp, fn
 
 
-_split = re.compile(r'\n\n+|^_+$|^-+$|^=+$|\n[A-Z].*:$|\Z', re.MULTILINE)
+_split = re.compile(r'\n\n+|^_+$|^-+$|^=+$|\Z', re.MULTILINE)
 _punct = re.compile(r'[.:!,;"\']')
 
 
@@ -380,10 +380,6 @@ def train(conf):
 
 def processor(conf):
     logging.basicConfig(level=logging.INFO)
-    if conf.pydevd_pcharm_port is not None:
-        import pydevd_pycharm
-        pydevd_pycharm.settrace('localhost', port=conf.pydevd_pcharm_port, stdoutToServer=True,
-                                stderrToServer=True)
     check_data(conf.download_data)
     proc = create_processor(conf)
     run_processor(proc, namespace=conf)
@@ -412,7 +408,7 @@ def create_processor(conf):
     logger.info('Loading word embeddings from: "{}"'.format(conf.embeddings))
     words, vectors = load_vectors(conf.embeddings)
     vectors = np.array(vectors)
-    logger.info('Loading chararacters from: {}'.format(conf.chars_file))
+    logger.info('Loading characters from: {}'.format(conf.chars_file))
     char_mapping = load_char_mapping(conf.chars_file)
     input_mapping = InputMapping(char_mapping, words, hparams.word_length)
     model = BiLSTM(hparams, n_chars(char_mapping), vectors)
@@ -449,8 +445,6 @@ def main(args=None):
     processor_subparser.add_argument('--download-data', action="store_true",
                                      help="Automatically Download the latest model files if they "
                                           "are not found.")
-    processor_subparser.add_argument('--pydevd-pycharm-port', type=int, default=None,
-                                     help="If specified will start a pydevd pcharm port.")
     processor_subparser.set_defaults(f=processor)
 
     conf = parser.parse_args(args)
