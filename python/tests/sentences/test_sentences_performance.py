@@ -18,7 +18,7 @@ from pathlib import Path
 import pytest
 from mtap import Pipeline, RemoteProcessor, EventsClient, LocalProcessor
 from mtap.io.serialization import JsonSerializer
-from mtap.metrics import Metrics, Accuracy
+from mtap.metrics import Metrics, BeginTokenBinaryClassification
 from mtap.utilities import find_free_port
 
 
@@ -39,25 +39,32 @@ def fixture_sentences_service(events_service, processor_watcher, processor_timeo
 def test_sentence_performance(events_service, sentences_service, test_results):
     input_dir = Path(os.environ['BIOMEDICUS_TEST_DATA']) / 'sentences'
 
-    accuracy = Accuracy()
+    metrics = BeginTokenBinaryClassification()
     with EventsClient(address=events_service) as client, Pipeline(
             RemoteProcessor(processor_id='biomedicus-sentences', address=sentences_service),
-            LocalProcessor(Metrics(accuracy, tested='sentences', target='Sentence'),
+            LocalProcessor(Metrics(metrics, tested='sentences', target='Sentence'),
                            component_id='metrics', client=client)
     ) as pipeline:
         for test_file in input_dir.glob('**/*.json'):
             with JsonSerializer.file_to_event(test_file, client=client) as event:
                 document = event.documents['plaintext']
                 results = pipeline.run(document)
-                print('Accuracy for event - ', event.event_id, ':', results[1].results['accuracy'],
-                      '- elapsed:', results[0].timing_info['process_method'])
+                print('F1 for event - "{}": {:0.3f} - elapsed: {}'.format(
+                    event.event_id,
+                    results[1].results['begin_token_binary_classification']['f1'],
+                    results[0].timing_info['process_method'])
+                )
 
-        print('Accuracy:', accuracy.value)
+        print('Overall Precision:', metrics.precision)
+        print('Overall Recall:', metrics.recall)
+        print('Overall F1:', metrics.f1)
         pipeline.print_times()
         timing_info = pipeline.processor_timer_stats()[0].timing_info
         test_results['Sentences'] = {
-            'Accuracy': accuracy.value,
+            'Precision': metrics.precision,
+            'Recall': metrics.recall,
+            'F1': metrics.f1,
             'Remote Call Duration': str(timing_info['remote_call'].mean),
             'Process Method Duration': str(timing_info['process_method'].mean)
         }
-        assert accuracy.value > 0.7
+        assert metrics.f1 > 0.85

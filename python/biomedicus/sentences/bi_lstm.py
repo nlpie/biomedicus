@@ -263,7 +263,7 @@ def confusion_matrix(predictions, labels, mask):
 
 _split = re.compile(r'\n\n+|^_+$|^-+$|^=+$|\Z', re.MULTILINE)
 _punct = re.compile(r'[.:!?,;"\'\])]')
-_max_sequence_length = 128
+_max_sequence_length = 256
 
 
 def predict_segment(model: BiLSTM, input_mapper, text):
@@ -277,12 +277,13 @@ def predict_segment(model: BiLSTM, input_mapper, text):
 
     all_ids = []
     i = 0
-    while i < len(char_ids):
-        lim = max(len(char_ids[0]), i + _max_sequence_length)
-        all_ids.append((
-            char_ids[0:1, i:lim],
-            word_ids[0:1, i:lim]
-        ))
+    while i < len(char_ids[0]):
+        lim = min(len(char_ids[0]), i + _max_sequence_length)
+        if lim - i > 0:
+            all_ids.append((
+                char_ids[0:1, i:lim],
+                word_ids[0:1, i:lim]
+            ))
         i += _max_sequence_length
     predictions = []
     for char_ids, word_ids in all_ids:
