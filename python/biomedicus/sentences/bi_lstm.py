@@ -21,6 +21,8 @@ from typing import Dict, Any
 import numpy as np
 import torch
 import yaml
+from mtap.processing.base import Processor
+
 from biomedicus.deployment.deploy_biomedicus import check_data
 from mtap import processor_parser, Document, processor, run_processor
 from mtap.processing import DocumentProcessor
@@ -134,6 +136,8 @@ class BiLSTM(nn.Module):
         return bos
 
     def predict(self, char_ids, word_ids):
+        if len(char_ids[0]) == 0:
+            return []
         with torch.no_grad():
             logits = self(char_ids, word_ids, torch.tensor([len(char_ids[0])]))
             predictions = torch.round(torch.sigmoid(logits))
@@ -257,18 +261,38 @@ def confusion_matrix(predictions, labels, mask):
     return tp, fp, fn
 
 
-_split = re.compile(r'\n\n+|^_+$|^-+$|^=+$|\n[A-Z].*:$|\Z', re.MULTILINE)
-_punct = re.compile(r'[.:!,;"\']')
+_split = re.compile(r'\n\n+|^_+$|^-+$|^=+$|\Z', re.MULTILINE)
+_punct = re.compile(r'[.:!?,;"\'\])]')
+_max_sequence_length = 256
 
 
 def predict_segment(model: BiLSTM, input_mapper, text):
     if len(text) == 0 or text.isspace():
         return []
-    tokens, char_ids, word_ids = input_mapper.transform_text(text)
-    predictions = model.predict(char_ids, word_ids)
+    with Processor.started_stopwatch('input_mapping'):
+        tokens, char_ids, word_ids = input_mapper.transform_text(text)
+
+    if len(char_ids) == 0:
+        return []
+
+    all_ids = []
+    i = 0
+    while i < len(char_ids[0]):
+        lim = min(len(char_ids[0]), i + _max_sequence_length)
+        if lim - i > 0:
+            all_ids.append((
+                char_ids[0:1, i:lim],
+                word_ids[0:1, i:lim]
+            ))
+        i += _max_sequence_length
+    predictions = []
+    for char_ids, word_ids in all_ids:
+        with Processor.started_stopwatch('model_predict'):
+            local_predictions = model.predict(char_ids, word_ids)
+        predictions.extend(local_predictions[0])
     start_index = None
     prev_end = None
-    for (start, end), prediction in zip(tokens, predictions[0]):
+    for (start, end), prediction in zip(tokens, predictions):
         if prediction == 1:
             if start_index is not None:
                 end_punct = _punct.match(text, prev_end)
@@ -283,12 +307,15 @@ def predict_segment(model: BiLSTM, input_mapper, text):
 
 def predict_text(model: BiLSTM, input_mapper, text):
     prev = 0
-    for match in _split.finditer(text):
-        start = match.start()
-        local_text = text[prev:start]
-        for ss, se in predict_segment(model, input_mapper, local_text):
-            yield prev + ss, prev + se
-        prev = match.end()
+    with Processor.started_stopwatch('segment_splitting') as split_timer:
+        for match in _split.finditer(text):
+            split_timer.stop()
+            start = match.start()
+            local_text = text[prev:start]
+            for ss, se in predict_segment(model, input_mapper, local_text):
+                yield prev + ss, prev + se
+            prev = match.end()
+            split_timer.start()
 
 
 @processor('biomedicus-sentences',
@@ -376,6 +403,16 @@ def processor(conf):
 
 
 def create_processor(conf):
+    config = load_config()
+    if conf.embeddings is None:
+        conf.embeddings = Path(config['sentences.wordEmbeddings'])
+    if conf.chars_file is None:
+        conf.chars_file = Path(config['sentences.charsFile'])
+    if conf.hparams_file is None:
+        conf.hparams_file = Path(config['sentences.hparamsFile'])
+    if conf.model_file is None:
+        conf.model_file = Path(config['sentences.modelFile'])
+
     logger.info('Loading hparams from: {}'.format(conf.hparams_file))
     with conf.hparams_file.open('r') as f:
         d = yaml.load(f, Loader)
@@ -388,7 +425,7 @@ def create_processor(conf):
     logger.info('Loading word embeddings from: "{}"'.format(conf.embeddings))
     words, vectors = load_vectors(conf.embeddings)
     vectors = np.array(vectors)
-    logger.info('Loading chararacters from: {}'.format(conf.chars_file))
+    logger.info('Loading characters from: {}'.format(conf.chars_file))
     char_mapping = load_char_mapping(conf.chars_file)
     input_mapping = InputMapping(char_mapping, words, hparams.word_length)
     model = BiLSTM(hparams, n_chars(char_mapping), vectors)
@@ -409,19 +446,18 @@ def main(args=None):
                                                                  training_parser()])
     training_subparser.set_defaults(f=train)
 
-    config = load_config()
     processor_subparser = subparsers.add_parser('processor', parents=[processor_parser()])
     processor_subparser.add_argument('--embeddings', type=Path,
-                                     default=Path(config['sentences.wordEmbeddings']),
+                                     default=None,
                                      help='Optional override for the embeddings file to use.')
     processor_subparser.add_argument('--chars-file', type=Path,
-                                     default=Path(config['sentences.charsFile']),
+                                     default=None,
                                      help='Optional override for the chars file to use')
     processor_subparser.add_argument('--hparams-file', type=Path,
-                                     default=Path(config['sentences.hparamsFile']),
+                                     default=None,
                                      help='Optional override for model hyperparameters file')
     processor_subparser.add_argument('--model-file', type=Path,
-                                     default=Path(config['sentences.modelFile']),
+                                     default=None,
                                      help='Optional override for model weights file.')
     processor_subparser.add_argument('--download-data', action="store_true",
                                      help="Automatically Download the latest model files if they "

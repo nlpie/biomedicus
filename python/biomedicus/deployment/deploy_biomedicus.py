@@ -50,7 +50,7 @@ def check_data(download=False):
         if download or input(prompt) in ['Y', 'y', 'Yes', 'yes']:
             download_data_to(data)
         else:
-            raise ValueError('No biomedicus data folder.')
+            exit()
 
 
 def download_data_to(data):

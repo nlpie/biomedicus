@@ -48,11 +48,13 @@ def _load_config(f):
 
 
 def _load_default_config():
-    with (Path(__file__).parent / 'defaultConfig.yml').open('rb') as f:
-        return _load_config(f)
+    global _DEFAULT_CONFIG
+    if _DEFAULT_CONFIG is None:
+        with (Path(__file__).parent / 'defaultConfig.yml').open('rb') as f:
+            _DEFAULT_CONFIG = _load_config(f)
 
 
-_DEFAULT_CONFIG = _load_default_config()
+_DEFAULT_CONFIG = None
 
 
 def load_config():
@@ -72,4 +74,5 @@ def load_config():
         except FileNotFoundError:
             pass
 
+    _load_default_config()
     return {k: v for k, v in _DEFAULT_CONFIG.items()}
