@@ -18,7 +18,7 @@ from pathlib import Path
 import pytest
 from mtap import Pipeline, RemoteProcessor, EventsClient, LocalProcessor
 from mtap.io.serialization import JsonSerializer
-from mtap.metrics import Metrics, BeginTokenBinaryClassification
+from mtap import metrics
 from mtap.utilities import find_free_port
 
 
@@ -39,10 +39,10 @@ def fixture_sentences_service(events_service, processor_watcher, processor_timeo
 def test_sentence_performance(events_service, sentences_service, test_results):
     input_dir = Path(os.environ['BIOMEDICUS_TEST_DATA']) / 'sentences'
 
-    metrics = BeginTokenBinaryClassification()
+    confusion = metrics.FirstTokenConfusion()
     with EventsClient(address=events_service) as client, Pipeline(
             RemoteProcessor(processor_id='biomedicus-sentences', address=sentences_service),
-            LocalProcessor(Metrics(metrics, tested='sentences', target='Sentence'),
+            LocalProcessor(metrics.Metrics(confusion, tested='sentences', target='Sentence'),
                            component_id='metrics', client=client)
     ) as pipeline:
         for test_file in input_dir.glob('**/*.json'):
@@ -51,20 +51,20 @@ def test_sentence_performance(events_service, sentences_service, test_results):
                 results = pipeline.run(document)
                 print('F1 for event - "{}": {:0.3f} - elapsed: {}'.format(
                     event.event_id,
-                    results[1].results['begin_token_binary_classification']['f1'],
+                    results[1].results['first_token_confusion']['f1'],
                     results[0].timing_info['process_method'])
                 )
 
-        print('Overall Precision:', metrics.precision)
-        print('Overall Recall:', metrics.recall)
-        print('Overall F1:', metrics.f1)
+        print('Overall Precision:', confusion.precision)
+        print('Overall Recall:', confusion.recall)
+        print('Overall F1:', confusion.f1)
         pipeline.print_times()
         timing_info = pipeline.processor_timer_stats()[0].timing_info
         test_results['Sentences'] = {
-            'Precision': metrics.precision,
-            'Recall': metrics.recall,
-            'F1': metrics.f1,
+            'Precision': confusion.precision,
+            'Recall': confusion.recall,
+            'F1': confusion.f1,
             'Remote Call Duration': str(timing_info['remote_call'].mean),
             'Process Method Duration': str(timing_info['process_method'].mean)
         }
-        assert metrics.f1 > 0.85
+        assert confusion.f1 > 0.85
