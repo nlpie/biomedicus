@@ -65,7 +65,7 @@ import static edu.umn.biomedicus.common.pos.PartOfSpeech.*;
         @LabelIndexDescription(name = "acronyms", reference = "biomedicus-acronyms/acronyms")
     },
     outputs = {
-        @LabelIndexDescription(name = "concepts",
+        @LabelIndexDescription(name = "umls_concepts",
             description = "The UMLS concepts that appear in the text.",
             properties = {
                 @PropertyDescription(name = "sui",
@@ -84,7 +84,7 @@ import static edu.umn.biomedicus.common.pos.PartOfSpeech.*;
                     description = "A score for the concept, direct phrase matches are highest, lowest are the normalized bag of words matches.",
                     dataType = "float")
             }),
-        @LabelIndexDescription(name = "terms",
+        @LabelIndexDescription(name = "umls_terms",
             description = "Text that is covered by one or more concepts.")
     }
 )

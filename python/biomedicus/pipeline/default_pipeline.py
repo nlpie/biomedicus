@@ -31,6 +31,8 @@ class DefaultPipelineConf:
         self.acronyms_address = '127.0.0.1:10104'
         self.concepts_id = 'biomedicus-concepts'
         self.concepts_address = '127.0.0.1:10105'
+        self.negation_id = 'biomedicus-negex'
+        self.negation_address = '127.0.0.1:10106'
         self.include_label_text = False
         self.threads = 4
 
@@ -55,7 +57,8 @@ class DefaultPipeline:
             (conf.sentences_id, conf.sentences_address),
             (conf.tagger_id, conf.tagger_address),
             (conf.acronyms_id, conf.acronyms_address),
-            (conf.concepts_id, conf.concepts_address)
+            (conf.concepts_id, conf.concepts_address),
+            (conf.negation_id, conf.negation_address)
         ]
         if conf.use_discovery:
             self.pipeline = Pipeline(
@@ -105,6 +108,8 @@ def default_pipeline_parser():
                         help="The address for the acronym detector service.")
     parser.add_argument('--concepts-address', default=defaults.concepts_address,
                         help="The address for the concept detector service.")
+    parser.add_argument('--negation-address', default=defaults.negation_address,
+                        help="The address for the negation detection service.")
     parser.add_argument('--use_discovery', action='store_true',
                         help="If this flag is specified, all ports will be ignored and instead "
                              "service discovery will be used to connect to services.")

@@ -32,7 +32,8 @@ def test_iter():
     dawg = DAWG()
     dawg[['a', 'b', 'c']] = True
     dawg[['a', 'b', 'd']] = False
-    assert list(dawg) == [['a', 'b', 'c'], ['a', 'b', 'd']]
+    assert ['a', 'b', 'c'] in list(dawg)
+    assert ['a', 'b', 'd'] in list(dawg)
 
 
 def test_delete():

@@ -71,20 +71,23 @@ class DAWG(MutableMapping[List[str], VT], Generic[VT]):
 
     def __iter__(self) -> Iterator[List[str]]:
         ptr = self.root
-        words = []
+        result = []
         stack = []
         i = 0
+        words = list(ptr.links.keys())
         while True:
             if hasattr(ptr, 'value'):
-                yield list(words)
-            if i < len(ptr.links):
-                stack.append((ptr, i + 1))
-                words.append(ptr.links[i])
-                ptr = ptr.links[i]
+                yield list(result)
+            if i < len(words):
+                stack.append((ptr, i + 1, words))
+                word = words[i]
+                result.append(word)
+                ptr = ptr.links[word]
+                words = list(ptr.links.keys())
                 i = 0
             elif len(stack) > 0:
-                ptr, i = stack.pop()
-                words.pop()
+                ptr, i, words = stack.pop()
+                result.pop()
             else:
                 break
 

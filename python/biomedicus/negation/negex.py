@@ -163,8 +163,8 @@ class NegexTagger:
             reference='biomedicus-sentences/sentences'
         ),
         label_index(
-            name='terms',
-            reference='biomedicus-concepts/terms',
+            name='umls_terms',
+            reference='biomedicus-concepts/umls_terms',
             name_from_parameter='terms_index'
         )
     ]
@@ -175,7 +175,7 @@ class NegexProcessor(mtap.processing.DocumentProcessor):
         self.negex = NegexTagger()
 
     def process_document(self, document: Document, params: Dict[str, Any]):
-        terms_index_name = params.get('terms_index', 'terms')
+        terms_index_name = params.get('terms_index', 'umls_terms')
         label_negated = document.get_labeler('negated')
         label_trigger = document.get_labeler('negation_trigger')
         terms = document.get_label_index(terms_index_name)

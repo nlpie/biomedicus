@@ -91,7 +91,8 @@ def deploy(conf):
         (['java', '-Xms128m', '-Xmx8g', '-cp', jar_path, 'edu.umn.biomedicus.acronym.AcronymDetectorProcessor'],
          conf.acronyms_port),
         (['java', '-Xms128m', '-Xmx8g', '-cp', jar_path, 'edu.umn.biomedicus.concepts.DictionaryConceptDetector'],
-         conf.concepts_port)
+         conf.concepts_port),
+        (['python', '-m', 'biomedicus.negation.negex'], conf.negation_port)
     ]
     if conf.events_address is None:
         calls.insert(0, (['python', '-m', 'mtap', 'events'], conf.events_port))
@@ -164,6 +165,8 @@ def deployment_parser():
                         help="The port to launch the acronym detector on.")
     parser.add_argument('--concepts-port', default='10105',
                         help="The port to launch the concepts detector on.")
+    parser.add_argument('--negation-port', default='10106',
+                        help="The port to launch the negation detector on.")
     parser.add_argument('--download-data', action='store_true',
                         help="If this flag is specified, automatically download the biomedicus "
                              "data if it is missing.")
