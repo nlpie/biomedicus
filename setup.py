@@ -96,7 +96,7 @@ setup(
     package_dir={'': 'python'},
     packages=find_packages(where='python', exclude=['tests']),
     package_data={
-        'biomedicus': ['defaultConfig.yml', 'biomedicus-all.jar']
+        'biomedicus': ['defaultConfig.yml', 'biomedicus-all.jar', 'negation/negex_triggers.txt']
     },
     install_requires=[
         'mtap>=0.3.0',
