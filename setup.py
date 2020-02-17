@@ -99,7 +99,7 @@ setup(
         'biomedicus': ['defaultConfig.yml', 'biomedicus-all.jar', 'negation/negex_triggers.txt']
     },
     install_requires=[
-        'mtap>=0.3.0',
+        'mtap>=0.4.0',
         'numpy',
         'pyyaml',
         'regex',
