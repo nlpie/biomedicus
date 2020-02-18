@@ -41,7 +41,6 @@ def test_negation_performance(events_service, negation_service, test_results):
     metrics_processor = metrics.Metrics(confusion, tested='negated', target='i2b2concepts',
                                         target_filter=lambda x: x.assertion == 'absent')
     with EventsClient(address=events_service) as client, Pipeline(
-            LocalProcessor(sentences, component_id='sentences', client=client),
             RemoteProcessor('biomedicus-negation', address=negation_service,
                             params={'terms_index': 'i2b2concepts'}),
             LocalProcessor(metrics_processor, component_id='metrics', client=client)
@@ -52,19 +51,20 @@ def test_negation_performance(events_service, negation_service, test_results):
                 results = pipeline.run(document)
                 print('F1 for event - "{}": {:0.3f} - elapsed: {}'.format(
                     event.event_id,
-                    results[2].results['first_token_confusion']['f1'],
-                    results[1].timing_info['process_method']
+                    results[1].results['first_token_confusion']['f1'],
+                    results[0].timing_info['process_method']
                 ))
 
         print('Overall Precision:', confusion.precision)
         print('Overall Recall:', confusion.recall)
         print('Overall F1:', confusion.f1)
         pipeline.print_times()
-        timing_info = pipeline.processor_timer_stats()[1].timing_info
-        test_results['Negation'] = {
+        timing_info = pipeline.processor_timer_stats()[0].timing_info
+        test_results['biomedicus-negation'] = {
+            'Gold Standard': "2010 i2b2-VA",
             'Precision': confusion.precision,
             'Recall': confusion.recall,
             'F1': confusion.f1,
-            'Remote Call Duration': str(timing_info['remote_call'].mean),
-            'Process Method Duration': str(timing_info['process_method'].mean)
+            'Per-Document Mean Remote Call Duration': str(timing_info['remote_call'].mean),
+            'Per-Document Mean Process Method Duration': str(timing_info['process_method'].mean)
         }

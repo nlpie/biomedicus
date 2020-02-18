@@ -150,6 +150,7 @@ class NegexTagger:
     name='biomedicus-negex',
     human_name='Negex Negation Detector',
     description='Detects which UMLS terms are negated.',
+    entry_point=__name__,
     parameters=[
         parameter(
             name='terms_index',
@@ -167,6 +168,10 @@ class NegexTagger:
             reference='biomedicus-concepts/umls_terms',
             name_from_parameter='terms_index'
         )
+    ],
+    outputs=[
+        label_index("negated", description="Spans of negated terms."),
+        label_index("negation_trigger", description="Spans of phrases that trigger negation.")
     ]
 )
 class NegexProcessor(mtap.processing.DocumentProcessor):
