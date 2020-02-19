@@ -166,9 +166,13 @@ public class ModificationDetector extends DocumentProcessor {
 
   @Override
   protected void process(@NotNull Document document, @NotNull JsonObject params, @NotNull JsonObjectBuilder result) {
+    String termIndexName = params.getStringValue("terms_index");
+    if (termIndexName == null) {
+      termIndexName = "umls_terms";
+    }
     LabelIndex<GenericLabel> sentences = document.getLabelIndex("sentences");
     LabelIndex<GenericLabel> posTags = document.getLabelIndex("pos_tags");
-    LabelIndex<GenericLabel> umlsTerms = document.getLabelIndex("umls_terms");
+    LabelIndex<GenericLabel> umlsTerms = document.getLabelIndex(termIndexName);
 
     try (
         Labeler<GenericLabel> uncertainLabeler = document.getLabeler("uncertain");
