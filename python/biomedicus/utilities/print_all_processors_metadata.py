@@ -12,12 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Prints the yaml metadata for all of Biomedicus's processors."""
-import os
 from argparse import ArgumentParser
+from pathlib import Path
 from subprocess import call
 from tempfile import NamedTemporaryFile
 
+from biomedicus.negation.negex import NegexProcessor
 from biomedicus.sentences.bi_lstm import SentenceProcessor
+from biomedicus.sentences.one_per_line_sentences import OnePerLineSentencesProcessor
 
 
 def main(args=None):
@@ -25,7 +27,7 @@ def main(args=None):
     parser.add_argument('--output-file', default="processors.yaml")
     ns = parser.parse_args(args)
 
-    biomedicus_jar = os.environ['BIOMEDICUS_JAR']
+    biomedicus_jar = Path(__file__).parent.parent / 'biomedicus-all.jar'
 
     from yaml import load, dump
     try:
@@ -34,15 +36,31 @@ def main(args=None):
         from yaml import Loader, Dumper
 
     with NamedTemporaryFile('r') as f:
-        call(['java', '-cp', biomedicus_jar, 'edu.umn.nlpie.mtap.utilities.PrintProcessorMetadata',
-              f.name, 'edu.umn.biomedicus.acronym.AcronymDetectorProcessor',
-              'edu.umn.biomedicus.concepts.DictionaryConceptDetector',
-              'edu.umn.biomedicus.normalization.NormalizationProcessor',
-              'edu.umn.biomedicus.rtf.RtfProcessor',
-              'edu.umn.biomedicus.tagging.tnt.TntPosTaggerProcessor'])
+        return_code = call(['java', '-cp', str(biomedicus_jar),
+                            'edu.umn.nlpie.mtap.utilities.PrintProcessorMetadata',
+                            f.name,
+                            'edu.umn.biomedicus.acronym.AcronymDetectorProcessor',
+                            'edu.umn.biomedicus.concepts.DictionaryConceptDetector',
+                            'edu.umn.biomedicus.normalization.NormalizationProcessor',
+                            'edu.umn.biomedicus.rtf.RtfProcessor',
+                            'edu.umn.biomedicus.tagging.tnt.TntPosTaggerProcessor',
+                            'edu.umn.biomedicus.modification.ModificationDetector'])
+        if return_code != 0:
+            raise ValueError("java metadata failed.")
         java_meta = load(f, Loader=Loader)
+        java_meta = {
+            m['name']: m for m in java_meta
+        }
 
-    all_meta = [x.metadata for x in [SentenceProcessor]] + java_meta
+    all_meta = [
+                   java_meta['biomedicus-rtf-processor']
+               ] + [x.metadata for x in [SentenceProcessor, OnePerLineSentencesProcessor]] + [
+                   java_meta['biomedicus-tnt-tagger'],
+                   java_meta['biomedicus-acronyms'],
+                   java_meta['biomedicus-normalizer'],
+                   java_meta['biomedicus-concepts'],
+                   java_meta['biomedicus-modification']
+               ] + [x.metadata for x in [NegexProcessor]]
     with open(ns.output_file, 'w') as f:
         dump(all_meta, f, Dumper=Dumper)
 

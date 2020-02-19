@@ -16,9 +16,9 @@ import re
 from argparse import ArgumentParser
 from pathlib import Path
 
-from mtap import Event
-from mtap.io.serialization import standard_serializers
-
+from biomedicus.sentences.one_per_line_sentences import OnePerLineSentencesProcessor
+from mtap import Event, Pipeline, LocalProcessor, RemoteProcessor, EventsClient
+from mtap.io.serialization import standard_serializers, SerializationProcessor
 
 _whitespace_tokenize = re.compile(r'\S+')
 _ast_pattern = re.compile(r'^c="(.+?)" (\d+):(\d+) (\d+):(\d+)\|\|t="(.+?)"\|\|a="(.+?)"\n$')
@@ -59,7 +59,7 @@ def events(input_directory, target_document, client=None):
                                   concept=concept,
                                   concept_type=concept_type,
                                   assertion=assertion)
-            yield event
+            yield doc
 
 
 def main(args=None):
@@ -76,14 +76,21 @@ def main(args=None):
     parser.add_argument('--target-document', default='plaintext')
     parser.add_argument('--serializer', default='pickle', choices=standard_serializers.keys(),
                         help='The serializer to use.')
+    parser.add_argument('--events', help="Address of the events client.")
+    parser.add_argument('--tagger', help="Address of the pos tagger to use.")
 
     conf = parser.parse_args(args)
 
     serializer = standard_serializers[conf.serializer]
 
-    for event in events(conf.input_directory, conf.target_document):
-        output_file = conf.output_directory / (event.event_id + serializer.extension)
-        serializer.event_to_file(event, output_file)
+    with EventsClient(address=conf.events) as client, Pipeline(
+        LocalProcessor(OnePerLineSentencesProcessor(), component_id='sentences', client=client),
+        RemoteProcessor('biomedicus-tnt-tagger', address=conf.tagger),
+        LocalProcessor(SerializationProcessor(serializer, output_dir=conf.output_directory),
+                       component_id='serializer', client=client)
+    ) as pipeline:
+        results = pipeline.run_multithread(events(conf.input_directory, conf.target_document, client=client))
+        pipeline.print_times()
 
 
 if __name__ == '__main__':

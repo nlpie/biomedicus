@@ -88,7 +88,7 @@ import static edu.umn.biomedicus.common.pos.PartOfSpeech.*;
             description = "Text that is covered by one or more concepts.")
     }
 )
-class DictionaryConceptDetector extends DocumentProcessor {
+public class DictionaryConceptDetector extends DocumentProcessor {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DictionaryConceptDetector.class);
 
