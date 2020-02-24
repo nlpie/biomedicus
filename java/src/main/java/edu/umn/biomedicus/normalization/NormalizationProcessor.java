@@ -96,6 +96,7 @@ final public class NormalizationProcessor extends DocumentProcessor {
   }
 
   public static void main(String[] args) {
+    DataFiles.checkDataPath();
     Options options = new Options();
     CmdLineParser parser = new CmdLineParser(options);
     try {

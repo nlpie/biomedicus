@@ -150,6 +150,7 @@ public class TntPosTaggerProcessor extends DocumentProcessor {
   }
 
   public static void main(String[] args) {
+    DataFiles.checkDataPath();
     TntOptions tntOptions = new TntOptions();
     CmdLineParser parser = new CmdLineParser(tntOptions);
     try {
