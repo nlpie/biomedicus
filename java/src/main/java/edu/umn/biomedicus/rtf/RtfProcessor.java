@@ -16,6 +16,7 @@
 
 package edu.umn.biomedicus.rtf;
 
+import edu.umn.biomedicus.common.data.DataFiles;
 import edu.umn.biomedicus.rtf.reader.RtfParser;
 import edu.umn.biomedicus.rtf.reader.RtfSource;
 import edu.umn.nlpie.mtap.common.JsonObject;
@@ -59,6 +60,7 @@ public class RtfProcessor extends EventProcessor {
   }
 
   public static void main(String[] args) {
+    DataFiles.checkDataPath();
     ProcessorServerOptions options = new ProcessorServerOptions();
     CmdLineParser cmdLineParser = new CmdLineParser(options);
     try {

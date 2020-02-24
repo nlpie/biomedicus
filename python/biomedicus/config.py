@@ -58,6 +58,12 @@ _DEFAULT_CONFIG = None
 
 
 def load_config():
+    try:
+        os.environ['BIOMEDICUS_DATA']
+    except KeyError:
+        data = Path.home() / '.biomedicus' / 'data'
+        os.environ['BIOMEDICUS_DATA'] = str(data)
+    
     potential_paths = []
     try:
         cnf = os.getenv('BIOMEDICUS_CONFIG')

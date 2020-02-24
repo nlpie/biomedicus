@@ -18,11 +18,13 @@ import pytest
 from mtap import Document, GenericLabel
 
 from biomedicus.config import load_config
+from biomedicus.deployment.deploy_biomedicus import check_data
 from biomedicus.sentences.bi_lstm import create_processor
 
 
 @pytest.fixture(name='bi_lstm_model')
 def fixture_bi_lstm_model():
+    check_data()
     config = load_config()
     conf = Namespace(
         embeddings=Path(config['sentences.wordEmbeddings']),

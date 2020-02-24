@@ -29,11 +29,12 @@ public class DataFiles {
   public static void checkDataPath() {
     String biomedicusData = System.getenv("BIOMEDICUS_DATA");
     if (biomedicusData == null) {
-      throw new DataFilesException("BIOMEDICUS_DATA environment variable is not set");
+      biomedicusData = Paths.get(System.getProperty("user.home")).resolve(".biomedicus").resolve("data").toString();
     }
     Path dataPath = Paths.get(biomedicusData);
     if (Files.notExists(dataPath) || !Files.isDirectory(dataPath)) {
       throw new DataFilesException("No directory at BIOMEDICUS_DATA path: " + dataPath.toString());
     }
+
   }
 }

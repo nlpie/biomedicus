@@ -34,7 +34,15 @@ import java.util.List;
 import java.util.Map;
 
 public class Config {
-  private static final StringSubstitutor SUBSTITUTOR = new StringSubstitutor(System.getenv());
+  private static final StringSubstitutor SUBSTITUTOR = createSubstitutor();
+
+  private static final StringSubstitutor createSubstitutor() {
+    Map<String, String> env = new HashMap<>(System.getenv());
+    if (!env.containsKey("BIOMEDICUS_DATA")) {
+      env.put("BIOMEDICUS_DATA", Paths.get(System.getProperty("user.home")).resolve(".biomedicus").resolve("data").toString());
+    }
+    return new StringSubstitutor(env);
+  }
 
   private static final Logger LOGGER = LoggerFactory.getLogger(Config.class);
 

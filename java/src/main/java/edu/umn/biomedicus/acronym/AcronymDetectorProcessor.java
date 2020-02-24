@@ -433,6 +433,7 @@ public class AcronymDetectorProcessor extends DocumentProcessor {
   }
 
   public static void main(String[] args) {
+    DataFiles.checkDataPath();
     Config config = Config.defaultConfig();
     Settings settings = new Settings(config);
     CmdLineParser parser = new CmdLineParser(settings);

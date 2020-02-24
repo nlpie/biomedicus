@@ -159,6 +159,7 @@ public class DictionaryConceptDetector extends DocumentProcessor {
   }
 
   public static void main(String[] args) {
+    DataFiles.checkDataPath();
     ConceptsOptions conceptsOptions = new ConceptsOptions();
     CmdLineParser parser = new CmdLineParser(conceptsOptions);
     try {

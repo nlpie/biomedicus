@@ -13,11 +13,12 @@
 #  limitations under the License.
 import os
 import signal
+import sys
 import urllib.request
 from argparse import ArgumentParser
 from pathlib import Path
 from subprocess import Popen, STDOUT, PIPE
-from threading import Event, Thread
+from threading import Event, Thread, Condition
 from zipfile import ZipFile
 
 import grpc
@@ -39,7 +40,10 @@ def check_data(download=False):
         data = Path.home() / '.biomedicus' / 'data'
         os.environ['BIOMEDICUS_DATA'] = str(data)
 
-    if not data.exists():
+    config = load_config()
+    download_url = config['data.data_url']
+    data_version = config['data.version']
+    if not data.exists() or (data / 'VERSION.txt').read_text() != data_version:
         print(
             'It looks like you do not have the set of models distributed for BioMedICUS.\n'
             'The models are available from our website (https://nlpie.umn.edu/downloads)\n'
@@ -48,15 +52,12 @@ def check_data(download=False):
         )
         prompt = 'Would you like to download the model files to ~/.biomedicus/data (Y/N)? '
         if download or input(prompt) in ['Y', 'y', 'Yes', 'yes']:
-            download_data_to(data)
+            download_data_to(download_url, data)
         else:
             exit()
 
 
-def download_data_to(data):
-    config = load_config()
-    download_url = config['data.data_url']
-
+def download_data_to(download_url, data):
     def report(_, read, total):
         if report.bar is None:
             report.bar = tqdm(total=total, unit='b', unit_scale=True, unit_divisor=10 ** 6)
@@ -69,7 +70,9 @@ def download_data_to(data):
     finally:
         report.bar.close()
     try:
-        data.mkdir(parents=True, exist_ok=True)
+        if data.exists():
+            data.rmtree()
+        data.mkdir(parents=True, exist_ok=False)
         with ZipFile(local_filename) as zf:
             print('Extracting...')
             zf.extractall(path=str(data))
@@ -83,19 +86,20 @@ def deploy(conf):
     except ValueError:
         return
     jar_path = str(Path(__file__).parent.parent / 'biomedicus-all.jar')
+    python_exe = sys.executable
     calls = [
-        (['python', '-m', 'biomedicus.sentences.bi_lstm', 'processor'],
+        ([python_exe, '-m', 'biomedicus.sentences.bi_lstm', 'processor'],
          conf.sentences_port),
-        (['java', '-Xms128m', '-Xmx8g', '-cp', jar_path, 'edu.umn.biomedicus.tagging.tnt.TntPosTaggerProcessor'],
-         conf.tagger_port),
-        (['java', '-Xms128m', '-Xmx8g', '-cp', jar_path, 'edu.umn.biomedicus.acronym.AcronymDetectorProcessor'],
-         conf.acronyms_port),
-        (['java', '-Xms128m', '-Xmx8g', '-cp', jar_path, 'edu.umn.biomedicus.concepts.DictionaryConceptDetector'],
-         conf.concepts_port),
-        (['python', '-m', 'biomedicus.negation.negex'], conf.negation_port)
+        (['java', '-Xms128m', '-Xmx8g', '-cp', jar_path,
+          'edu.umn.biomedicus.tagging.tnt.TntPosTaggerProcessor'], conf.tagger_port),
+        (['java', '-Xms128m', '-Xmx8g', '-cp', jar_path,
+          'edu.umn.biomedicus.acronym.AcronymDetectorProcessor'], conf.acronyms_port),
+        (['java', '-Xms128m', '-Xmx8g', '-cp', jar_path,
+          'edu.umn.biomedicus.concepts.DictionaryConceptDetector'], conf.concepts_port),
+        ([python_exe, '-m', 'biomedicus.negation.negex'], conf.negation_port)
     ]
     if conf.events_address is None:
-        calls.insert(0, (['python', '-m', 'mtap', 'events'], conf.events_port))
+        calls.insert(0, ([python_exe, '-m', 'mtap', 'events'], conf.events_port))
         events_address = '127.0.0.1:' + conf.events_port
     else:
         events_address = conf.events_address
@@ -119,11 +123,16 @@ def deploy(conf):
         processes.append(p)
 
     e = Event()
+    shutting_down = [False]
+    future = None
 
     def handler(_a, _b):
+        shutting_down[0] = True
         print("Shutting down all processors", flush=True)
         for p in processes:
             p.send_signal(signal.SIGINT)
+        if future is not None:
+            future.cancel()
         for listener in process_listeners:
             listener.join(timeout=5)
         e.set()
@@ -131,13 +140,14 @@ def deploy(conf):
     signal.signal(signal.SIGINT, handler)
 
     for call, port in calls:
-        with grpc.insecure_channel('127.0.0.1:' + port) as channel:
-            future = grpc.channel_ready_future(channel)
-            try:
-                future.result(timeout=20)
-            except grpc.FutureTimeoutError:
-                print('Failed to launch: {}'.format(call))
-                handler(None, None)
+        if not shutting_down[0]:
+            with grpc.insecure_channel('127.0.0.1:' + port) as channel:
+                future = grpc.channel_ready_future(channel)
+                try:
+                    future.result(timeout=20)
+                except grpc.FutureTimeoutError:
+                    print('Failed to launch: {}'.format(call))
+                    handler(None, None)
 
     print('Done starting all processors', flush=True)
     e.wait()
