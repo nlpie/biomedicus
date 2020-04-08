@@ -16,7 +16,7 @@ from subprocess import PIPE, STDOUT, Popen
 
 import pytest
 from mtap import Pipeline, RemoteProcessor, EventsClient, LocalProcessor
-from mtap.io.serialization import JsonSerializer
+from mtap.io.serialization import JsonSerializer, PickleSerializer
 from mtap.metrics import Metrics, Accuracy
 from mtap.utilities import find_free_port
 from pathlib import Path
@@ -46,8 +46,8 @@ def test_tnt_performance(events_service, pos_tags_service, test_results):
             LocalProcessor(Metrics(accuracy, tested='pos_tags', target='gold_tags'),
                            component_id='metrics', client=client)
     ) as pipeline:
-        for test_file in input_dir.glob('**/*.json'):
-            event = JsonSerializer.file_to_event(test_file, client=client)
+        for test_file in input_dir.glob('**/*.pickle'):
+            event = PickleSerializer.file_to_event(test_file, client=client)
             with event:
                 document = event.documents['gold']
                 results = pipeline.run(document)

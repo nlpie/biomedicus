@@ -15,7 +15,7 @@ from argparse import ArgumentParser
 from pathlib import Path
 
 from mtap import Event, EventsClient, Document, Pipeline, RemoteProcessor, LocalProcessor
-from mtap.io.serialization import JsonSerializer, SerializationProcessor
+from mtap.io.serialization import SerializationProcessor, PickleSerializer
 
 
 def main(args=None):
@@ -35,7 +35,7 @@ def main(args=None):
                             params={'source_document_name': 'source',
                                     'target_document_name': 'gold',
                                     'pos_tags_index': 'gold_tags'}),
-            LocalProcessor(SerializationProcessor(JsonSerializer, output_dir=args.output),
+            LocalProcessor(SerializationProcessor(PickleSerializer, output_dir=args.output),
                            component_id='serializer', client=client)
     ) as pipeline:
         for f in Path(args.input).rglob(args.glob):

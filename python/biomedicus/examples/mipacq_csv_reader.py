@@ -16,7 +16,7 @@ from argparse import ArgumentParser
 from pathlib import Path
 
 from mtap import EventsClient, Pipeline, LocalProcessor, Event, RemoteProcessor
-from mtap.io.serialization import SerializationProcessor, JsonSerializer
+from mtap.io.serialization import SerializationProcessor, PickleSerializer
 
 
 def main(args=None):
@@ -53,7 +53,7 @@ def main(args=None):
                 RemoteProcessor('biomedicus-sentences', address=ns.sentences),
                 RemoteProcessor('biomedicus-tnt-tagger', address=ns.tagger),
                 RemoteProcessor('biomedicus-acronyms', address=ns.acronyms),
-                LocalProcessor(SerializationProcessor(JsonSerializer,
+                LocalProcessor(SerializationProcessor(PickleSerializer,
                                                       output_dir=ns.output_directory),
                                component_id='serialize',
                                client=client)
