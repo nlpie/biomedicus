@@ -17,7 +17,7 @@ from subprocess import Popen, PIPE
 
 import pytest
 from mtap import EventsClient, RemoteProcessor, Pipeline, LocalProcessor
-from mtap.io.serialization import JsonSerializer, PickleSerializer
+from mtap.io.serialization import PickleSerializer
 from mtap.metrics import Accuracy, Metrics
 from mtap.utilities import find_free_port
 

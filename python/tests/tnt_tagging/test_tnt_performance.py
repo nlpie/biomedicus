@@ -12,14 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
+from pathlib import Path
 from subprocess import PIPE, STDOUT, Popen
 
 import pytest
 from mtap import Pipeline, RemoteProcessor, EventsClient, LocalProcessor
-from mtap.io.serialization import JsonSerializer, PickleSerializer
+from mtap.io.serialization import PickleSerializer
 from mtap.metrics import Metrics, Accuracy
 from mtap.utilities import find_free_port
-from pathlib import Path
 
 import biomedicus
 
