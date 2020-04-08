@@ -27,7 +27,7 @@ class DefaultPipelineConf:
         self.sentences_address = '127.0.0.1:10102'
         self.tagger_id = 'biomedicus-tnt-tagger'
         self.tagger_address = '127.0.0.1:10103'
-        self.acronyms_id = 'biomedicus_acronyms'
+        self.acronyms_id = 'biomedicus-acronyms'
         self.acronyms_address = '127.0.0.1:10104'
         self.concepts_id = 'biomedicus-concepts'
         self.concepts_address = '127.0.0.1:10105'
@@ -113,7 +113,7 @@ def default_pipeline_parser():
     parser.add_argument('--use_discovery', action='store_true',
                         help="If this flag is specified, all ports will be ignored and instead "
                              "service discovery will be used to connect to services.")
-    parser.add_argument('--serializer', default='yml', choices=['json', 'yml', 'pickle'],
+    parser.add_argument('--serializer', default='json', choices=['json', 'yml', 'pickle'],
                         help="The identifier for the serializer to use, see MTAP serializers.")
     parser.add_argument('--include-label-text', action='store_true',
                         help="Flag to include the covered text for every label")
@@ -135,9 +135,9 @@ def run_default_pipeline(conf: DefaultPipelineConf):
                 with path.open('r', errors='replace') as f:
                     txt = f.read()
                 relative = str(path.relative_to(input_dir))
-                e = Event(event_id=relative, client=default_pipeline.events_client)
-                doc = e.create_document('plaintext', txt)
-                yield doc
+                with Event(event_id=relative, client=default_pipeline.events_client) as e:
+                    doc = e.create_document('plaintext', txt)
+                    yield doc
 
         default_pipeline.pipeline.run_multithread(source(), total=total)
         default_pipeline.pipeline.print_times()
