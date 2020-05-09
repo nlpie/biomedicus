@@ -61,11 +61,11 @@ public class RtfProcessor extends EventProcessor {
 
   public static void main(String[] args) {
     DataFiles.checkDataPath();
-    ProcessorServerOptions options = new ProcessorServerOptions();
+    ProcessorServer.Builder options = new ProcessorServer.Builder();
     CmdLineParser cmdLineParser = new CmdLineParser(options);
     try {
       cmdLineParser.parseArgument(args);
-      Server server = ProcessorServerBuilder.forProcessor(new RtfProcessor(), options).build();
+      Server server = options.build(new RtfProcessor());
       server.start();
       server.blockUntilShutdown();
     } catch (CmdLineException e) {

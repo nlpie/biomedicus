@@ -42,7 +42,7 @@ class RtfProcessorTest {
         baos.write(b);
       }
     }
-    Event event = Event.newBuilder().withEventID("1").build();
+    Event event = Event.newBuilder().eventID("1").build();
     event.getBinaryData().put("rtf", baos.toByteArray());
     RtfProcessor processor = new RtfProcessor();
     processor.process(event, JsonObjectImpl.newBuilder().build(), JsonObjectImpl.newBuilder());
@@ -52,7 +52,7 @@ class RtfProcessorTest {
 
   @Test
   void plaintextDocument() throws IOException {
-    Event event = Event.newBuilder().withEventID("1").build();
+    Event event = Event.newBuilder().eventID("1").build();
     event.getBinaryData().put("rtf", "The quick brown fox jumped over the lazy dog.\n".getBytes());
     RtfProcessor processor = new RtfProcessor();
     processor.process(event, JsonObjectImpl.newBuilder().build(), JsonObjectImpl.newBuilder());

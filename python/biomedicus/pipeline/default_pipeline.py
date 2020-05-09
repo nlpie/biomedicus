@@ -62,13 +62,11 @@ class DefaultPipeline:
         ]
         if conf.use_discovery:
             self.pipeline = Pipeline(
-                *[RemoteProcessor(identifier) for identifier, _ in pipeline],
-                n_threads=conf.threads
+                *[RemoteProcessor(identifier) for identifier, _ in pipeline]
             )
         else:
             self.pipeline = Pipeline(
-                *[RemoteProcessor(identifier, address=addr) for identifier, addr in pipeline],
-                n_threads=conf.threads
+                *[RemoteProcessor(identifier, address=addr) for identifier, addr in pipeline]
             )
         if conf.serializer is not None:
             serialization_proc = SerializationProcessor(get_serializer(conf.serializer),
@@ -135,7 +133,7 @@ def run_default_pipeline(conf: DefaultPipelineConf):
                 with path.open('r', errors='replace') as f:
                     txt = f.read()
                 relative = str(path.relative_to(input_dir))
-                with Event(event_id=relative, client=default_pipeline.events_client) as e:
+                with Event(event_id=relative, client=default_pipeline.events_client, only_create_new=True) as e:
                     doc = e.create_document('plaintext', txt)
                     yield doc
 

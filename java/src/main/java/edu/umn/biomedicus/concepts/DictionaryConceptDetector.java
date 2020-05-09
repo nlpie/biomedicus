@@ -337,8 +337,8 @@ public class DictionaryConceptDetector extends DocumentProcessor {
           for (int subsetSize = 1; subsetSize <= window.size(); subsetSize++) {
             List<GenericLabel> windowSubset = window.subList(0, subsetSize);
             GenericLabel last = windowSubset.get(subsetSize - 1);
-            GenericLabel entire = GenericLabel.withSpan(first.getStartIndex(), last.getEndIndex())
-                .withDocument(document).build();
+            GenericLabel entire = GenericLabel.createSpan(first.getStartIndex(), last.getEndIndex());
+            entire.setDocument(document);
 
             if (window.stream()
                 .map(posTag -> PartsOfSpeech.forTag(posTag.getStringValue("tag"))).allMatch(TRIVIAL_POS::contains)) {

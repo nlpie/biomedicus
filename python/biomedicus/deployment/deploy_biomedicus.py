@@ -18,7 +18,8 @@ import urllib.request
 from argparse import ArgumentParser
 from pathlib import Path
 from subprocess import Popen, STDOUT, PIPE
-from threading import Event, Thread, Condition
+from threading import Event, Thread
+from time import sleep
 from zipfile import ZipFile
 
 import grpc
@@ -68,7 +69,8 @@ def download_data_to(download_url, data):
         print('Starting download: ', download_url)
         local_filename, headers = urllib.request.urlretrieve(download_url, reporthook=report)
     finally:
-        report.bar.close()
+        if report.bar is not None:
+            report.bar.close()
     try:
         if data.exists():
             data.rmtree()
@@ -122,35 +124,23 @@ def deploy(conf):
         process_listeners.append(listener)
         processes.append(p)
 
-    e = Event()
-    shutting_down = [False]
-    future = None
-
-    def handler(_a, _b):
-        shutting_down[0] = True
-        print("Shutting down all processors", flush=True)
-        for p in processes:
-            p.send_signal(signal.SIGINT)
-        if future is not None:
-            future.cancel()
-        for listener in process_listeners:
-            listener.join(timeout=5)
-        e.set()
-
-    signal.signal(signal.SIGINT, handler)
-
     for call, port in calls:
-        if not shutting_down[0]:
-            with grpc.insecure_channel('127.0.0.1:' + port) as channel:
-                future = grpc.channel_ready_future(channel)
-                try:
-                    future.result(timeout=20)
-                except grpc.FutureTimeoutError:
-                    print('Failed to launch: {}'.format(call))
-                    handler(None, None)
+        with grpc.insecure_channel('127.0.0.1:' + port) as channel:
+            future = grpc.channel_ready_future(channel)
+            try:
+                future.result(timeout=20)
+            except grpc.FutureTimeoutError:
+                print('Failed to launch: {}'.format(call))
 
     print('Done starting all processors', flush=True)
-    e.wait()
+    try:
+        while True:
+            sleep(60 * 60 * 24)
+    except KeyboardInterrupt:
+        print("Shutting down all processors")
+        for p in processes:
+            p.wait()
+
     print("Done shutting down all processors")
 
 

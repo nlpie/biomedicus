@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import os
 import signal
 import subprocess
 import sys
@@ -64,8 +65,12 @@ def fixture_processor_timeout(request):
 
 @pytest.fixture(name='events_service')
 def fixture_events_service():
-    with subprocess_events_server() as address:
+    try:
+        address = os.environ['EVENTS_ADDRESS']
         yield address
+    except KeyError:
+        with subprocess_events_server() as address:
+            yield address
 
 
 def _listen(process: subprocess.Popen):

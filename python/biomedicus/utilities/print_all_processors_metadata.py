@@ -17,9 +17,9 @@ from pathlib import Path
 from subprocess import call
 from tempfile import NamedTemporaryFile
 
+from biomedicus.dependencies.stanza_parser import StanzaParser
 from biomedicus.negation.negex import NegexProcessor
 from biomedicus.sentences.bi_lstm import SentenceProcessor
-from biomedicus.sentences.one_per_line_sentences import OnePerLineSentencesProcessor
 
 
 def main(args=None):
@@ -54,7 +54,7 @@ def main(args=None):
 
     all_meta = [
                    java_meta['biomedicus-rtf-processor']
-               ] + [x.metadata for x in [SentenceProcessor, OnePerLineSentencesProcessor]] + [
+               ] + [x.metadata for x in [SentenceProcessor, StanzaParser]] + [
                    java_meta['biomedicus-tnt-tagger'],
                    java_meta['biomedicus-acronyms'],
                    java_meta['biomedicus-normalizer'],

@@ -28,10 +28,7 @@ import edu.umn.biomedicus.tokenization.TokenResult;
 import edu.umn.biomedicus.tokenization.Tokenizer;
 import edu.umn.nlpie.mtap.common.JsonObject;
 import edu.umn.nlpie.mtap.common.JsonObjectBuilder;
-import edu.umn.nlpie.mtap.model.Document;
-import edu.umn.nlpie.mtap.model.GenericLabel;
-import edu.umn.nlpie.mtap.model.LabelIndex;
-import edu.umn.nlpie.mtap.model.Labeler;
+import edu.umn.nlpie.mtap.model.*;
 import edu.umn.nlpie.mtap.processing.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -143,8 +140,7 @@ public class TntPosTaggerProcessor extends DocumentProcessor {
       TntOptions tntOptions
   ) throws IOException, InterruptedException {
     TntPosTaggerProcessor taggerProcessor = createTaggerProcessor(tntOptions);
-    ProcessorServer server = ProcessorServerBuilder.forProcessor(taggerProcessor, tntOptions)
-        .build();
+    ProcessorServer server = tntOptions.build(taggerProcessor);
     server.start();
     server.blockUntilShutdown();
   }
@@ -157,7 +153,7 @@ public class TntPosTaggerProcessor extends DocumentProcessor {
       parser.parseArgument(args);
       runTntProcessor(tntOptions);
     } catch (CmdLineException e) {
-      ProcessorServerOptions.printHelp(parser, TntPosTaggerProcessor.class, e, null);
+      ProcessorServer.Builder.printHelp(parser, TntPosTaggerProcessor.class, e, null);
     } catch (InterruptedException | IOException e) {
       e.printStackTrace();
     }
@@ -180,28 +176,28 @@ public class TntPosTaggerProcessor extends DocumentProcessor {
       for (GenericLabel sentence : sentenceLabelIndex) {
         ViterbiProcessor<PosCap, WordCap> viterbiProcessor = Viterbi.secondOrder(tntModel, tntModel,
             Ngram.create(BBS, BOS), Ngram::create);
-        List<GenericLabel> tokens;
+        List<Label> tokens;
         if (tokenIndex != null) {
-          tokens = tokenIndex.inside(sentence).asList();
+          tokens = new ArrayList<>(tokenIndex.inside(sentence).asList());
         } else {
           tokens = new ArrayList<>();
           CharSequence sentenceText = sentence.getText();
           for (TokenResult token : Tokenizer.tokenize(sentenceText)) {
             int startIndex = sentence.getStartIndex() + token.getStartIndex();
             int endIndex = sentence.getStartIndex() + token.getEndIndex();
-            tokens.add(GenericLabel.withSpan(startIndex, endIndex).withDocument(document).build());
+            tokens.add(new TextSpan(document.getText(), startIndex, endIndex));
           }
           if (tokens.size() > 0) {
-            GenericLabel lastToken = tokens.remove(tokens.size() - 1);
+            Label lastToken = tokens.remove(tokens.size() - 1);
             if (lastToken.getEndIndex() - lastToken.getStartIndex() > 1) {
               CharSequence tokenText = lastToken.getText();
               if (Arrays.asList('!', '?', '.').contains(tokenText.charAt(tokenText.length() - 1))) {
                 tokens.add(
                     GenericLabel.withSpan(lastToken.getStartIndex(), lastToken.getEndIndex() - 1)
-                        .withDocument(document).build());
+                        .build());
                 tokens.add(
                     GenericLabel.withSpan(lastToken.getEndIndex() - 1, lastToken.getEndIndex())
-                        .withDocument(document).build());
+                        .build());
               } else {
                 tokens.add(lastToken);
               }
@@ -209,8 +205,8 @@ public class TntPosTaggerProcessor extends DocumentProcessor {
           }
         }
 
-        for (GenericLabel token : tokens) {
-          CharSequence text = token.getText();
+        for (Label token : tokens) {
+          CharSequence text = document.getText().substring(token.getStartIndex(), token.getEndIndex());
           boolean isCapitalized = Character.isUpperCase(text.charAt(0));
           viterbiProcessor.advance(new WordCap(text.toString().toLowerCase(), isCapitalized));
           viterbiProcessor.beamFilter(beamThreshold);
@@ -224,7 +220,7 @@ public class TntPosTaggerProcessor extends DocumentProcessor {
         }
 
         Iterator<PosCap> it = tags.subList(2, tags.size()).iterator();
-        for (GenericLabel token : tokens) {
+        for (Label token : tokens) {
           PartOfSpeech partOfSpeech = it.next().getPartOfSpeech();
           partOfSpeechLabeler.add(GenericLabel.withSpan(token)
               .setProperty("tag", partOfSpeech.toString()));
