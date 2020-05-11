@@ -326,20 +326,20 @@ public class AcronymDetectorProcessor extends DocumentProcessor {
         .allMatch(EXCLUDE_POS::contains);
   }
 
-  public static class Settings extends ProcessorServerOptions {
+  public static class Settings extends ProcessorServer.Builder {
     @Option(
         name = "--acronym-vector-space",
         metaVar = "PATH",
         usage = "Path to the vector space model."
     )
-    private final Path vectorSpace;
+    private Path vectorSpace;
 
     @Option(
         name = "--acronym-sense-map",
         metaVar = "PATH",
         usage = "Path to the sense map."
     )
-    private final Path senseMap;
+    private Path senseMap;
 
     @Option(
         name = "--acronym-sense-vectors-in-memory",
@@ -347,34 +347,34 @@ public class AcronymDetectorProcessor extends DocumentProcessor {
         handler = ExplicitBooleanOptionHandler.class,
         usage = "Stores sense vectors in memory"
     )
-    private final Boolean sensesInMemory;
+    private Boolean sensesInMemory;
 
     @Option(
         name = "--acronym-orthographic-model",
         metaVar = "PATH",
         usage = "The path to the orthographic model."
     )
-    private final Path orthographicModel;
+    private Path orthographicModel;
 
     @Option(
         name = "--acronym-expansion-model-path",
         metaVar = "PATH",
         usage = "Path to the acronym expansions model."
     )
-    private final Path expansionsModel;
+    private Path expansionsModel;
 
     @Option(
         name = "--acronym-use-alignment",
         usage = "Flag to use the alignment model."
     )
-    private final boolean useAlignment;
+    private boolean useAlignment;
 
     @Option(
         name = "--acronym-alignment-model",
         metaVar = "PATH",
         usage = "Path to the acronym alignment model."
     )
-    private final Path alignmentModel;
+    private Path alignmentModel;
 
     @Option(
         name = "--acronym-label-other-senses",
@@ -382,14 +382,14 @@ public class AcronymDetectorProcessor extends DocumentProcessor {
         handler = ExplicitBooleanOptionHandler.class,
         usage = "Whether to label additional senses."
     )
-    private final boolean labelOtherSenses;
+    private boolean labelOtherSenses;
 
     @Option(
         name = "--acronym-cutoff-score",
         metaVar = "FLOAT",
         usage = "The acronym cutoff score."
     )
-    private final double cutoffScore;
+    private double cutoffScore;
 
     public Settings(Config config) {
       vectorSpace = Paths.get(config.getStringValue("acronym.vector.model"));
@@ -401,6 +401,78 @@ public class AcronymDetectorProcessor extends DocumentProcessor {
       alignmentModel = Paths.get(config.getStringValue("acronym.alignmentModel"));
       labelOtherSenses = config.getBooleanValue("acronym.labelOtherSenses");
       cutoffScore = config.getDoubleValue("acronym.cutoffScore");
+    }
+
+    public Path getVectorSpace() {
+      return vectorSpace;
+    }
+
+    public void setVectorSpace(Path vectorSpace) {
+      this.vectorSpace = vectorSpace;
+    }
+
+    public Path getSenseMap() {
+      return senseMap;
+    }
+
+    public void setSenseMap(Path senseMap) {
+      this.senseMap = senseMap;
+    }
+
+    public Boolean getSensesInMemory() {
+      return sensesInMemory;
+    }
+
+    public void setSensesInMemory(Boolean sensesInMemory) {
+      this.sensesInMemory = sensesInMemory;
+    }
+
+    public Path getOrthographicModel() {
+      return orthographicModel;
+    }
+
+    public void setOrthographicModel(Path orthographicModel) {
+      this.orthographicModel = orthographicModel;
+    }
+
+    public Path getExpansionsModel() {
+      return expansionsModel;
+    }
+
+    public void setExpansionsModel(Path expansionsModel) {
+      this.expansionsModel = expansionsModel;
+    }
+
+    public boolean isUseAlignment() {
+      return useAlignment;
+    }
+
+    public void setUseAlignment(boolean useAlignment) {
+      this.useAlignment = useAlignment;
+    }
+
+    public Path getAlignmentModel() {
+      return alignmentModel;
+    }
+
+    public void setAlignmentModel(Path alignmentModel) {
+      this.alignmentModel = alignmentModel;
+    }
+
+    public boolean isLabelOtherSenses() {
+      return labelOtherSenses;
+    }
+
+    public void setLabelOtherSenses(boolean labelOtherSenses) {
+      this.labelOtherSenses = labelOtherSenses;
+    }
+
+    public double getCutoffScore() {
+      return cutoffScore;
+    }
+
+    public void setCutoffScore(double cutoffScore) {
+      this.cutoffScore = cutoffScore;
     }
 
     public AcronymDetectorProcessor build() throws IOException {
@@ -444,7 +516,7 @@ public class AcronymDetectorProcessor extends DocumentProcessor {
       server.start();
       server.blockUntilShutdown();
     } catch (CmdLineException e) {
-      ProcessorServerOptions.printHelp(parser, AcronymDetectorProcessor.class, e, null);
+      ProcessorServer.Builder.printHelp(parser, AcronymDetectorProcessor.class, e, null);
     } catch (IOException | InterruptedException e) {
       e.printStackTrace();
     }
