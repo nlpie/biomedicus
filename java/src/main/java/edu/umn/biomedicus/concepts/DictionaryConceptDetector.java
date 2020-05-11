@@ -152,8 +152,7 @@ public class DictionaryConceptDetector extends DocumentProcessor {
       @NotNull ConceptsOptions conceptsOptions
   ) throws IOException, RocksDBException, InterruptedException {
     DictionaryConceptDetector conceptDetector = createConceptDetector(conceptsOptions);
-    ProcessorServer server = ProcessorServerBuilder.forProcessor(conceptDetector, conceptsOptions)
-        .build();
+    ProcessorServer server = conceptsOptions.build(conceptDetector);
     server.start();
     server.blockUntilShutdown();
   }
@@ -166,7 +165,7 @@ public class DictionaryConceptDetector extends DocumentProcessor {
       parser.parseArgument(args);
       runDictionaryConceptDetector(conceptsOptions);
     } catch (CmdLineException e) {
-      ProcessorServerOptions.printHelp(parser, DictionaryConceptDetector.class, e, null);
+      ProcessorServer.Builder.printHelp(parser, DictionaryConceptDetector.class, e, null);
     } catch (InterruptedException | IOException | RocksDBException e) {
       e.printStackTrace();
     }
@@ -185,7 +184,7 @@ public class DictionaryConceptDetector extends DocumentProcessor {
     }
   }
 
-  public static class ConceptsOptions extends ProcessorServerOptions {
+  public static class ConceptsOptions extends ProcessorServer.Builder {
     @Option(
         name = "--db-path",
         metaVar = "PATH_TO",

@@ -12,13 +12,14 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 import os
-import signal
 import sys
 import urllib.request
 from argparse import ArgumentParser
 from pathlib import Path
+from shutil import rmtree
 from subprocess import Popen, STDOUT, PIPE
-from threading import Event, Thread
+from tempfile import NamedTemporaryFile
+from threading import Thread
 from time import sleep
 from zipfile import ZipFile
 
@@ -44,15 +45,18 @@ def check_data(download=False):
     config = load_config()
     download_url = config['data.data_url']
     data_version = config['data.version']
-    if not data.exists() or (data / 'VERSION.txt').read_text() != data_version:
-        print(
-            'It looks like you do not have the set of models distributed for BioMedICUS.\n'
-            'The models are available from our website (https://nlpie.umn.edu/downloads)\n'
-            'and can be installed by specifying the environment variable BIOMEDICUS_DATA\n'
-            'or by placing the extracted models in ~/.biomedicus/data'
-        )
-        prompt = 'Would you like to download the model files to ~/.biomedicus/data (Y/N)? '
-        if download or input(prompt) in ['Y', 'y', 'Yes', 'yes']:
+    version_file = data / 'VERSION.txt'
+    if not data.exists() or not version_file.exists() or version_file.read_text() != data_version:
+        if not download:
+            print(
+                'It looks like you do not have the set of models distributed for BioMedICUS.\n'
+                'The models are available from our website (https://nlpie.umn.edu/downloads)\n'
+                'and can be installed by specifying the environment variable BIOMEDICUS_DATA\n'
+                'or by placing the extracted models in ~/.biomedicus/data'
+            )
+            prompt = 'Would you like to download the model files to {} (Y/N)? '.format(str(data))
+            download = input(prompt) in ['Y', 'y', 'Yes', 'yes']
+        if download:
             download_data_to(download_url, data)
         else:
             exit()
@@ -66,20 +70,19 @@ def download_data_to(download_url, data):
 
     report.bar = None
     try:
-        print('Starting download: ', download_url)
-        local_filename, headers = urllib.request.urlretrieve(download_url, reporthook=report)
+        with NamedTemporaryFile() as temporary_file:
+            print('Starting download: ', download_url)
+            urllib.request.urlretrieve(download_url, filename=temporary_file.name,
+                                       reporthook=report)
+            if data.exists():
+                rmtree(str(data))
+            data.mkdir(parents=True, exist_ok=False)
+            with ZipFile(temporary_file) as zf:
+                print('Extracting...')
+                zf.extractall(path=str(data))
     finally:
         if report.bar is not None:
             report.bar.close()
-    try:
-        if data.exists():
-            data.rmtree()
-        data.mkdir(parents=True, exist_ok=False)
-        with ZipFile(local_filename) as zf:
-            print('Extracting...')
-            zf.extractall(path=str(data))
-    finally:
-        os.unlink(local_filename)
 
 
 def deploy(conf):

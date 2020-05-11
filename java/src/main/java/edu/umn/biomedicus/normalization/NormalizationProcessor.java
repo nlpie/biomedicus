@@ -130,7 +130,7 @@ final public class NormalizationProcessor extends DocumentProcessor {
     }
   }
 
-  public static class Options extends ProcessorServerOptions {
+  public static class Options extends ProcessorServer.Builder {
     @Option(
         name = "--db-path",
         metaVar = "DB_PATH",

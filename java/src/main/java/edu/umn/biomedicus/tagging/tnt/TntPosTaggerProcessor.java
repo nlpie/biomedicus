@@ -229,7 +229,7 @@ public class TntPosTaggerProcessor extends DocumentProcessor {
     }
   }
 
-  public static class TntOptions extends ProcessorServerOptions {
+  public static class TntOptions extends ProcessorServer.Builder {
     @Option(
         name = "--trigram",
         metaVar = "PATH_TO_TRIGRAM",
