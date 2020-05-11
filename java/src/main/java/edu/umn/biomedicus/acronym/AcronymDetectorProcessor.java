@@ -286,7 +286,7 @@ public class AcronymDetectorProcessor extends DocumentProcessor {
     }
 
     LabelIndex<GenericLabel> posTags = document.getLabelIndex("pos_tags");
-    List<GenericLabel> tokens = WhitespaceTokenizer.tokenize(document.getText());
+    List<GenericLabel> tokens = WhitespaceTokenizer.tokenize(document);
     List<CharSequence> tokensText = tokens.stream().map(Label::getText)
         .collect(Collectors.toList());
     try (
@@ -332,14 +332,14 @@ public class AcronymDetectorProcessor extends DocumentProcessor {
         metaVar = "PATH",
         usage = "Path to the vector space model."
     )
-    private Path vectorSpace;
+    private final Path vectorSpace;
 
     @Option(
         name = "--acronym-sense-map",
         metaVar = "PATH",
         usage = "Path to the sense map."
     )
-    private Path senseMap;
+    private final Path senseMap;
 
     @Option(
         name = "--acronym-sense-vectors-in-memory",
@@ -347,34 +347,34 @@ public class AcronymDetectorProcessor extends DocumentProcessor {
         handler = ExplicitBooleanOptionHandler.class,
         usage = "Stores sense vectors in memory"
     )
-    private Boolean sensesInMemory;
+    private final Boolean sensesInMemory;
 
     @Option(
         name = "--acronym-orthographic-model",
         metaVar = "PATH",
         usage = "The path to the orthographic model."
     )
-    private Path orthographicModel;
+    private final Path orthographicModel;
 
     @Option(
         name = "--acronym-expansion-model-path",
         metaVar = "PATH",
         usage = "Path to the acronym expansions model."
     )
-    private Path expansionsModel;
+    private final Path expansionsModel;
 
     @Option(
         name = "--acronym-use-alignment",
         usage = "Flag to use the alignment model."
     )
-    private boolean useAlignment;
+    private final boolean useAlignment;
 
     @Option(
         name = "--acronym-alignment-model",
         metaVar = "PATH",
         usage = "Path to the acronym alignment model."
     )
-    private Path alignmentModel;
+    private final Path alignmentModel;
 
     @Option(
         name = "--acronym-label-other-senses",
@@ -382,14 +382,14 @@ public class AcronymDetectorProcessor extends DocumentProcessor {
         handler = ExplicitBooleanOptionHandler.class,
         usage = "Whether to label additional senses."
     )
-    private boolean labelOtherSenses;
+    private final boolean labelOtherSenses;
 
     @Option(
         name = "--acronym-cutoff-score",
         metaVar = "FLOAT",
         usage = "The acronym cutoff score."
     )
-    private double cutoffScore;
+    private final double cutoffScore;
 
     public Settings(Config config) {
       vectorSpace = Paths.get(config.getStringValue("acronym.vector.model"));
@@ -439,7 +439,8 @@ public class AcronymDetectorProcessor extends DocumentProcessor {
     CmdLineParser parser = new CmdLineParser(settings);
     try {
       parser.parseArgument(args);
-      ProcessorServer server = MTAP.processorServerBuilder(settings.build(), settings).build();
+      AcronymDetectorProcessor processor = settings.build();
+      ProcessorServer server = settings.createServer(processor);
       server.start();
       server.blockUntilShutdown();
     } catch (CmdLineException e) {

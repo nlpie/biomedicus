@@ -11,13 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import os
 from pathlib import Path
 from subprocess import PIPE, Popen
 
 import pytest
 from mtap import EventsClient, Pipeline, RemoteProcessor
-from mtap.io.serialization import JsonSerializer
+from mtap.io.serialization import JsonSerializer, PickleSerializer
 from mtap.utilities import find_free_port
 
 import biomedicus
@@ -39,7 +38,7 @@ def test_normalization(events_service, normalization_processor):
     with EventsClient(address=events_service) as client, \
             Pipeline(RemoteProcessor(processor_id='biomedicus_normalizer',
                                      address=normalization_processor)) as pipeline, \
-            JsonSerializer.file_to_event(Path(__file__).parent / '97_95.json',
+            PickleSerializer.file_to_event(Path(__file__).parent / '97_95.pickle',
                                          client=client) as event:
         document = event.documents['plaintext']
         pipeline.run(document)

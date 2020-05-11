@@ -17,7 +17,7 @@ from subprocess import Popen, PIPE
 
 import pytest
 from mtap import EventsClient, RemoteProcessor, Pipeline, LocalProcessor
-from mtap.io.serialization import JsonSerializer
+from mtap.io.serialization import PickleSerializer
 from mtap.metrics import Accuracy, Metrics
 from mtap.utilities import find_free_port
 
@@ -48,8 +48,8 @@ def test_concepts_performance(events_service, concepts_service, test_results):
                 LocalProcessor(Metrics(precision, tested='gold_concepts', target='umls_concepts'),
                                component_id='metrics_reverse', client=client)
             ) as pipeline:
-        for test_file in input_dir.glob('**/*.json'):
-            with JsonSerializer.file_to_event(test_file, client=client) as event:
+        for test_file in input_dir.glob('**/*.pickle'):
+            with PickleSerializer.file_to_event(test_file, client=client) as event:
                 document = event.documents['plaintext']
                 pipeline.run(document)
 

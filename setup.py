@@ -65,7 +65,7 @@ setup(
     url='https://nlpie.github.io/biomedicus',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    python_requires='~=3.5',
+    python_requires='~=3.7',
     author='University of Minnesota NLP/IE Group',
     author_email='nlp-ie@umn.edu',
     classifiers=[
@@ -103,7 +103,8 @@ setup(
         'numpy',
         'pyyaml',
         'regex',
-        'tqdm'
+        'tqdm',
+        'stanza'
     ],
     setup_requires=[
         'pytest-runner',

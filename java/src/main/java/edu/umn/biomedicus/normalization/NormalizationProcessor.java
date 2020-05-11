@@ -89,8 +89,7 @@ final public class NormalizationProcessor extends DocumentProcessor {
       Options options
   ) throws IOException, InterruptedException {
     NormalizationProcessor normalizationProcessor = createNormalizationProcessor(options);
-    ProcessorServer server = ProcessorServerBuilder.forProcessor(normalizationProcessor, options)
-        .build();
+    ProcessorServer server = options.build(normalizationProcessor);
     server.start();
     server.blockUntilShutdown();
   }
@@ -103,7 +102,7 @@ final public class NormalizationProcessor extends DocumentProcessor {
       parser.parseArgument(args);
       runNormalizationProcessor(options);
     } catch (CmdLineException e) {
-      ProcessorServerOptions.printHelp(parser, NormalizationProcessor.class, e, null);
+      ProcessorServer.Builder.printHelp(parser, NormalizationProcessor.class, e, null);
     } catch (InterruptedException | IOException e) {
       e.printStackTrace();
     }

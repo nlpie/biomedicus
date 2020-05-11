@@ -49,7 +49,7 @@ def test_deploy_run(deploy_all):
         code = call(['python', '-m', 'biomedicus', 'run', str(Path(__file__).parent / 'in'),
                      tmpdir])
         assert code == 0
-        with YamlSerializer.file_to_event(Path(tmpdir) / '97_204.txt.yml') as event:
+        with YamlSerializer.file_to_event(Path(tmpdir) / '97_204.txt.json') as event:
             document = event.documents['plaintext']
             assert len(document.get_label_index('sentences')) > 0
             assert len(document.get_label_index('pos_tags')) > 0
