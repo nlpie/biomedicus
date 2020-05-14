@@ -11,28 +11,51 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Namespace
 from pathlib import Path
+from typing import Optional
 
 from mtap import Pipeline, Event, EventsClient, RemoteProcessor, LocalProcessor
 from mtap.io.serialization import get_serializer, SerializationProcessor
 from mtap.processing import ProcessingResult
 
+SERVICES = ['events', 'sentences', 'tagger', 'acronyms', 'concepts', 'negation']
 
-class DefaultPipelineConf:
+
+class PipelineConf:
+    """Configuration for the biomedicus default pipeline to connect to.
+
+    By default will connect to ``host`` and ``SERVICE_port`` of each service unless
+    ``SERVICE_address`` is specified or ``use_discovery`` is ``true``.
+
+    """
     def __init__(self):
         self.use_discovery = False
-        self.events_address = '127.0.0.1:10100'
+        self.host = '127.0.0.1'
+
+        self.events_port = '10100'
+        self.events_address = None
+
+        self.sentences_port = '10102'
+        self.sentences_address = None
         self.sentences_id = 'biomedicus-sentences'
-        self.sentences_address = '127.0.0.1:10102'
+
+        self.tagger_port = '10103'
+        self.tagger_address = None
         self.tagger_id = 'biomedicus-tnt-tagger'
-        self.tagger_address = '127.0.0.1:10103'
+
+        self.acronyms_port = '10104'
+        self.acronyms_address = None
         self.acronyms_id = 'biomedicus-acronyms'
-        self.acronyms_address = '127.0.0.1:10104'
+
+        self.concepts_port = '10105'
+        self.concepts_address = None
         self.concepts_id = 'biomedicus-concepts'
-        self.concepts_address = '127.0.0.1:10105'
+
+        self.negation_port = '10106'
+        self.negation_address = None
         self.negation_id = 'biomedicus-negex'
-        self.negation_address = '127.0.0.1:10106'
+
         self.include_label_text = False
         self.threads = 4
 
@@ -40,10 +63,23 @@ class DefaultPipelineConf:
         self.input_directory = None
         self.output_directory = None
 
+    def populate_addresses(self):
+        for service in SERVICES:
+            if getattr(self, service + '_address') is None:
+                setattr(self, service + '_address',
+                        self.host + ':' + getattr(self, service + '_port'))
+
 
 class DefaultPipeline:
-    def __init__(self, conf: DefaultPipelineConf,
-                 *, events_client: EventsClient = None):
+    """The biomedicus default pipeline for processing clinical documents.
+
+    Attributes
+        events_client (mtap.EventsClient): An MTAP events client used by the pipeline.
+        pipeline (mtap.Pipeline): An MTAP pipeline to use to process documents.
+
+    """
+    def __init__(self, conf: PipelineConf, *, events_client: EventsClient = None):
+        conf.populate_addresses()
         if events_client is not None:
             self.close_client = False
             self.events_client = events_client
@@ -91,23 +127,40 @@ class DefaultPipeline:
             self.events_client.close()
 
 
+def _add_address(parser: ArgumentParser, service: str, default_port: str,
+                 service_id: Optional[str] = None):
+    mutex = parser.add_mutually_exclusive_group()
+    mutex.add_argument('--' + service + '-port', default=default_port,
+                       help='The port for the ' + service + ' service to use in conjunction with '
+                                                            'the default host.')
+    mutex.add_argument('--' + service + '-address', default=None,
+                       help='A full address (host and port) to use instead of the default host '
+                            'and --' + service + '-port.')
+    if service_id is not None:
+        parser.add_argument('--' + service + '-id', default=service_id,
+                            help='A service ID to use instead of the default service ID.')
+
+
 def default_pipeline_parser():
+    """The argument parser for the biomedicus default pipeline.
+
+    Returns: ArgumentParser object.
+
+    """
     parser = ArgumentParser(add_help=False)
-    defaults = DefaultPipelineConf()
     parser.add_argument('input_directory', help="The input directory of text files to process.")
     parser.add_argument('output_directory', help="The output directory to write json out.")
-    parser.add_argument('--events-address', default=defaults.events_address,
-                        help="The address for the events service.")
-    parser.add_argument('--sentences-address', default=defaults.sentences_address,
-                        help="The address for the sentence boundary detector service.")
-    parser.add_argument('--tagger-address', default=defaults.tagger_address,
-                        help="The address for the pos tagger service.")
-    parser.add_argument('--acronyms-address', default=defaults.acronyms_address,
-                        help="The address for the acronym detector service.")
-    parser.add_argument('--concepts-address', default=defaults.concepts_address,
-                        help="The address for the concept detector service.")
-    parser.add_argument('--negation-address', default=defaults.negation_address,
-                        help="The address for the negation detection service.")
+    parser.add_argument('--host', default='127.0.0.1',
+                        help='A hostname to connect to for all services.')
+
+    # events
+    _add_address(parser, 'events', '10100')
+    _add_address(parser, 'sentences', '10102', 'biomedicus-sentences')
+    _add_address(parser, 'tagger', '10103', 'biomedicus-tnt-tagger')
+    _add_address(parser, 'acronyms', '10104', 'biomedicus-acronyms')
+    _add_address(parser, 'concepts', '10105', 'biomedicus-concepts')
+    _add_address(parser, 'negation', '10106', 'biomedicus-negex')
+
     parser.add_argument('--use_discovery', action='store_true',
                         help="If this flag is specified, all ports will be ignored and instead "
                              "service discovery will be used to connect to services.")
@@ -115,15 +168,15 @@ def default_pipeline_parser():
                         help="The identifier for the serializer to use, see MTAP serializers.")
     parser.add_argument('--include-label-text', action='store_true',
                         help="Flag to include the covered text for every label")
-    parser.add_argument('--threads', default=defaults.threads, type=int,
+    parser.add_argument('--threads', default=4, type=int,
                         help="The number of threads to use for processing")
     return parser
 
 
-def run_default_pipeline(conf: DefaultPipelineConf):
-    _conf = DefaultPipelineConf()
-    vars(_conf).update(vars(conf))
-    conf = _conf
+def run_default_pipeline(config: Namespace):
+    conf = PipelineConf()
+    vars(conf).update(vars(config))
+
     with DefaultPipeline(conf) as default_pipeline:
         input_dir = Path(conf.input_directory)
         total = sum(1 for _ in input_dir.rglob('*.txt'))
@@ -133,7 +186,8 @@ def run_default_pipeline(conf: DefaultPipelineConf):
                 with path.open('r', errors='replace') as f:
                     txt = f.read()
                 relative = str(path.relative_to(input_dir))
-                with Event(event_id=relative, client=default_pipeline.events_client, only_create_new=True) as e:
+                with Event(event_id=relative, client=default_pipeline.events_client,
+                           only_create_new=True) as e:
                     doc = e.create_document('plaintext', txt)
                     yield doc
 
