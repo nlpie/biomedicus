@@ -103,9 +103,12 @@ def deploy(conf):
           'edu.umn.biomedicus.concepts.DictionaryConceptDetector'], conf.concepts_port),
         ([python_exe, '-m', 'biomedicus.negation.negex'], conf.negation_port)
     ]
+    host = conf.host
+    if host is None:
+        host = '127.0.0.1'
     if conf.events_address is None:
         calls.insert(0, ([python_exe, '-m', 'mtap', 'events'], conf.events_port))
-        events_address = '127.0.0.1:' + conf.events_port
+        events_address = host + ':' + conf.events_port
     else:
         events_address = conf.events_address
     if conf.include_rtf:
@@ -118,6 +121,8 @@ def deploy(conf):
             call.extend(['--events', events_address])
         if conf.discovery:
             call.append('--register')
+        if conf.host:
+            call.extend(['--host', conf.host])
     process_listeners = []
     processes = []
     for call, _ in calls:
@@ -128,7 +133,7 @@ def deploy(conf):
         processes.append(p)
 
     for call, port in calls:
-        with grpc.insecure_channel('127.0.0.1:' + port) as channel:
+        with grpc.insecure_channel(host + ':' + port) as channel:
             future = grpc.channel_ready_future(channel)
             try:
                 future.result(timeout=20)
@@ -152,6 +157,8 @@ def deployment_parser():
     parser.add_argument('--config-file')
     parser.add_argument('--events-address', default=None,
                         help="An existing events service to use instead of launching one.")
+    parser.add_argument('--host', default=None,
+                        help='A host address to bind all of the services to.')
     parser.add_argument('--events-port', default='10100',
                         help="The port to launch the events service on")
     parser.add_argument('--include-rtf', action='store_true',
