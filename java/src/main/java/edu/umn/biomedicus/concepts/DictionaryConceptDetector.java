@@ -41,6 +41,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static edu.umn.biomedicus.common.pos.PartOfSpeech.*;
 
@@ -94,18 +96,6 @@ public class DictionaryConceptDetector extends DocumentProcessor {
 
   private static final Set<PartOfSpeech> TRIVIAL_POS = buildTrivialPos();
 
-  private static final int SPAN_SIZE = 5;
-
-  private final ConceptDictionary conceptDictionary;
-
-  @Nullable
-  private final NormalizerModel normalizerModel;
-
-  DictionaryConceptDetector(ConceptDictionary conceptDictionary, @Nullable NormalizerModel normalizerModel) {
-    this.conceptDictionary = conceptDictionary;
-    this.normalizerModel = normalizerModel;
-  }
-
   private static Set<PartOfSpeech> buildTrivialPos() {
     Set<PartOfSpeech> builder = new HashSet<>();
     Collections.addAll(builder,
@@ -124,6 +114,28 @@ public class DictionaryConceptDetector extends DocumentProcessor {
     Set<PartOfSpeech> punctuationClass = PartsOfSpeech.getPunctuationClass();
     builder.addAll(punctuationClass);
     return Collections.unmodifiableSet(builder);
+  }
+
+  private static final Set<String> STOPWORDS = buildStopwords();
+
+  private static Set<String> buildStopwords() {
+    HashSet<String> builder = new HashSet<>();
+    Collections.addAll(builder, "a", "of", "and", "with", "for", "nos", "to", "in", "by", "on", "the");
+    return Collections.unmodifiableSet(builder);
+  }
+
+  private static final Pattern PUNCT = Pattern.compile("[\\p{Punct}]+");
+
+  private static final int SPAN_SIZE = 5;
+
+  private final ConceptDictionary conceptDictionary;
+
+  @Nullable
+  private final NormalizerModel normalizerModel;
+
+  DictionaryConceptDetector(ConceptDictionary conceptDictionary, @Nullable NormalizerModel normalizerModel) {
+    this.conceptDictionary = conceptDictionary;
+    this.normalizerModel = normalizerModel;
   }
 
   public static @NotNull DictionaryConceptDetector createConceptDetector(
@@ -199,6 +211,14 @@ public class DictionaryConceptDetector extends DocumentProcessor {
         usage = "Optional override whether to load the concept dictionary into memory."
     )
     private boolean inMemory;
+
+    @Option(
+        name = "--check-norm-forms",
+        metaVar = "BOOL",
+        handler = ExplicitBooleanOptionHandler.class,
+        usage = "Whether to check normalized bags of words for concepts"
+    )
+    private boolean checkNormForms;
 
     @Option(
         name = "--normalize-locally",
@@ -354,23 +374,26 @@ public class DictionaryConceptDetector extends DocumentProcessor {
               int editedEnd = editedSentenceTokens.get(from + subsetSize - 1).getEndIndex();
               String editedSubstring = editedSentenceText.substring(editedBegin, editedEnd);
               if (checkPhrase(entire, editedSubstring, subsetSize == 1, .1)) {
-                  continue;
-                }
+                continue;
+              }
             }
 
             if (windowSubset.size() <= 1) {
               continue;
             }
 
-            List<String> windowNorms = new ArrayList<>(sentenceNorms.subList(from, to));
-            windowNorms.sort(Comparator.naturalOrder());
-            StringBuilder queryStringBuilder = new StringBuilder();
-            for (String windowNorm : windowNorms) {
-              queryStringBuilder.append(windowNorm);
-            }
-            List<ConceptRow> normsCUI = conceptDictionary.forNorms(queryStringBuilder.toString());
-            if (normsCUI != null) {
-              labelTerm(entire, normsCUI, .3);
+            String newNorm = sentenceNorms.get(from + subsetSize - 1);
+            if (!STOPWORDS.contains(newNorm) && !PUNCT.matcher(newNorm).matches()) {
+              List<String> windowNorms = new ArrayList<>(sentenceNorms.subList(from, from + subsetSize));
+              windowNorms.sort(Comparator.naturalOrder());
+              windowNorms = windowNorms.stream().filter(x -> !STOPWORDS.contains(x))
+                  .filter(x -> !PUNCT.matcher(x).matches())
+                  .collect(Collectors.toList());
+              String queryString = String.join(" ", windowNorms);
+              List<ConceptRow> normsCUI = conceptDictionary.forNorms(queryString);
+              if (normsCUI != null) {
+                labelTerm(entire, normsCUI, .3);
+              }
             }
           }
         }

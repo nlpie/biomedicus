@@ -146,8 +146,8 @@ def deploy(conf):
             sleep(60 * 60 * 24)
     except KeyboardInterrupt:
         print("Shutting down all processors")
-        for p in processes:
-            p.wait()
+        for listener in process_listeners:
+            listener.join(timeout=1)
 
     print("Done shutting down all processors")
 

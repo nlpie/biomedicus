@@ -11,6 +11,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+import os
 import signal
 import threading
 from pathlib import Path
@@ -23,7 +24,7 @@ from mtap.io.serialization import YamlSerializer
 
 @pytest.fixture(name='deploy_all')
 def fixture_deploy_all():
-    p = Popen(['python', '-m', 'biomedicus', 'deploy'], stdout=PIPE, stderr=STDOUT)
+    p = Popen(['python', '-m', 'biomedicus', 'deploy'], start_new_session=True, stdout=PIPE, stderr=STDOUT)
 
     e = threading.Event()
 
@@ -39,7 +40,7 @@ def fixture_deploy_all():
     listener.start()
     e.wait()
     yield p
-    p.send_signal(signal.SIGINT)
+    os.killpg(p.pid, signal.SIGINT)
     listener.join()
 
 
@@ -47,7 +48,7 @@ def test_deploy_run(deploy_all):
     print("testing deployment")
     with TemporaryDirectory() as tmpdir:
         code = call(['python', '-m', 'biomedicus', 'run', str(Path(__file__).parent / 'in'),
-                     tmpdir])
+                     tmpdir],)
         assert code == 0
         with YamlSerializer.file_to_event(Path(tmpdir) / '97_204.txt.json') as event:
             document = event.documents['plaintext']

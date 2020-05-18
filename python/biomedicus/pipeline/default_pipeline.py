@@ -191,5 +191,5 @@ def run_default_pipeline(config: Namespace):
                     doc = e.create_document('plaintext', txt)
                     yield doc
 
-        default_pipeline.pipeline.run_multithread(source(), total=total)
+        default_pipeline.pipeline.run_multithread(source(), total=total, n_threads=conf.threads)
         default_pipeline.pipeline.print_times()

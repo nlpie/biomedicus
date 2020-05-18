@@ -27,15 +27,17 @@ def fixture_dependencies_service(events_service, processor_watcher, processor_ti
     try:
         existing_address = os.environ['DEPENDENCIES_ADDRESS']
         yield existing_address
+        return
     except KeyError:
-        port = str(find_free_port())
-        address = '127.0.0.1:' + port
-        p = subprocess.Popen(['python', '-m', 'biomedicus.dependencies.stanza_parser',
-                              '-p', port,
-                              '--events', events_service],
-                             start_new_session=True, stdin=subprocess.PIPE,
-                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        yield from processor_watcher(address, p, timeout=processor_timeout)
+        pass
+    port = str(find_free_port())
+    address = '127.0.0.1:' + port
+    p = subprocess.Popen(['python', '-m', 'biomedicus.dependencies.stanza_parser',
+                          '-p', port,
+                          '--events', events_service],
+                         start_new_session=True, stdin=subprocess.PIPE,
+                         stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    yield from processor_watcher(address, p, timeout=processor_timeout)
 
 
 def uas_equal(x, y):
