@@ -10,12 +10,11 @@ More information about BioMedICUS can be found on our [website](https://nlpie.gi
 
 - [Python 3.5 or later](https://www.python.org/)
 - [Java JDK 8.0 or later](https://adoptopenjdk.net/index.html). Note, you will need to have the ["java" command on the your "$PATH"](https://www.java.com/en/download/help/path.xml).
+- [PyTorch](https://pytorch.org/get-started/locally/)
 
 ## Installation
 
-```bash
-pip install biomedicus\[torch]
-```
+[Installation instructions are available on our website](https://nlpie.github.io/biomedicus/installation).
 
 ## Deploying the default BioMedICUS Pipeline
 
