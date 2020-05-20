@@ -34,6 +34,7 @@ def fixture_normalization_processor(events_service, processor_watcher, processor
     yield from processor_watcher(address, p, timeout=processor_timeout)
 
 
+@pytest.mark.integration
 def test_normalization(events_service, normalization_processor):
     with EventsClient(address=events_service) as client, \
             Pipeline(RemoteProcessor(processor_id='biomedicus_normalizer',
