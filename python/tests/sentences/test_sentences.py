@@ -37,6 +37,7 @@ def fixture_bi_lstm_model():
     proc.close()
 
 
+@pytest.mark.integration
 def test_sentences_unknown_character(bi_lstm_model):
     document = Document('plaintext', text='• Sentence which contains unknown character.')
     bi_lstm_model.process_document(document, {})
