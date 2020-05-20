@@ -22,7 +22,6 @@ import pytest
 from mtap.io.serialization import YamlSerializer
 
 
-@pytest.mark.integration
 @pytest.fixture(name='deploy_all')
 def fixture_deploy_all():
     p = Popen(['python', '-m', 'biomedicus', 'deploy'], start_new_session=True, stdout=PIPE, stderr=STDOUT)
@@ -45,6 +44,7 @@ def fixture_deploy_all():
     listener.join()
 
 
+@pytest.mark.integration
 def test_deploy_run(deploy_all):
     print("testing deployment")
     with TemporaryDirectory() as tmpdir:
