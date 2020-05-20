@@ -22,6 +22,7 @@ import pytest
 from mtap.io.serialization import YamlSerializer
 
 
+@pytest.mark.integration
 @pytest.fixture(name='deploy_all')
 def fixture_deploy_all():
     p = Popen(['python', '-m', 'biomedicus', 'deploy'], start_new_session=True, stdout=PIPE, stderr=STDOUT)
