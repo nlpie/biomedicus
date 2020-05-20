@@ -24,6 +24,9 @@ from mtap.utilities import subprocess_events_server
 
 def pytest_configure(config):
     config.addinivalue_line(
+        "markers", "integration"
+    )
+    config.addinivalue_line(
         "markers", "performance"
     )
     config.addinivalue_line(
@@ -32,6 +35,10 @@ def pytest_configure(config):
 
 
 def pytest_addoption(parser):
+    parser.addoption(
+        "--integration", action="store_true", default=False,
+        help="Runs integration testing"
+    )
     parser.addoption(
         "--performance", action="store_true", default=False,
         help="Runs performance testing",
@@ -46,6 +53,11 @@ def pytest_addoption(parser):
 
 
 def pytest_collection_modifyitems(config, items):
+    if not config.getoption("--integration"):
+        skip_integration = pytest.mark.skip(reason="need --integration option to run")
+        for item in items:
+            if "integration" in item.keywords:
+                item.add_marker(skip_integration)
     if not config.getoption("--performance"):
         skip_consul = pytest.mark.skip(reason="need --performance option to run")
         for item in items:
