@@ -44,6 +44,7 @@ def fixture_deploy_all():
     listener.join()
 
 
+@pytest.mark.integration
 def test_deploy_run(deploy_all):
     print("testing deployment")
     with TemporaryDirectory() as tmpdir:
