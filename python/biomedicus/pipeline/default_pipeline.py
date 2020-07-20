@@ -19,7 +19,8 @@ from mtap import Pipeline, Event, EventsClient, RemoteProcessor, LocalProcessor
 from mtap.io.serialization import get_serializer, SerializationProcessor
 from mtap.processing import ProcessingResult
 
-SERVICES = ['events', 'sentences', 'tagger', 'acronyms', 'concepts', 'negation']
+SERVICES = ['events', 'sentences', 'tagger', 'acronyms', 'concepts', 'negation',
+            'selective_dependencies', 'deepen']
 
 
 class PipelineConf:
@@ -54,7 +55,15 @@ class PipelineConf:
 
         self.negation_port = '10106'
         self.negation_address = None
-        self.negation_id = 'biomedicus-negex'
+        self.negation_id = 'biomedicus-negex-triggers'
+
+        self.selective_dependencies_port = '10107'
+        self.selective_dependencies_address = None
+        self.selective_dependencies_id = 'biomedicus-selective-dependencies'
+
+        self.deepen_port = '10108'
+        self.deepen_address = None
+        self.deepen_id = 'biomedicus-deepen'
 
         self.include_label_text = False
         self.threads = 4
@@ -94,7 +103,9 @@ class DefaultPipeline:
             (conf.tagger_id, conf.tagger_address),
             (conf.acronyms_id, conf.acronyms_address),
             (conf.concepts_id, conf.concepts_address),
-            (conf.negation_id, conf.negation_address)
+            (conf.negation_id, conf.negation_address),
+            (conf.selective_dependencies_id, conf.selective_dependencies_address),
+            (conf.deepen_id, conf.deepen_address)
         ]
         if conf.use_discovery:
             self.pipeline = Pipeline(
@@ -159,7 +170,9 @@ def default_pipeline_parser():
     _add_address(parser, 'tagger', '10103', 'biomedicus-tnt-tagger')
     _add_address(parser, 'acronyms', '10104', 'biomedicus-acronyms')
     _add_address(parser, 'concepts', '10105', 'biomedicus-concepts')
-    _add_address(parser, 'negation', '10106', 'biomedicus-negex')
+    _add_address(parser, 'negation', '10106', 'biomedicus-negex-triggers')
+    _add_address(parser, 'selective-dependencies', '10107', 'biomedicus-selective-dependencies')
+    _add_address(parser, 'deepen', 'biomedicus-deepen')
 
     parser.add_argument('--use_discovery', action='store_true',
                         help="If this flag is specified, all ports will be ignored and instead "
@@ -169,7 +182,8 @@ def default_pipeline_parser():
     parser.add_argument('--include-label-text', action='store_true',
                         help="Flag to include the covered text for every label")
     parser.add_argument('--threads', default=4, type=int,
-                        help="The number of threads to use for processing")
+                        help="The number of threads (documents being processed in parallel) "
+                             "to use for processing")
     return parser
 
 
