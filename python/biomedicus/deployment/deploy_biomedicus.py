@@ -95,13 +95,23 @@ def deploy(conf):
     calls = [
         ([python_exe, '-m', 'biomedicus.sentences.bi_lstm', 'processor'],
          conf.sentences_port),
+
         (['java', '-Xms128m', '-Xmx8g', '-cp', jar_path,
           'edu.umn.biomedicus.tagging.tnt.TntPosTaggerProcessor'], conf.tagger_port),
+
         (['java', '-Xms128m', '-Xmx8g', '-cp', jar_path,
           'edu.umn.biomedicus.acronym.AcronymDetectorProcessor'], conf.acronyms_port),
+
         (['java', '-Xms128m', '-Xmx8g', '-cp', jar_path,
           'edu.umn.biomedicus.concepts.DictionaryConceptDetector'], conf.concepts_port),
-        ([python_exe, '-m', 'biomedicus.negation.negex'], conf.negation_port)
+
+        ([python_exe, '-m', 'biomedicus.negation.negex_triggers'], conf.negation_port),
+
+        ([python_exe, '-m', 'biomedicus.dependencies.stanza_selective_parser'],
+
+         conf.selective_dependencies_port),
+
+        ([python_exe, '-m', 'biomedicus.negation.deepen'], conf.deepen_port)
     ]
     host = conf.host
     if host is None:
@@ -176,7 +186,11 @@ def deployment_parser():
     parser.add_argument('--concepts-port', default='10105',
                         help="The port to launch the concepts detector on.")
     parser.add_argument('--negation-port', default='10106',
-                        help="The port to launch the negation detector on.")
+                        help="The port to launch the negex triggers detector on.")
+    parser.add_argument('--selective-dependencies-port', default='10107',
+                        help="The port to launch the selective dependencies parser on.")
+    parser.add_argument('--deepen-port', default='10108',
+                        help="The port to launch the deepen negation affirmer on.")
     parser.add_argument('--download-data', action='store_true',
                         help="If this flag is specified, automatically download the biomedicus "
                              "data if it is missing.")

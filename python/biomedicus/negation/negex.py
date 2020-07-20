@@ -55,7 +55,7 @@ from mtap.processing.descriptions import label_index, parameter
 from biomedicus.core.dawg import DAWG
 
 _word_pattern = re.compile(r'\S+')
-_not_word = re.compile(r'\W+')
+_not_word = re.compile(r'[^\w/\-]+')
 
 
 def _line_to_rule(line: str):
@@ -72,13 +72,19 @@ def make_rules(source: Iterable[str]) -> List[Tuple[List[str], str]]:
 
 
 class NegexTagger:
-    def __init__(self, rules: List[List[str]] = None):
+    def __init__(self, rules: List[List[str]] = None, tokens_range: int = 40):
         if rules is None:
             with (Path(__file__).parent / 'negex_triggers.txt').open('r') as f:
                 rules = make_rules(f)
         self.dawg = DAWG()
         for rule, tag in rules:
-            self.dawg[rule] = tag
+            try:
+                tags = self.dawg[rule]
+            except KeyError:
+                tags = []
+                self.dawg[rule] = tags
+            tags.append(tag)
+        self.tokens_range = tokens_range
 
     def check_sentence(
             self,
@@ -124,24 +130,27 @@ class NegexTagger:
             word = _not_word.sub('', sentence[begin:end].lower())
             if len(word) > 0:
                 hits = matcher.advance(word)
-                for length, tag in hits:
+                for length, tags in hits:
                     first_token_idx = i + 1 - length
-                    triggers.append((first_token_idx, i, tag))
+                    triggers.append((first_token_idx, i, tags))
 
         negations = []
         neg_triggers = []
 
         for (term_start, term_end) in term_indices:
-            for i, (trigger_start, trigger_end, tag) in enumerate(triggers):
-                if term_start - trigger_end in range(1, 6):
-                    if tag == 'PREN':
-                        negations.append((tokens[term_start][0], tokens[term_end][1]))
-                        neg_triggers.append((tokens[trigger_start][0], tokens[trigger_end][1]))
-                        break
-                if trigger_start - term_end in range(1, 6) and tag == 'POST':
-                    negations.append((tokens[term_start][0], tokens[term_end][1]))
-                    neg_triggers.append((tokens[trigger_start][0], tokens[trigger_end][1]))
-                    break
+            negated = False
+            negation_trigger = None
+            for i, (trigger_start, trigger_end, tags) in enumerate(triggers):
+                if term_end - trigger_end in range(0, self.tokens_range):
+                    if 'PREN' in tags:
+                        negated = True
+                        negation_trigger = (tokens[trigger_start][0], tokens[trigger_end][1])
+                if not negated and trigger_start - term_end in range(0, self.tokens_range) and 'POST' in tags:
+                    negated = True
+                    negation_trigger = (tokens[trigger_start][0], tokens[trigger_end][1])
+            if negated:
+                negations.append((tokens[term_start][0], tokens[term_end][1]))
+                neg_triggers.append(negation_trigger)
 
         return negations, neg_triggers
 
@@ -171,7 +180,7 @@ class NegexTagger:
     ],
     outputs=[
         label_index("negated", description="Spans of negated terms."),
-        label_index("negation_trigger", description="Spans of phrases that trigger negation.")
+        label_index("negation_triggers", description="Spans of phrases that trigger negation.")
     ]
 )
 class NegexProcessor(mtap.processing.DocumentProcessor):
