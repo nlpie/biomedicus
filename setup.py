@@ -65,7 +65,7 @@ setup(
     url='https://nlpie.github.io/biomedicus',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    python_requires='~=3.7',
+    python_requires='~=3.5',
     author='University of Minnesota NLP/IE Group',
     author_email='nlp-ie@umn.edu',
     classifiers=[
@@ -99,7 +99,7 @@ setup(
         'biomedicus': ['defaultConfig.yml', 'biomedicus-all.jar', 'negation/negex_triggers.txt']
     },
     install_requires=[
-        'mtap>=0.5.0',
+        'mtap>=0.6.0',
         'numpy',
         'pyyaml',
         'regex',

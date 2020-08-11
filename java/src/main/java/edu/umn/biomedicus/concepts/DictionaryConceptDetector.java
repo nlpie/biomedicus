@@ -392,7 +392,9 @@ public class DictionaryConceptDetector extends DocumentProcessor {
               String queryString = String.join(" ", windowNorms);
               List<ConceptRow> normsCUI = conceptDictionary.forNorms(queryString);
               if (normsCUI != null) {
-                labelTerm(entire, normsCUI, .3);
+                Double[] phraseScores = new Double[normsCUI.size()];
+                Arrays.fill(phraseScores, 0.3);
+                labelTerm(entire, normsCUI, Arrays.asList(phraseScores));
               }
             }
           }
@@ -424,20 +426,24 @@ public class DictionaryConceptDetector extends DocumentProcessor {
 
     private boolean checkPhrase(Label span, String phrase, boolean oneToken, double confMod) {
       List<ConceptRow> phraseSUI = conceptDictionary.forPhrase(phrase);
+      List<ConceptRow> lowercasePhrase = conceptDictionary.forLowercasePhrase(phrase.toLowerCase(Locale.ENGLISH));
 
-      if (phraseSUI != null) {
-        labelTerm(span, phraseSUI, 1 - confMod);
-        return true;
-      }
-
-      if (oneToken) {
-        return false;
-      }
-
-      phraseSUI = conceptDictionary.forLowercasePhrase(phrase.toLowerCase(Locale.ENGLISH));
-
-      if (phraseSUI != null) {
-        labelTerm(span, phraseSUI, 0.6 - confMod);
+      if (phraseSUI != null || lowercasePhrase != null) {
+        List<ConceptRow> allPhrases = new ArrayList<>();
+        List<Double> scores = new ArrayList<>();
+        if (phraseSUI != null) {
+          allPhrases.addAll(phraseSUI);
+          Double[] phraseScores = new Double[phraseSUI.size()];
+          Arrays.fill(phraseScores, 1.0);
+          Collections.addAll(scores, phraseScores);
+        }
+        if (lowercasePhrase != null && !oneToken) {
+          allPhrases.addAll(lowercasePhrase);
+          Double[] phraseScores = new Double[lowercasePhrase.size()];
+          Arrays.fill(phraseScores, 0.6);
+          Collections.addAll(scores, phraseScores);
+        }
+        labelTerm(span, allPhrases, scores);
         return true;
       }
 
@@ -447,8 +453,9 @@ public class DictionaryConceptDetector extends DocumentProcessor {
     private void labelTerm(
         Label span,
         List<ConceptRow> cuis,
-        double score
+        List<Double> scores
     ) {
+      Iterator<Double> it = scores.iterator();
       for (ConceptRow row : cuis) {
         String source = conceptDictionary.source(row.getSource());
         if (source == null) {
@@ -461,7 +468,8 @@ public class DictionaryConceptDetector extends DocumentProcessor {
                 .setProperty("cui", row.getCui().toString())
                 .setProperty("tui", row.getTui().toString())
                 .setProperty("source", source)
-                .setProperty("score", score)
+                .setProperty("code", row.getCode())
+                .setProperty("score", it.next())
         );
       }
       termLabeler.add(GenericLabel.withSpan(span));
