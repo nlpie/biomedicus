@@ -148,20 +148,19 @@ def deploy(conf):
             call.extend(['--host', conf.host])
     process_listeners = []
     processes = []
-    for call, _ in calls:
+    for call, port in calls:
         p = Popen(call, stdout=PIPE, stderr=STDOUT)
         listener = Thread(target=_listen, args=(p,))
         listener.start()
         process_listeners.append(listener)
         processes.append(p)
-
-    for call, port in calls:
         with grpc.insecure_channel(host + ':' + port) as channel:
             future = grpc.channel_ready_future(channel)
             try:
-                future.result(timeout=20)
+                future.result(timeout=30)
             except grpc.FutureTimeoutError:
                 print('Failed to launch: {}'.format(call))
+                exit()
 
     print('Done starting all processors', flush=True)
     try:
