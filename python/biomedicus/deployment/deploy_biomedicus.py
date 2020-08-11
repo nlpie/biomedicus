@@ -46,20 +46,31 @@ def check_data(download=False):
     download_url = config['data.data_url']
     data_version = config['data.version']
     version_file = data / 'VERSION.txt'
-    if not data.exists() or not version_file.exists() or version_file.read_text() != data_version:
-        if not download:
-            print(
-                'It looks like you do not have the set of models distributed for BioMedICUS.\n'
-                'The models are available from our website (https://nlpie.umn.edu/downloads)\n'
-                'and can be installed by specifying the environment variable BIOMEDICUS_DATA\n'
-                'or by placing the extracted models in ~/.biomedicus/data'
-            )
-            prompt = 'Would you like to download the model files to {} (Y/N)? '.format(str(data))
-            download = input(prompt) in ['Y', 'y', 'Yes', 'yes']
-        if download:
-            download_data_to(download_url, data)
+    if not data.exists():
+        print('No existing data folder.')
+    elif not version_file.exists():
+        print('No existing version file.')
+    else:
+        existing_version = version_file.read_text().strip()
+        if existing_version != data_version:
+            print('Data folder ({}) is not most recent version ({})'.format(existing_version,
+                                                                            data_version))
         else:
-            exit()
+            print('Data folder is up to date version {}'.format(data_version))
+            return
+    if not download:
+        print(
+            'It looks like you do not have the set of models distributed for BioMedICUS.\n'
+            'The models are available from our website (https://nlpie.umn.edu/downloads)\n'
+            'and can be installed by specifying the environment variable BIOMEDICUS_DATA\n'
+            'or by placing the extracted models in ~/.biomedicus/data'
+        )
+        prompt = 'Would you like to download the model files to {} (Y/N)? '.format(str(data))
+        download = input(prompt) in ['Y', 'y', 'Yes', 'yes']
+    if download:
+        download_data_to(download_url, data)
+    else:
+        exit()
 
 
 def download_data_to(download_url, data):
@@ -108,10 +119,12 @@ def deploy(conf):
         ([python_exe, '-m', 'biomedicus.negation.negex_triggers'], conf.negation_port),
 
         ([python_exe, '-m', 'biomedicus.dependencies.stanza_selective_parser'],
-
          conf.selective_dependencies_port),
 
-        ([python_exe, '-m', 'biomedicus.negation.deepen'], conf.deepen_port)
+        ([python_exe, '-m', 'biomedicus.negation.deepen'], conf.deepen_port),
+
+        (['java', '-Xms128m', '-Xmx8g', '-cp', jar_path,
+          'edu.umn.biomedicus.sections.RuleBasedSectionHeaderDetector'], conf.sections_port),
     ]
     host = conf.host
     if host is None:
@@ -191,6 +204,8 @@ def deployment_parser():
                         help="The port to launch the selective dependencies parser on.")
     parser.add_argument('--deepen-port', default='10108',
                         help="The port to launch the deepen negation affirmer on.")
+    parser.add_argument('--sections-port', default='10109',
+                        help="The port to launch the section detector on.")
     parser.add_argument('--download-data', action='store_true',
                         help="If this flag is specified, automatically download the biomedicus "
                              "data if it is missing.")

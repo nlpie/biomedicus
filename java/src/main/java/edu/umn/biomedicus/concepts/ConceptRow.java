@@ -17,21 +17,28 @@
 package edu.umn.biomedicus.concepts;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Objects;
 
 public class ConceptRow {
-  public static final int NUM_BYTES = 16;
+  public static final int NUM_BYTES = 28;
 
   private final SUI sui;
   private final CUI cui;
   private final TUI tui;
   private final int source;
+  private final String code;
 
-  public ConceptRow(SUI sui, CUI cui, TUI tui, int source) {
+  public ConceptRow(SUI sui, CUI cui, TUI tui, int source, String code) {
     this.sui = sui;
     this.cui = cui;
     this.tui = tui;
     this.source = source;
+    if (code.length() > 12) {
+      code = code.substring(0, 12);
+    }
+    this.code = code;
   }
 
   public SUI getSui() {
@@ -50,21 +57,35 @@ public class ConceptRow {
     return source;
   }
 
+  public String getCode() {
+    return code;
+  }
+
   public byte[] getBytes() {
-    return ByteBuffer.allocate(16)
+    return ByteBuffer.allocate(NUM_BYTES)
         .putInt(sui.identifier())
         .putInt(cui.identifier())
         .putInt(tui.identifier())
         .putInt(source)
+        .put(StandardCharsets.US_ASCII.encode(code))
         .array();
   }
 
   public static ConceptRow next(ByteBuffer buffer) {
+    int sui = buffer.getInt();
+    int cui = buffer.getInt();
+    int tui = buffer.getInt();
+    int source = buffer.getInt();
+    byte[] code = new byte[12];
+    Arrays.fill(code, (byte) 0);
+    buffer.get(code, 0, 12);
+    String sourceCode = new String(code, StandardCharsets.US_ASCII).trim();
     return new ConceptRow(
-        new SUI(buffer.getInt()),
-        new CUI(buffer.getInt()),
-        new TUI(buffer.getInt()),
-        buffer.getInt()
+        new SUI(sui),
+        new CUI(cui),
+        new TUI(tui),
+        source,
+        sourceCode
     );
   }
 
@@ -76,12 +97,13 @@ public class ConceptRow {
     return source == that.source &&
         sui.equals(that.sui) &&
         cui.equals(that.cui) &&
-        tui.equals(that.tui);
+        tui.equals(that.tui) &&
+        code.equals(that.code);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(sui, cui, tui, source);
+    return Objects.hash(sui, cui, tui, source, code);
   }
 
   @Override
@@ -91,6 +113,7 @@ public class ConceptRow {
         ", cui=" + cui +
         ", tui=" + tui +
         ", source=" + source +
+        ", code=" + code +
         '}';
   }
 }

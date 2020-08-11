@@ -20,7 +20,7 @@ from mtap.io.serialization import get_serializer, SerializationProcessor
 from mtap.processing import ProcessingResult
 
 SERVICES = ['events', 'sentences', 'tagger', 'acronyms', 'concepts', 'negation',
-            'selective_dependencies', 'deepen']
+            'selective_dependencies', 'deepen', 'section_headers']
 
 
 class PipelineConf:
@@ -65,6 +65,10 @@ class PipelineConf:
         self.deepen_address = None
         self.deepen_id = 'biomedicus-deepen'
 
+        self.section_headers_port = '10109'
+        self.section_headers_address = None
+        self.section_headers_id = 'biomedicus-section-headers'
+
         self.include_label_text = False
         self.threads = 4
 
@@ -100,6 +104,7 @@ class DefaultPipeline:
 
         pipeline = [
             (conf.sentences_id, conf.sentences_address),
+            (conf.section_headers_id, conf.section_headers_address),
             (conf.tagger_id, conf.tagger_address),
             (conf.acronyms_id, conf.acronyms_address),
             (conf.concepts_id, conf.concepts_address),
@@ -172,7 +177,8 @@ def default_pipeline_parser():
     _add_address(parser, 'concepts', '10105', 'biomedicus-concepts')
     _add_address(parser, 'negation', '10106', 'biomedicus-negex-triggers')
     _add_address(parser, 'selective-dependencies', '10107', 'biomedicus-selective-dependencies')
-    _add_address(parser, 'deepen', 'biomedicus-deepen')
+    _add_address(parser, 'deepen', '10108', 'biomedicus-deepen')
+    _add_address(parser, 'section-headers', '10109', 'biomedicus-section-headers')
 
     parser.add_argument('--use_discovery', action='store_true',
                         help="If this flag is specified, all ports will be ignored and instead "

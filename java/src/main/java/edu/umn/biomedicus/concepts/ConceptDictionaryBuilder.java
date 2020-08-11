@@ -16,6 +16,7 @@
 
 package edu.umn.biomedicus.concepts;
 
+import edu.umn.biomedicus.common.tuples.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.kohsuke.args4j.*;
@@ -154,7 +155,7 @@ public class ConceptDictionaryBuilder {
     Set<SUI> bannedSUIs = new HashSet<>();
 
     Map<String, Integer> sources = new HashMap<>();
-    Map<SuiCui, List<Integer>> suiCuiSources = new HashMap<>();
+    Map<SuiCui, List<Pair<Integer, String>>> suiCuiSources = new HashMap<>();
 
     Files.createDirectories(dbPath);
     long mrConsoTotalLines = Files.lines(mrconsoPath).count();
@@ -177,6 +178,7 @@ public class ConceptDictionaryBuilder {
             String obsoleteOrSuppressible = splitLine[16];
             String source = splitLine[11];
             String tty = splitLine[12];
+            String code = splitLine[13];
             String phrase = splitLine[14];
 
             if (phrase.length() < 3) {
@@ -191,6 +193,10 @@ public class ConceptDictionaryBuilder {
             if (ttyBanlist.contains(tty)) {
               bannedSUIs.add(sui);
               continue;
+            }
+
+            if (code.length() > 12) {
+              code = code.substring(0, 12);
             }
 
             List<TUI> tuis = cuiToTUIs.get(cui);
@@ -208,12 +214,12 @@ public class ConceptDictionaryBuilder {
 
               Integer sourceId = sources.computeIfAbsent(source, (unused) -> sources.size());
 
-              ConceptRow value = new ConceptRow(sui, cui, tui, sourceId);
+              ConceptRow value = new ConceptRow(sui, cui, tui, sourceId, code);
 
               multimapPut(phrasesMap, phrase, value);
-              multimapPut(lowercaseMap, phrase, value);
+              multimapPut(lowercaseMap, phrase.toLowerCase(Locale.ENGLISH), value);
 
-              multimapPut(suiCuiSources, sc, sourceId);
+              multimapPut(suiCuiSources, sc, Pair.of(sourceId, code));
             }
           }
         }
@@ -289,9 +295,10 @@ public class ConceptDictionaryBuilder {
               continue;
             }
 
-            List<Integer> sourceList = suiCuiSources.get(sc);
-            for (Integer sourceId : sourceList) {
-              multimapPut(map, normsLine, new ConceptRow(sui, cui, tui, sourceId));
+            List<Pair<Integer, String>> sourceList = suiCuiSources.get(sc);
+            for (Pair<Integer, String> sourceCodePair : sourceList) {
+              multimapPut(map, normsLine, new ConceptRow(sui, cui, tui, sourceCodePair.first(),
+                  sourceCodePair.second()));
             }
           }
         }

@@ -29,6 +29,8 @@ tnt:
     db: ${BIOMEDICUS_DATA}/tnt/words
     metadata: ${BIOMEDICUS_DATA}/tnt/wordMetadata.yml
   beam.threshold: 2.0
+sections:
+  headersFile: ${BIOMEDICUS_DATA}/sections/header_patterns.txt
 data:
-  data_url: https://nlpie.umn.edu/downloads/open/biomedicus-3.0b4-standard-data.zip
-  version: 3.0b4
+  data_url: https://nlpie.umn.edu/downloads/open/biomedicus-3.0b6-standard-data.zip
+  version: 3.0b6
