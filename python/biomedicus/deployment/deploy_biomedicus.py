@@ -13,7 +13,6 @@
 #  limitations under the License.
 import os
 import sys
-import urllib.request
 from argparse import ArgumentParser
 from pathlib import Path
 from shutil import rmtree
@@ -24,6 +23,7 @@ from time import sleep
 from zipfile import ZipFile
 
 import grpc
+import requests
 from tqdm import tqdm
 
 from biomedicus.config import load_config
@@ -74,26 +74,20 @@ def check_data(download=False):
 
 
 def download_data_to(download_url, data):
-    def report(_, read, total):
-        if report.bar is None:
-            report.bar = tqdm(total=total, unit='b', unit_scale=True, unit_divisor=10 ** 6)
-        report.bar.update(read)
-
-    report.bar = None
-    try:
-        with NamedTemporaryFile() as temporary_file:
-            print('Starting download: ', download_url)
-            urllib.request.urlretrieve(download_url, filename=temporary_file.name,
-                                       reporthook=report)
-            if data.exists():
-                rmtree(str(data))
-            data.mkdir(parents=True, exist_ok=False)
-            with ZipFile(temporary_file) as zf:
-                print('Extracting...')
-                zf.extractall(path=str(data))
-    finally:
-        if report.bar is not None:
-            report.bar.close()
+    print('Starting download: ', download_url)
+    if data.exists():
+        rmtree(str(data))
+    data.mkdir(parents=True, exist_ok=False)
+    with NamedTemporaryFile() as temporary_file:
+        r = requests.get(download_url, stream=True, verify=False)
+        size = int(r.headers.get('content-length', -1))
+        with tqdm(total=size, unit='b', unit_scale=True) as bar:
+            for chunk in r.iter_content(chunk_size=1024):
+                temporary_file.write(chunk)
+                bar.update(1024)
+        with ZipFile(temporary_file) as zf:
+            print('Extracting...')
+            zf.extractall(path=str(data))
 
 
 def deploy(conf):

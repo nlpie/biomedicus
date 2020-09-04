@@ -104,7 +104,8 @@ setup(
         'pyyaml',
         'regex',
         'tqdm',
-        'stanza'
+        'stanza',
+        'requests'
     ],
     setup_requires=[
         'pytest-runner',
