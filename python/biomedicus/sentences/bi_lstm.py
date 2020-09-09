@@ -43,7 +43,7 @@ try:
 except ImportError:
     from yaml import Loader as Loader, Dumper as Dumper
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("biomedicus.sentences.bi_lstm")
 
 
 class CharCNN(nn.Module):
@@ -125,23 +125,26 @@ class BiLSTM(nn.Module):
         # Run LSTM on the sequences of word representations to create contextual word
         # representations
         word_reps = PackedSequence(word_reps, batch_sizes=word_chars.batch_sizes,
-                                   sorted_indices=sorted_indices)
+                                   sorted_indices=sorted_indices,
+                                   unsorted_indices=None)
         contextual_word_reps, _ = self.lstm(word_reps)
         # Project to the "begin of sentence" space for each word
         contextual_word_reps = self.dropout(contextual_word_reps.data)
         bos = self.hidden2bos(contextual_word_reps).squeeze(-1)
         bos, _ = pad_packed_sequence(PackedSequence(bos, batch_sizes=word_chars.batch_sizes,
-                                                    sorted_indices=sorted_indices),
+                                                    sorted_indices=sorted_indices,
+                                                    unsorted_indices=None),
                                      batch_first=True)
         return bos
 
-    def predict(self, char_ids, word_ids):
-        if len(char_ids[0]) == 0:
-            return []
-        with torch.no_grad():
-            logits = self(char_ids, word_ids, torch.tensor([len(char_ids[0])]))
-            predictions = torch.round(torch.sigmoid(logits))
-            return predictions
+
+def predict(model, char_ids, word_ids):
+    if len(char_ids[0]) == 0:
+        return []
+    with torch.no_grad():
+        logits = model(char_ids, word_ids, torch.tensor([len(char_ids[0])]))
+        predictions = torch.round(torch.sigmoid(logits))
+        return predictions
 
 
 class Training:
@@ -236,7 +239,7 @@ class Training:
             val_fp = torch.tensor(0, dtype=torch.int64)
             for (char_ids, word_ids), labels, lengths in self.validation.batches():
                 # validation batches are shape = [1, sequence_length] with no padding
-                predictions = self.model.predict(char_ids, word_ids)
+                predictions = predict(self.model, char_ids, word_ids)
                 flat_predictions = predictions.view(-1)
                 flat_labels = labels.view(-1)
                 # there is no padding in the validation batch
@@ -288,7 +291,7 @@ def predict_segment(model: BiLSTM, input_mapper, text):
     predictions = []
     for char_ids, word_ids in all_ids:
         with Processor.started_stopwatch('model_predict'):
-            local_predictions = model.predict(char_ids, word_ids)
+            local_predictions = predict(model, char_ids, word_ids)
         predictions.extend(local_predictions[0])
     start_index = None
     prev_end = None
@@ -429,7 +432,8 @@ def create_processor(conf):
     char_mapping = load_char_mapping(conf.chars_file)
     input_mapping = InputMapping(char_mapping, words, hparams.word_length)
     model = BiLSTM(hparams, n_chars(char_mapping), vectors)
-    model.train(False)
+    model = torch.jit.script(model)
+    model.eval()
     logger.info('Loading model weights from: {}'.format(conf.model_file))
     with conf.model_file.open('rb') as f:
         state_dict = torch.load(f)
