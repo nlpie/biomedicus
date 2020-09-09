@@ -1,4 +1,4 @@
-#  Copyright 2019 Regents of the University of Minnesota.
+#  Copyright 2020 Regents of the University of Minnesota.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
 #  limitations under the License.
 import os
 import sys
+import urllib.request
 from argparse import ArgumentParser
 from pathlib import Path
 from shutil import rmtree
@@ -23,7 +24,6 @@ from time import sleep
 from zipfile import ZipFile
 
 import grpc
-import requests
 from tqdm import tqdm
 
 from biomedicus.config import load_config
@@ -74,20 +74,26 @@ def check_data(download=False):
 
 
 def download_data_to(download_url, data):
-    print('Starting download: ', download_url)
-    if data.exists():
-        rmtree(str(data))
-    data.mkdir(parents=True, exist_ok=False)
-    with NamedTemporaryFile() as temporary_file:
-        r = requests.get(download_url, stream=True, verify=False)
-        size = int(r.headers.get('content-length', -1))
-        with tqdm(total=size, unit='b', unit_scale=True) as bar:
-            for chunk in r.iter_content(chunk_size=1024):
-                temporary_file.write(chunk)
-                bar.update(1024)
-        with ZipFile(temporary_file) as zf:
-            print('Extracting...')
-            zf.extractall(path=str(data))
+    def report(_, read, total):
+        if report.bar is None:
+            report.bar = tqdm(total=total, unit='b', unit_scale=True, unit_divisor=10 ** 6)
+        report.bar.update(read)
+
+    report.bar = None
+    try:
+        with NamedTemporaryFile() as temporary_file:
+            print('Starting download: ', download_url)
+            urllib.request.urlretrieve(download_url, filename=temporary_file.name,
+                                       reporthook=report)
+            if data.exists():
+                rmtree(str(data))
+            data.mkdir(parents=True, exist_ok=False)
+            with ZipFile(temporary_file) as zf:
+                print('Extracting...')
+                zf.extractall(path=str(data))
+    finally:
+        if report.bar is not None:
+            report.bar.close()
 
 
 def deploy(conf):
@@ -103,22 +109,6 @@ def deploy(conf):
 
         (['java', '-Xms128m', '-Xmx8g', '-cp', jar_path,
           'edu.umn.biomedicus.tagging.tnt.TntPosTaggerProcessor'], conf.tagger_port),
-
-        (['java', '-Xms128m', '-Xmx8g', '-cp', jar_path,
-          'edu.umn.biomedicus.acronym.AcronymDetectorProcessor'], conf.acronyms_port),
-
-        (['java', '-Xms128m', '-Xmx8g', '-cp', jar_path,
-          'edu.umn.biomedicus.concepts.DictionaryConceptDetector'], conf.concepts_port),
-
-        ([python_exe, '-m', 'biomedicus.negation.negex_triggers'], conf.negation_port),
-
-        ([python_exe, '-m', 'biomedicus.dependencies.stanza_selective_parser'],
-         conf.selective_dependencies_port),
-
-        ([python_exe, '-m', 'biomedicus.negation.deepen'], conf.deepen_port),
-
-        (['java', '-Xms128m', '-Xmx8g', '-cp', jar_path,
-          'edu.umn.biomedicus.sections.RuleBasedSectionHeaderDetector'], conf.sections_port),
     ]
     host = conf.host
     if host is None:
@@ -128,12 +118,10 @@ def deploy(conf):
         events_address = host + ':' + conf.events_port
     else:
         events_address = conf.events_address
-    if conf.include_rtf:
-        calls.append(['java', '-cp', jar_path, 'edu.umn.biomedicus.rtf.RtfProcessor',
-                      '-p', conf.rtf_port, '--events', events_address])
 
     for i, (call, port) in enumerate(calls):
         call.extend(['-p', port])
+        call.extend(['--workers', str(conf.workers)])
         if conf.events_address is not None or i > 0:
             call.extend(['--events', events_address])
         if conf.discovery:
@@ -168,38 +156,30 @@ def deploy(conf):
     print("Done shutting down all processors")
 
 
-def deployment_parser():
-    parser = ArgumentParser(add_help=False)
+def main(args=None):
+    parser = ArgumentParser()
     parser.add_argument('--config-file')
-    parser.add_argument('--events-address', default=None,
-                        help="An existing events service to use instead of launching one.")
     parser.add_argument('--host', default=None,
                         help='A host address to bind all of the services to.')
-    parser.add_argument('--events-port', default='10100',
-                        help="The port to launch the events service on")
-    parser.add_argument('--include-rtf', action='store_true',
-                        help='Also launch the RTF processor.')
     parser.add_argument('--discovery', action='store_true',
                         help='Register the services with consul.')
-    parser.add_argument('--rtf-port', default='10101',
-                        help="The port to launch the RTF processor on.")
+    parser.add_argument('--events-address', default=None,
+                        help="An existing events service to use instead of launching one.")
+    parser.add_argument('--events-port', default='10100',
+                        help="The port to launch the events service on")
     parser.add_argument('--sentences-port', default='10102',
                         help="The port to launch the sentences processor on.")
     parser.add_argument('--tagger-port', default='10103',
                         help="The port to launch the tnt pos tagger on.")
-    parser.add_argument('--acronyms-port', default='10104',
-                        help="The port to launch the acronym detector on.")
-    parser.add_argument('--concepts-port', default='10105',
-                        help="The port to launch the concepts detector on.")
-    parser.add_argument('--negation-port', default='10106',
-                        help="The port to launch the negex triggers detector on.")
-    parser.add_argument('--selective-dependencies-port', default='10107',
-                        help="The port to launch the selective dependencies parser on.")
-    parser.add_argument('--deepen-port', default='10108',
-                        help="The port to launch the deepen negation affirmer on.")
-    parser.add_argument('--sections-port', default='10109',
-                        help="The port to launch the section detector on.")
+    parser.add_argument('--workers', default=4, type=int,
+                        help="Number of worker threads for processors and events service.")
     parser.add_argument('--download-data', action='store_true',
                         help="If this flag is specified, automatically download the biomedicus "
                              "data if it is missing.")
-    return parser
+
+    conf = parser.parse_args(args)
+    deploy(conf)
+
+
+if __name__ == '__main__':
+    main()
