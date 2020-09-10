@@ -110,6 +110,8 @@ class DeepenTagger:
                         trigger_edge = dep
                         break
                 gov = trigger_edge
+                if gov is None:
+                    raise ValueError('Dependency not found.')
                 while True:
                     if gov.head is None:
                         break

@@ -14,11 +14,11 @@
 from typing import Dict, Any
 
 import stanza
-from mtap import Document, processor, run_processor, GenericLabel
+from mtap import Document, processor, run_processor
 from mtap.processing import DocumentProcessor
 from mtap.processing.descriptions import label_index, label_property
 
-MAX_ITER = 5000
+from biomedicus.dependencies.stanza_parser import stanza_deps_and_upos_tags
 
 
 @processor('biomedicus-selective-dependencies',
@@ -83,51 +83,14 @@ class StanzaSelectiveParser(DocumentProcessor):
         all_deps = []
         all_upos_tags = []
         for sentence in document.labels['sentences']:
-            if len(terms.inside(sentence)) > 0 and len(negation_triggers.inside(sentence)) > 0:
-                pass
-            else:
+            if len(terms.inside(sentence)) == 0 or len(negation_triggers.inside(sentence)) == 0:
                 continue
 
             stanza_doc = self.nlp([sentence.text])
             stanza_sentence = stanza_doc.sentences[0]
-            dependencies = {}
-            stanza_dependencies = stanza_sentence.dependencies
-            stanza_dependencies = list(stanza_dependencies)
-            i = 0
-            while len(stanza_dependencies) > 0:
-                i += 1
-                if i > MAX_ITER:
-                    raise ValueError(
-                        'Maximum Iterations reached while processing dependency graph.')
-                head, deprel, dep = stanza_dependencies.pop()
-                head_id = int(head.id)
-                if head_id == 0:
-                    head_dep_label = None
-                else:
-                    try:
-                        head_dep_label = dependencies[head_id]
-                    except KeyError:
-                        stanza_dependencies.insert(0, (head, deprel, dep))
-                        continue
-
-                token_begin = sentence.start_index + dep.parent.start_char - stanza_sentence.tokens[
-                    0].start_char
-                token_end = sentence.start_index + dep.parent.end_char - stanza_sentence.tokens[
-                    0].start_char
-                dep_label = GenericLabel(token_begin, token_end, head=head_dep_label, deprel=deprel)
-                dep_label.reference_cache['dependents'] = []
-                dependencies[int(dep.id)] = dep_label
-                if head_dep_label is not None:
-                    head_dep_label.dependents.append(dep_label)
-                all_deps.append(dep_label)
-
-            for word in stanza_sentence.words:
-                token = word.parent
-                token_begin = sentence.start_index + token.start_char - stanza_sentence.tokens[
-                    0].start_char
-                token_end = sentence.start_index + token.end_char - stanza_sentence.tokens[
-                    0].start_char
-                all_upos_tags.append(GenericLabel(token_begin, token_end, tag=word.upos))
+            sentence_deps, sentence_upos_tags = stanza_deps_and_upos_tags(sentence, stanza_sentence)
+            all_deps.extend(sentence_deps)
+            all_upos_tags.extend(sentence_upos_tags)
 
         document.add_labels('dependencies', all_deps)
         document.add_labels('upos_tags', all_upos_tags)
