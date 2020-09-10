@@ -187,7 +187,7 @@ def default_pipeline_parser():
                         help="The identifier for the serializer to use, see MTAP serializers.")
     parser.add_argument('--include-label-text', action='store_true',
                         help="Flag to include the covered text for every label")
-    parser.add_argument('--threads', default=4, type=int,
+    parser.add_argument('--threads', default=8, type=int,
                         help="The number of threads (documents being processed in parallel) "
                              "to use for processing")
     return parser
