@@ -1,0 +1,46 @@
+global:
+  host: null
+  mtapConfig: null
+  logLevel: INFO
+  register: no
+eventsService:
+  enabled: yes
+  port: 10100
+  workers: 8
+sharedProcessorConfig:
+  eventsAddress: null
+  workers: 8
+  args: [ ]
+  jvmArgs: [ "-Xms32m", "-Xmx8g" ]
+  javaClasspath: null
+# Below this is a list of the processors to be deployed and their individual settings.
+processors:
+  - implementation: java
+    enabled: no
+    entryPoint: edu.umn.biomedicus.rtf.RtfProcessor
+    port: 10101
+  - implementation: python
+    entryPoint: biomedicus.sentences.bi_lstm
+    port: 10102
+    preArgs: ['processor']
+  - implementation: java
+    entryPoint: edu.umn.biomedicus.tagging.tnt.TntPosTaggerProcessor
+    port: 10103
+  - implementation: java
+    entryPoint: edu.umn.biomedicus.acronym.AcronymDetectorProcessor
+    port: 10104
+  - implementation: java
+    entryPoint: edu.umn.biomedicus.concepts.DictionaryConceptDetector
+    port: 10105
+  - implementation: python
+    entryPoint: biomedicus.negation.negex_triggers
+    port: 10106
+  - implementation: python
+    entryPoint: biomedicus.dependencies.stanza_selective_parser
+    port: 10107
+  - implementation: python
+    entryPoint: biomedicus.negation.deepen
+    port: 10108
+  - implementation: java
+    entryPoint: edu.umn.biomedicus.sections.RuleBasedSectionHeaderDetector
+    port: 10109

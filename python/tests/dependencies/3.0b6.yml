@@ -1,0 +1,6 @@
+biomedicus-dependencies:
+  Corpus: MiPACQ converted to UD from PTB test set
+  LAS: 0.5375093886134895
+  Process Method Duration: '0:00:00.375682'
+  Remote Call Duration: '0:00:00.377636'
+  UAS: 0.6739372089529818

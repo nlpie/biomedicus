@@ -11,17 +11,17 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-from typing import Sequence, Dict, Any
+from typing import Sequence, Dict, Any, TYPE_CHECKING
 
 import mtap
 from mtap import GenericLabel, Location, processor, Document
-from mtap.label_indices import LabelIndex
-from mtap.processing.descriptions import parameter, label_index
+from mtap.processing.descriptions import parameter, labels
 
-from biomedicus.negation.negex import NegexTagger
+if TYPE_CHECKING:
+    from mtap.data import LabelIndex
 
 
-def check_cc_and(dep: GenericLabel, upos_tags: LabelIndex[GenericLabel]):
+def check_cc_and(dep: GenericLabel, upos_tags: 'LabelIndex[GenericLabel]'):
     if dep.deprel == 'conj' and upos_tags.at(dep)[0].tag == 'VERB':
         for child in dep.dependents:
             if child.deprel == 'cc' and child.text.lower() == 'and':
@@ -29,7 +29,7 @@ def check_cc_and(dep: GenericLabel, upos_tags: LabelIndex[GenericLabel]):
     return False
 
 
-def check_nmod(child: GenericLabel, negation_location, upos_tags: LabelIndex[GenericLabel]):
+def check_nmod(child: GenericLabel, negation_location, upos_tags: 'LabelIndex[GenericLabel]'):
     if child.deprel == 'nmod':
         if first_level(child, negation_location, upos_tags):
             return True
@@ -61,7 +61,7 @@ def check_conj_or(dep: GenericLabel, negation_location: Location, upos_tags):
 
 
 def first_level(gov: GenericLabel, negation_location: Location,
-                upos_tags: LabelIndex[GenericLabel]):
+                upos_tags: 'LabelIndex[GenericLabel]'):
     if negation_location.covers(gov):
         return True
     if check_conj_or(gov, negation_location, upos_tags):
@@ -90,9 +90,9 @@ def first_level(gov: GenericLabel, negation_location: Location,
 class DeepenTagger:
     def check_sentence(self,
                        terms: Sequence[GenericLabel],
-                       triggers: LabelIndex[GenericLabel],
-                       deps: LabelIndex[GenericLabel],
-                       upos_tags: LabelIndex[GenericLabel]):
+                       triggers: 'LabelIndex[GenericLabel]',
+                       deps: 'LabelIndex[GenericLabel]',
+                       upos_tags: 'LabelIndex[GenericLabel]'):
         affirmed_negations = []
         affirmed_triggers = []
         for term in terms:
@@ -145,23 +145,23 @@ class DeepenTagger:
         )
     ],
     inputs=[
-        label_index(
+        labels(
             name='sentences',
             reference='biomedicus-sentences/sentences'
         ),
-        label_index(
+        labels(
             name='dependencies',
             reference='biomedicus-selective-dependencies/dependencies'
         ),
-        label_index(
+        labels(
             name='umls_terms',
             reference='biomedicus-concepts/umls_terms',
             name_from_parameter='terms_index'
         )
     ],
     outputs=[
-        label_index("negated", description="Spans of negated terms."),
-        label_index("negation_trigger", description="Spans of phrases that trigger negation.")
+        labels("negated", description="Spans of negated terms."),
+        labels("negation_trigger", description="Spans of phrases that trigger negation.")
     ]
 )
 class DeepenProcessor(mtap.processing.DocumentProcessor):

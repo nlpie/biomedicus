@@ -15,9 +15,8 @@ from typing import Dict, Any
 
 import numpy as np
 import stanza
-from mtap import Document, processor, run_processor, GenericLabel
-from mtap.processing import DocumentProcessor
-from mtap.processing.descriptions import label_index, label_property
+from mtap import Document, DocumentProcessor, processor, run_processor, GenericLabel
+from mtap.processing.descriptions import labels, label_property
 
 MAX_ITER = 5000
 
@@ -73,38 +72,38 @@ def stanza_deps_and_upos_tags(sentence, stanza_sentence):
            entry_point=__name__,
            description="Calls out to the Stanford Stanza framework for dependency parsing.",
            inputs=[
-               label_index(name='sentences', reference='biomedicus-sentences/sentences')
+               labels(name='sentences', reference='biomedicus-sentences/sentences')
            ],
            outputs=[
-               label_index(name='dependencies',
-                           description="The dependent words.",
-                           properties=[
-                               label_property(
-                                   'deprel',
-                                   description="The dependency relation",
-                                   data_type='str'
-                               ),
-                               label_property(
-                                   'head',
-                                   description="The head of this label or null if its the root.",
-                                   nullable=True,
-                                   data_type='ref:dependencies'
-                               ),
-                               label_property(
-                                   'dependents',
-                                   description="The dependents of ths dependent.",
-                                   data_type='list[ref:dependencies]'
-                               )
-                           ]),
-               label_index(name='upos_tags',
-                           description="Universal Part-of-speech tags",
-                           properties=[
-                               label_property(
-                                   'tag',
-                                   description="The Universal Part-of-Speech tag",
-                                   data_type='str'
-                               )
-                           ])
+               labels(name='dependencies',
+                      description="The dependent words.",
+                      properties=[
+                          label_property(
+                              'deprel',
+                              description="The dependency relation",
+                              data_type='str'
+                          ),
+                          label_property(
+                              'head',
+                              description="The head of this label or null if its the root.",
+                              nullable=True,
+                              data_type='ref:dependencies'
+                          ),
+                          label_property(
+                              'dependents',
+                              description="The dependents of ths dependent.",
+                              data_type='list[ref:dependencies]'
+                          )
+                      ]),
+               labels(name='upos_tags',
+                      description="Universal Part-of-speech tags",
+                      properties=[
+                          label_property(
+                              'tag',
+                              description="The Universal Part-of-Speech tag",
+                              data_type='str'
+                          )
+                      ])
            ])
 class StanzaParser(DocumentProcessor):
 

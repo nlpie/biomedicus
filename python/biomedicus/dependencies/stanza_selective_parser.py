@@ -16,7 +16,7 @@ from typing import Dict, Any
 import stanza
 from mtap import Document, processor, run_processor
 from mtap.processing import DocumentProcessor
-from mtap.processing.descriptions import label_index, label_property
+from mtap.processing.descriptions import labels, label_property
 
 from biomedicus.dependencies.stanza_parser import stanza_deps_and_upos_tags
 
@@ -27,45 +27,51 @@ from biomedicus.dependencies.stanza_parser import stanza_deps_and_upos_tags
            description="Calls out to the Stanford Stanza framework for dependency parsing"
                        "on a appropriate subset of sentences.",
            inputs=[
-               label_index(name='sentences', reference='biomedicus-sentences/sentences'),
-               label_index(
+               labels(name='sentences', reference='biomedicus-sentences/sentences'),
+               labels(
                    name='umls_terms',
                    reference='biomedicus-concepts/umls_terms',
                    name_from_parameter='terms_index'
                ),
-               label_index("negation_triggers",
-                           reference='biomedicus-negex-triggers')
+               labels(
+                   "negation_triggers",
+                   reference='biomedicus-negex-triggers'
+               )
            ],
            outputs=[
-               label_index(name='dependencies',
-                           description="The dependent words.",
-                           properties=[
-                               label_property(
-                                   'deprel',
-                                   description="The dependency relation",
-                                   data_type='str'
-                               ),
-                               label_property(
-                                   'head',
-                                   description="The head of this label or null if its the root.",
-                                   nullable=True,
-                                   data_type='ref:dependencies'
-                               ),
-                               label_property(
-                                   'dependents',
-                                   description="The dependents of ths dependent.",
-                                   data_type='list[ref:dependencies]'
-                               )
-                           ]),
-               label_index(name='upos_tags',
-                           description="Universal Part-of-speech tags",
-                           properties=[
-                               label_property(
-                                   'tag',
-                                   description="The Universal Part-of-Speech tag",
-                                   data_type='str'
-                               )
-                           ])
+               labels(
+                   name='dependencies',
+                   description="The dependent words.",
+                   properties=[
+                       label_property(
+                           'deprel',
+                           description="The dependency relation",
+                           data_type='str'
+                       ),
+                       label_property(
+                           'head',
+                           description="The head of this label or null if its the root.",
+                           nullable=True,
+                           data_type='ref:dependencies'
+                       ),
+                       label_property(
+                           'dependents',
+                           description="The dependents of ths dependent.",
+                           data_type='list[ref:dependencies]'
+                       )
+                   ]
+               ),
+               labels(
+                   name='upos_tags',
+                   description="Universal Part-of-speech tags",
+                   properties=[
+                       label_property(
+                           'tag',
+                           description="The Universal Part-of-Speech tag",
+                           data_type='str'
+                       )
+                   ]
+               )
            ])
 class StanzaSelectiveParser(DocumentProcessor):
     def __init__(self):

@@ -20,8 +20,7 @@ from typing import Optional, Callable, Union
 import math
 import numpy as np
 from mtap import Pipeline, Event, EventsClient, RemoteProcessor, Document
-from mtap.processing import ProcessingResult
-from mtap.processing.pipeline import ProcessingSource, PipelineResult
+from mtap.processing import PipelineResult, ProcessingResult, ProcessingSource
 
 SERVICES = ['events', 'sentences', 'tagger']
 

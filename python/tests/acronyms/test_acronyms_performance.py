@@ -64,7 +64,7 @@ def test_acronyms_performance(events_service, acronyms_service, test_results):
         print('Detection Recall:', detection_recall.value)
         print('Detection Precision:', detection_precision.value)
         pipeline.print_times()
-        timing_info = pipeline.processor_timer_stats()[0].timing_info
+        timing_info = pipeline.processor_timer_stats('biomedicus-acronyms').timing_info
         test_results['acronyms'] = {
             'Top sense accuracy': top_score_accuracy.value,
             'Any sense accuracy': any_accuracy.value,

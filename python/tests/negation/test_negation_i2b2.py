@@ -148,15 +148,15 @@ def test_negex_performance(events_service, negex_service, test_results):
                 results = pipeline.run(document)
                 print('F1 for event - "{}": {:0.3f} - elapsed: {}'.format(
                     event.event_id,
-                    results[1].results['first_token_confusion']['f1'],
-                    results[0].timing_info['process_method']
+                    results.component_result('metrics').result_dict['first_token_confusion']['f1'],
+                    results.component_result('biomedicus-negation').timing_info['process_method']
                 ))
 
         print('Overall Precision:', confusion.precision)
         print('Overall Recall:', confusion.recall)
         print('Overall F1:', confusion.f1)
         pipeline.print_times()
-        timing_info = pipeline.processor_timer_stats()[0].timing_info
+        timing_info = pipeline.processor_timer_stats('biomedicus-negation').timing_info
         test_results['biomedicus-negex'] = {
             'Gold Standard': "2010 i2b2-VA",
             'Precision': confusion.precision,
@@ -185,15 +185,15 @@ def test_modification_detector_performance(events_service, modification_detector
                 results = pipeline.run(document)
                 print('F1 for event - "{}": {:0.3f} - elapsed: {}'.format(
                     event.event_id,
-                    results[1].results['first_token_confusion']['f1'],
-                    results[0].timing_info['process_method']
+                    results.component_result('metrics').result_dict['first_token_confusion']['f1'],
+                    results.component_result('biomedicus-negation').timing_info['process_method']
                 ))
 
         print('Overall Precision:', confusion.precision)
         print('Overall Recall:', confusion.recall)
         print('Overall F1:', confusion.f1)
         pipeline.print_times()
-        timing_info = pipeline.processor_timer_stats()[0].timing_info
+        timing_info = pipeline.processor_timer_stats('biomedicus-negation').timing_info
         test_results['biomedicus-modification'] = {
             'Gold Standard': "2010 i2b2-VA",
             'Precision': confusion.precision,
@@ -227,16 +227,16 @@ def test_deepen_performance(events_service, negex_triggers_service, dependencies
                 results = pipeline.run(document)
                 print('F1 for event - "{}": {:0.3f} - elapsed: {}'.format(
                     event.event_id,
-                    results[3].results['first_token_confusion']['f1'],
-                    results[2].timing_info['process_method']
+                    results.component_result('metrics').result_dict['first_token_confusion']['f1'],
+                    results.component_result('biomedicus-selective-dependencies').timing_info['process_method']
                 ))
 
         print('Overall Precision:', confusion.precision)
         print('Overall Recall:', confusion.recall)
         print('Overall F1:', confusion.f1)
         pipeline.print_times()
-        timing_info = pipeline.processor_timer_stats()[2].timing_info
-        timing_info_parse = pipeline.processor_timer_stats()[1].timing_info
+        timing_info = pipeline.processor_timer_stats('biomedicus-deepen').timing_info
+        timing_info_parse = pipeline.processor_timer_stats('biomedicus-selective-dependencies').timing_info
         test_results['biomedicus-deepen'] = {
             'Gold Standard': "2010 i2b2-VA",
             'Precision': confusion.precision,

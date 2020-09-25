@@ -97,17 +97,15 @@ public class PtbReaderProcessor extends EventProcessor {
   }
 
   public static void main(String[] args) {
-    ProcessorServerOptions options = new ProcessorServerOptions();
+    ProcessorServer.Builder options = new ProcessorServer.Builder();
     CmdLineParser parser = new CmdLineParser(options);
     try {
       parser.parseArgument(args);
-      ProcessorServer server = ProcessorServerBuilder
-          .forProcessor(new PtbReaderProcessor(), options)
-          .build();
+      ProcessorServer server = options.build(new PtbReaderProcessor());
       server.start();
       server.blockUntilShutdown();
     } catch (CmdLineException e) {
-      ProcessorServerOptions.printHelp(parser, PtbReaderProcessor.class, e, null);
+      ProcessorServer.Builder.printHelp(parser, PtbReaderProcessor.class, e, null);
     } catch (InterruptedException | IOException e) {
       e.printStackTrace();
     }

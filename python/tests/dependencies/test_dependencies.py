@@ -68,12 +68,13 @@ def test_dependencies(events_service, dependencies_service, test_results):
             with PickleSerializer.file_to_event(test_file, client=client) as event:
                 document = event.documents['plaintext']
                 results = pipeline.run(document)
-                print('Results for document: UAS: {}. LAS: {}.'.format(results[1].results['UAS'],
-                                                                       results[1].results['LAS']))
+                accuracy_dict = results.component_result('accuracy').result_dict
+                print('Results for document: UAS: {}. LAS: {}.'.format(accuracy_dict['UAS'],
+                                                                       accuracy_dict['LAS']))
 
     print('UAS:', uas.value)
     print('LAS:', las.value)
-    timing_info = pipeline.processor_timer_stats()[0].timing_info
+    timing_info = pipeline.processor_timer_stats('biomedicus-dependencies').timing_info
     test_results['biomedicus-dependencies'] = {
         'UAS': uas.value,
         'LAS': las.value,

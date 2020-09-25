@@ -200,21 +200,21 @@ public class ModificationDetector extends DocumentProcessor {
       .addScopeDelimitingWord(":")
       .build();
 
-  public static void runModificationDetector(ProcessorServerOptions options) throws IOException, InterruptedException {
+  public static void runModificationDetector(ProcessorServer.Builder options) throws IOException, InterruptedException {
     ModificationDetector detector = new ModificationDetector();
-    ProcessorServer server = ProcessorServerBuilder.forProcessor(detector, options).build();
+    ProcessorServer server = options.build(detector);
     server.start();
     server.blockUntilShutdown();
   }
 
   public static void main(String[] args) {
-    ProcessorServerOptions options = new ProcessorServerOptions();
+    ProcessorServer.Builder options = new ProcessorServer.Builder();
     CmdLineParser parser = new CmdLineParser(options);
     try {
       parser.parseArgument(args);
       runModificationDetector(options);
     } catch (CmdLineException e) {
-      ProcessorServerOptions.printHelp(parser, ModificationDetector.class, e, null);
+      ProcessorServer.Builder.printHelp(parser, ModificationDetector.class, e, null);
     } catch (InterruptedException | IOException e) {
       e.printStackTrace();
     }
