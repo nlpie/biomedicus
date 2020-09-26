@@ -90,7 +90,7 @@ public class TntTrainerProcessor extends DocumentProcessor {
   public static void hostProcessor(Options options) throws IOException, InterruptedException {
     Path outputDir = options.getOutputDir();
     TntTrainerProcessor trainer = createTrainer(outputDir);
-    ProcessorServer server = ProcessorServerBuilder.forProcessor(trainer, options).build();
+    ProcessorServer server = options.build(trainer);
     server.start();
     server.blockUntilShutdown();
   }
@@ -102,13 +102,13 @@ public class TntTrainerProcessor extends DocumentProcessor {
       parser.parseArgument(args);
       hostProcessor(options);
     } catch (CmdLineException e) {
-      ProcessorServerOptions.printHelp(parser, TntTrainerProcessor.class, e, null);
+      ProcessorServer.Builder.printHelp(parser, TntTrainerProcessor.class, e, null);
     } catch (InterruptedException | IOException e) {
       e.printStackTrace();
     }
   }
 
-  public static class Options extends ProcessorServerOptions {
+  public static class Options extends ProcessorServer.Builder {
     @Argument(
         metaVar = "OUTPUT_PATH",
         required = true,

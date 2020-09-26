@@ -16,9 +16,8 @@ from pathlib import Path
 from typing import Dict, Any, List
 
 import mtap
-from mtap import Document
-from mtap.processing import DocumentProcessor
-from mtap.processing.descriptions import label_index, parameter, processor, label_property
+from mtap import Document, DocumentProcessor
+from mtap.processing.descriptions import labels, parameter, processor, label_property
 
 from biomedicus.core.dawg import DAWG
 from biomedicus.negation.negex import make_rules
@@ -74,23 +73,23 @@ class NegexTriggerTagger:
         )
     ],
     inputs=[
-        label_index(
+        labels(
             name='sentences',
             reference='biomedicus-sentences/sentences'
         ),
-        label_index(
+        labels(
             name='umls_terms',
             reference='biomedicus-concepts/umls_terms',
             name_from_parameter='terms_index'
         )
     ],
     outputs=[
-        label_index("negation_trigger", description="Spans of phrases that trigger negation.",
-                    properties=[
-                        label_property("tags", data_type='List[str]',
-                                       description='The tags that apply to the trigger, '
-                                                   'for example: POST PREN')
-                    ])
+        labels("negation_trigger", description="Spans of phrases that trigger negation.",
+               properties=[
+                   label_property("tags", data_type='List[str]',
+                                  description='The tags that apply to the trigger, '
+                                              'for example: POST PREN')
+               ])
     ]
 )
 class NegexTriggersProcessor(DocumentProcessor):

@@ -55,7 +55,7 @@ def test_concepts_performance(events_service, concepts_service, test_results):
 
     print('Precision:', precision.value)
     print('Recall:', recall.value)
-    timing_info = pipeline.processor_timer_stats()[0].timing_info
+    timing_info = pipeline.processor_timer_stats('biomedicus-concepts').timing_info
     test_results['Concepts'] = {
         'Precision': precision.value,
         'Recall': recall.value,

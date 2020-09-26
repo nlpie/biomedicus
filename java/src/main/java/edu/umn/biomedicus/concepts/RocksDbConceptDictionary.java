@@ -27,10 +27,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -191,6 +188,7 @@ class RocksDbConceptDictionary implements ConceptDictionary, Closeable {
 
   @Override
   public List<PhraseConcept> withWord(String word) {
+    word = word.toLowerCase(Locale.US);
     List<PhraseConcept> results = new ArrayList<>();
     try (RocksIterator rocksIterator = lowercase.newIterator()) {
       rocksIterator.seekToFirst();

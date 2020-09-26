@@ -24,9 +24,8 @@ import yaml
 from mtap.processing.base import Processor
 
 from biomedicus.deployment.deploy_biomedicus import check_data
-from mtap import processor_parser, Document, processor, run_processor
-from mtap.processing import DocumentProcessor
-from mtap.processing.descriptions import label_index
+from mtap import processor_parser, Document, DocumentProcessor, processor, run_processor
+from mtap.processing.descriptions import labels
 from time import time
 from torch import nn, optim
 from torch.nn import functional as F
@@ -326,7 +325,7 @@ def predict_text(model: BiLSTM, input_mapper, text):
            description="Labels sentences given document text.",
            entry_point=__name__,
            outputs=[
-               label_index('sentences')
+               labels('sentences')
            ])
 class SentenceProcessor(DocumentProcessor):
     def __init__(self, input_mapper: InputMapping, model: BiLSTM):

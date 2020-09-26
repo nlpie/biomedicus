@@ -12,18 +12,17 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 import os
-import sys
+import shutil
 from argparse import ArgumentParser
 from pathlib import Path
 from shutil import rmtree
-from subprocess import Popen, STDOUT, PIPE
+from subprocess import Popen
 from tempfile import NamedTemporaryFile
-from threading import Thread
-from time import sleep
+from typing import Optional
 from zipfile import ZipFile
 
-import grpc
 import requests
+from mtap.deployment import Deployment
 from tqdm import tqdm
 
 from biomedicus.config import load_config
@@ -90,116 +89,59 @@ def download_data_to(download_url, data):
             zf.extractall(path=str(data))
 
 
+def attach_biomedicus_jar(deployment: Deployment, append_to: Optional[str] = None):
+    jar_path = str(Path(__file__).parent.parent / 'biomedicus-all.jar')
+    classpath = deployment.shared_processor_config.classpath
+    classpath = classpath + ':' if classpath is not None else ''
+    if append_to is not None:
+        classpath += append_to + ':'
+    classpath += jar_path
+    deployment.shared_processor_config.classpath = classpath
+
+
+def default_deployment_config() -> Path:
+    return Path(__file__).parent / 'biomedicus_deploy_config.yml'
+
+
 def deploy(conf):
+    if conf.write_deployment_config:
+        shutil.copyfile(default_deployment_config(), 'biomedicus_deploy_config.yml')
+        return
     try:
         check_data(conf.download_data)
     except ValueError:
         return
-    jar_path = str(Path(__file__).parent.parent / 'biomedicus-all.jar')
-    python_exe = sys.executable
-    calls = [
-        ([python_exe, '-m', 'biomedicus.sentences.bi_lstm', 'processor'],
-         conf.sentences_port),
-
-        (['java', '-Xms128m', '-Xmx8g', '-cp', jar_path,
-          'edu.umn.biomedicus.tagging.tnt.TntPosTaggerProcessor'], conf.tagger_port),
-
-        (['java', '-Xms128m', '-Xmx8g', '-cp', jar_path,
-          'edu.umn.biomedicus.acronym.AcronymDetectorProcessor'], conf.acronyms_port),
-
-        (['java', '-Xms128m', '-Xmx8g', '-cp', jar_path,
-          'edu.umn.biomedicus.concepts.DictionaryConceptDetector'], conf.concepts_port),
-
-        ([python_exe, '-m', 'biomedicus.negation.negex_triggers'], conf.negation_port),
-
-        ([python_exe, '-m', 'biomedicus.dependencies.stanza_selective_parser'],
-         conf.selective_dependencies_port),
-
-        ([python_exe, '-m', 'biomedicus.negation.deepen'], conf.deepen_port),
-
-        (['java', '-Xms128m', '-Xmx8g', '-cp', jar_path,
-          'edu.umn.biomedicus.sections.RuleBasedSectionHeaderDetector'], conf.sections_port),
-    ]
-    host = conf.host
-    if host is None:
-        host = '127.0.0.1'
-    if conf.events_address is None:
-        calls.insert(0, ([python_exe, '-m', 'mtap', 'events'], conf.events_port))
-        events_address = host + ':' + conf.events_port
-    else:
-        events_address = conf.events_address
-    if conf.include_rtf:
-        calls.append(['java', '-cp', jar_path, 'edu.umn.biomedicus.rtf.RtfProcessor',
-                      '-p', conf.rtf_port, '--events', events_address])
-
-    for i, (call, port) in enumerate(calls):
-        call.extend(['-p', port])
-        if conf.events_address is not None or i > 0:
-            call.extend(['--events', events_address])
-        if conf.discovery:
-            call.append('--register')
-        if conf.host:
-            call.extend(['--host', conf.host])
-    process_listeners = []
-    processes = []
-    for call, port in calls:
-        p = Popen(call, stdout=PIPE, stderr=STDOUT)
-        listener = Thread(target=_listen, args=(p,))
-        listener.start()
-        process_listeners.append(listener)
-        processes.append(p)
-        with grpc.insecure_channel(host + ':' + port) as channel:
-            future = grpc.channel_ready_future(channel)
-            try:
-                future.result(timeout=60)
-            except grpc.FutureTimeoutError:
-                print('Failed to launch: {}'.format(call))
-                exit()
-
-    print('Done starting all processors', flush=True)
-    try:
-        while True:
-            sleep(60 * 60 * 24)
-    except KeyboardInterrupt:
-        print("Shutting down all processors")
-        for listener in process_listeners:
-            listener.join(timeout=1)
-
-    print("Done shutting down all processors")
+    deployment_config_file = conf.config
+    if deployment_config_file is None:
+        deployment_config_file = default_deployment_config()
+    deployment = Deployment.from_yaml_file(deployment_config_file)
+    attach_biomedicus_jar(deployment, conf.jvm_classpath)
+    deployment.run_servers()
 
 
 def deployment_parser():
     parser = ArgumentParser(add_help=False)
-    parser.add_argument('--config-file')
-    parser.add_argument('--events-address', default=None,
-                        help="An existing events service to use instead of launching one.")
-    parser.add_argument('--host', default=None,
-                        help='A host address to bind all of the services to.')
-    parser.add_argument('--events-port', default='10100',
-                        help="The port to launch the events service on")
-    parser.add_argument('--include-rtf', action='store_true',
-                        help='Also launch the RTF processor.')
-    parser.add_argument('--discovery', action='store_true',
-                        help='Register the services with consul.')
-    parser.add_argument('--rtf-port', default='10101',
-                        help="The port to launch the RTF processor on.")
-    parser.add_argument('--sentences-port', default='10102',
-                        help="The port to launch the sentences processor on.")
-    parser.add_argument('--tagger-port', default='10103',
-                        help="The port to launch the tnt pos tagger on.")
-    parser.add_argument('--acronyms-port', default='10104',
-                        help="The port to launch the acronym detector on.")
-    parser.add_argument('--concepts-port', default='10105',
-                        help="The port to launch the concepts detector on.")
-    parser.add_argument('--negation-port', default='10106',
-                        help="The port to launch the negex triggers detector on.")
-    parser.add_argument('--selective-dependencies-port', default='10107',
-                        help="The port to launch the selective dependencies parser on.")
-    parser.add_argument('--deepen-port', default='10108',
-                        help="The port to launch the deepen negation affirmer on.")
-    parser.add_argument('--sections-port', default='10109',
-                        help="The port to launch the section detector on.")
-    parser.add_argument('--download-data', action='store_true',
-                        help="If this flag is specified, automatically download the biomedicus "
-                             "data if it is missing.")
+    parser.add_argument(
+        '--config',
+        help='A path to a deployment configuration file to use instead of the'
+             'default deployment configuration.'
+    )
+    parser.add_argument(
+        '--jvm-classpath',
+        help="A java -classpath string that will be used in addition to the biomedicus jar."
+    )
+    parser.add_argument(
+        '--with-rtf', action='store_true',
+        help="Enables the RTF processor."
+    )
+    parser.add_argument(
+        '--write-deployment-config', action='store_true',
+        help="Writes the default configuration file to the current directory and immediately exits."
+             "Provides a base example for customization."
+    )
+    parser.add_argument(
+        '--download-data', action='store_true',
+        help="If this flag is specified, automatically download the biomedicus "
+             "data if it is missing."
+    )
     return parser

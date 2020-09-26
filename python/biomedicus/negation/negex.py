@@ -50,7 +50,7 @@ from typing import List, Tuple, Dict, Any, Iterable
 
 import mtap
 from mtap import Document, processor
-from mtap.processing.descriptions import label_index, parameter
+from mtap.processing.descriptions import labels, parameter
 
 from biomedicus.core.dawg import DAWG
 
@@ -168,19 +168,19 @@ class NegexTagger:
         )
     ],
     inputs=[
-        label_index(
+        labels(
             name='sentences',
             reference='biomedicus-sentences/sentences'
         ),
-        label_index(
+        labels(
             name='umls_terms',
             reference='biomedicus-concepts/umls_terms',
             name_from_parameter='terms_index'
         )
     ],
     outputs=[
-        label_index("negated", description="Spans of negated terms."),
-        label_index("negation_triggers", description="Spans of phrases that trigger negation.")
+        labels("negated", description="Spans of negated terms."),
+        labels("negation_triggers", description="Spans of phrases that trigger negation.")
     ]
 )
 class NegexProcessor(mtap.processing.DocumentProcessor):

@@ -51,11 +51,12 @@ def test_tnt_performance(events_service, pos_tags_service, test_results):
             with event:
                 document = event.documents['gold']
                 results = pipeline.run(document)
-                print('Accuracy for event - ', event.event_id, ':', results[1].results['accuracy'])
+                print('Accuracy for event - ', event.event_id, ':',
+                      results.component_result('metrics').result_dict['accuracy'])
 
         print('Accuracy:', accuracy.value)
         pipeline.print_times()
-        timing_info = pipeline.processor_timer_stats()[0].timing_info
+        timing_info = pipeline.processor_timer_stats('biomedicus-tnt-tagger').timing_info
         test_results['TnT Pos Tagger'] = {
             'Accuracy': accuracy.value,
             'Remote Call Duration': str(timing_info['remote_call'].mean),

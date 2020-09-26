@@ -51,15 +51,15 @@ def test_sentence_performance(events_service, sentences_service, test_results):
                 results = pipeline.run(document)
                 print('F1 for event - "{}": {:0.3f} - elapsed: {}'.format(
                     event.event_id,
-                    results[1].results['first_token_confusion']['f1'],
-                    results[0].timing_info['process_method'])
+                    results.component_result('metrics').results['first_token_confusion']['f1'],
+                    results.component_result('biomedicus-sentences').timing_info['process_method'])
                 )
 
         print('Overall Precision:', confusion.precision)
         print('Overall Recall:', confusion.recall)
         print('Overall F1:', confusion.f1)
         pipeline.print_times()
-        timing_info = pipeline.processor_timer_stats()[0].timing_info
+        timing_info = pipeline.processor_timer_stats('biomedicus-sentences').timing_info
         test_results['Sentences'] = {
             'Precision': confusion.precision,
             'Recall': confusion.recall,

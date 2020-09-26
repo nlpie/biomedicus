@@ -21,9 +21,8 @@ import numpy as np
 import torch
 import torch.multiprocessing as mp
 import yaml
-from mtap import Document, processor, run_processor
-from mtap.processing import DocumentProcessor
-from mtap.processing.descriptions import label_index
+from mtap import Document, DocumentProcessor, processor, run_processor
+from mtap.processing.descriptions import labels
 
 from biomedicus.config import load_config
 from biomedicus.deployment.deploy_biomedicus import check_data
@@ -73,7 +72,7 @@ def predict_sentences_async(text) -> List[Tuple[int, int]]:
            description="Labels sentences given document text.",
            entry_point=__name__,
            outputs=[
-               label_index('sentences')
+               labels('sentences')
            ])
 class SentenceProcessor(DocumentProcessor):
     def __init__(self, model, input_mapping, pool_processes, log_level):

@@ -24,24 +24,30 @@ from mtap.io.serialization import YamlSerializer
 
 @pytest.fixture(name='deploy_all')
 def fixture_deploy_all():
-    p = Popen(['python', '-m', 'biomedicus', 'deploy'], start_new_session=True, stdout=PIPE, stderr=STDOUT)
 
-    e = threading.Event()
+    try:
+        p = Popen(['python', '-m', 'biomedicus', 'deploy'], start_new_session=True, stdout=PIPE, stderr=STDOUT)
 
-    def listen(p, e):
-        print("Starting listener")
-        for line in p.stdout:
-            line = line.decode()
-            print(line, end='', flush=True)
-            if 'Done starting all processors' in line:
-                e.set()
+        e = threading.Event()
 
-    listener = threading.Thread(target=listen, args=(p, e))
-    listener.start()
-    e.wait()
-    yield p
-    os.killpg(p.pid, signal.SIGINT)
-    listener.join()
+        def listen(p, e):
+            print("Starting listener")
+            for line in p.stdout:
+                line = line.decode()
+                print(line, end='', flush=True)
+                if 'Done deploying all servers.' in line:
+                    e.set()
+
+        listener = threading.Thread(target=listen, args=(p, e))
+        listener.start()
+        e.wait()
+        yield p
+    finally:
+        try:
+            os.killpg(p.pid, signal.SIGINT)
+            listener.join()
+        except AttributeError:
+            pass
 
 
 @pytest.mark.integration
