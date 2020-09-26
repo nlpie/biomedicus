@@ -8,8 +8,8 @@ More information about BioMedICUS can be found on our [website](https://nlpie.gi
 
 ## Prerequisites
 
-- [Python 3.7 or later](https://www.python.org/)
-- [Java JDK 8.0 or later](https://adoptopenjdk.net/index.html). Note, you will need to have the ["java" command on the your "$PATH"](https://www.java.com/en/download/help/path.xml).
+- [Python 3.6 or later](https://www.python.org/)
+- [Java JDK 9.0 or later](https://adoptopenjdk.net/index.html). Note, you will need to have the ["java" command on the your "$PATH"](https://www.java.com/en/download/help/path.xml).
 - [PyTorch](https://pytorch.org/get-started/locally/)
 
 ## Installation
