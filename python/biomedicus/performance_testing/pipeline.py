@@ -33,6 +33,7 @@ class PipelineConf:
 
     """
     def __init__(self):
+        self.id = ""
         self.use_discovery = False
         self.host = '127.0.0.1'
 
@@ -124,10 +125,7 @@ def _add_address(parser: ArgumentParser, service: str, default_port: str,
                             help='A service ID to use instead of the default service ID.')
 
 
-def run_default_pipeline(config: Namespace):
-    conf = PipelineConf()
-    vars(conf).update(vars(config))
-
+def run_default_pipeline(conf: PipelineConf):
     with DefaultPipeline(conf) as default_pipeline:
         input_dir = Path(conf.input_directory)
         total = min(sum(1 for _ in input_dir.rglob('*.txt')), conf.limit)
@@ -157,7 +155,7 @@ def run_default_pipeline(config: Namespace):
         duration = datetime.now() - start
         print('Total time elapsed:', duration)
         print('Per document time:', duration / total)
-        with open('times-{}workers.csv'.format(conf.workers), 'w') as f:
+        with open('{}-times-{}workers.csv'.format(conf.id, conf.workers), 'w') as f:
             f.write(default_pipeline.pipeline.pipeline_timer_stats().csv_header())
             for line in default_pipeline.pipeline.pipeline_timer_stats().timing_csv():
                 f.write(line)
@@ -165,8 +163,8 @@ def run_default_pipeline(config: Namespace):
                 for line in proc.timing_csv():
                     f.write(line)
         i = list(map(lambda x: x.total_seconds(), times))
-        np.save('times-series-{}workers'.format(conf.workers), np.array(i))
-        np.save('chars-per-doc-{}workers'.format(conf.workers), np.array(chars))
+        np.save('{}-times-series-{}-workers'.format(conf.id, conf.workers), np.array(i))
+        np.save('{}-chars-per-doc-{}-workers'.format(conf.id, conf.workers), np.array(chars))
 
 
 def main(args=None):
@@ -184,12 +182,12 @@ def main(args=None):
     _add_address(parser, 'events', '10100')
     _add_address(parser, 'sentences', '10102', 'biomedicus-sentences')
     _add_address(parser, 'tagger', '10103', 'biomedicus-tnt-tagger')
-
+    parser.add_argument('--id', default="", help="An identifier for output files.")
     parser.add_argument('--workers', default=1, type=int,
                         help="The number of workers to process with.")
     parser.add_argument('--limit', default=math.inf, type=int,
                         help="The number of documents (at most) to process.")
-    parser.add_argument('--use_discovery', action='store_true',
+    parser.add_argument('--use-discovery', action='store_true',
                         help="If this flag is specified, all ports will be ignored and instead "
                              "service discovery will be used to connect to services.")
     parser.add_argument('--serializer', default='json', choices=['json', 'yml', 'pickle'],
@@ -197,7 +195,7 @@ def main(args=None):
     parser.add_argument('--include-label-text', action='store_true',
                         help="Flag to include the covered text for every label")
 
-    conf = parser.parse_args(args)
+    conf = parser.parse_args(args, namespace=PipelineConf())
     run_default_pipeline(conf)
 
 

@@ -21,7 +21,7 @@ import numpy as np
 import torch
 import torch.multiprocessing as mp
 import yaml
-from mtap import Document, DocumentProcessor, processor, run_processor
+from mtap import Document, DocumentProcessor, processor, run_processor, processor_parser
 from mtap.processing.descriptions import labels
 
 from biomedicus.config import load_config
@@ -136,7 +136,7 @@ def create_processor(conf):
 
 
 def main(args=None):
-    parser = ArgumentParser()
+    parser = ArgumentParser(parents=[processor_parser()])
     parser.add_argument('--embeddings', type=Path,
                         default=None,
                         help='Optional override for the embeddings file to use.')
@@ -156,8 +156,6 @@ def main(args=None):
                         help="The number of processes to use for multiprocessing the ")
 
     conf = parser.parse_args(args)
-    f = conf.f
-    del conf.f
 
     if conf.log_level is not None:
         logging.basicConfig(level=getattr(logging, conf.log_level))

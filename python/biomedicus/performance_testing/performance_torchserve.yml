@@ -1,0 +1,24 @@
+global:
+  host: null
+  mtapConfig: null
+  logLevel: INFO
+  register: no
+eventsService:
+  enabled: yes
+  port: 10100
+  workers: 16
+sharedProcessorConfig:
+  eventsAddress: null
+  workers: 16
+  args: [ ]
+  jvmArgs: [ "-Xms32m", "-Xmx8g" ]
+  javaClasspath: null
+# Below this is a list of the processors to be deployed and their individual settings.
+processors:
+  - implementation: python
+    workers: 16
+    entryPoint: biomedicus.sentences.bi_lstm_torchserve
+    port: 10102
+  - implementation: java
+    entryPoint: edu.umn.biomedicus.tagging.tnt.TntPosTaggerProcessor
+    port: 10103

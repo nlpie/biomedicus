@@ -139,7 +139,7 @@ class BiLSTM(nn.Module):
 
 def predict(model, char_ids, word_ids):
     if len(char_ids[0]) == 0:
-        return []
+        return torch.empty(1, 0)
     with torch.no_grad():
         logits = model(char_ids, word_ids, torch.tensor([len(char_ids[0])]))
         predictions = torch.round(torch.sigmoid(logits))
@@ -404,7 +404,34 @@ def processor(conf):
     run_processor(proc, namespace=conf)
 
 
+def save_model(conf):
+    logging.basicConfig(level=logging.INFO)
+    check_data(conf.download_data)
+    input_mapping, model = load_model(conf)
+    torch.jit.save(model, conf.model_out)
+
+
+def save_words(conf):
+    logging.basicConfig(level=logging.INFO)
+    check_data(conf.download_data)
+    config = load_config()
+    if conf.embeddings is None:
+        conf.embeddings = Path(config['sentences.wordEmbeddings'])
+    logger.info('Loading word embeddings from: "{}"'.format(conf.embeddings))
+    words, _ = load_vectors(conf.embeddings)
+    with open(conf.words_out, 'w') as f:
+        for word in words:
+            f.write(word)
+            f.write('\n')
+
+
 def create_processor(conf):
+    input_mapping, model = load_model(conf)
+    proc = SentenceProcessor(input_mapping, model)
+    return proc
+
+
+def load_model(conf):
     config = load_config()
     if conf.embeddings is None:
         conf.embeddings = Path(config['sentences.wordEmbeddings'])
@@ -414,7 +441,6 @@ def create_processor(conf):
         conf.hparams_file = Path(config['sentences.hparamsFile'])
     if conf.model_file is None:
         conf.model_file = Path(config['sentences.modelFile'])
-
     logger.info('Loading hparams from: {}'.format(conf.hparams_file))
     with conf.hparams_file.open('r') as f:
         d = yaml.load(f, Loader)
@@ -431,14 +457,13 @@ def create_processor(conf):
     char_mapping = load_char_mapping(conf.chars_file)
     input_mapping = InputMapping(char_mapping, words, hparams.word_length)
     model = BiLSTM(hparams, n_chars(char_mapping), vectors)
-    model = torch.jit.script(model)
-    model.eval()
     logger.info('Loading model weights from: {}'.format(conf.model_file))
     with conf.model_file.open('rb') as f:
         state_dict = torch.load(f)
         model.load_state_dict(state_dict)
-    proc = SentenceProcessor(input_mapping, model)
-    return proc
+    model = torch.jit.script(model)
+    model.eval()
+    return input_mapping, model
 
 
 def main(args=None):
@@ -449,23 +474,36 @@ def main(args=None):
                                                                  training_parser()])
     training_subparser.set_defaults(f=train)
 
-    processor_subparser = subparsers.add_parser('processor', parents=[processor_parser()])
-    processor_subparser.add_argument('--embeddings', type=Path,
-                                     default=None,
-                                     help='Optional override for the embeddings file to use.')
-    processor_subparser.add_argument('--chars-file', type=Path,
-                                     default=None,
-                                     help='Optional override for the chars file to use')
-    processor_subparser.add_argument('--hparams-file', type=Path,
-                                     default=None,
-                                     help='Optional override for model hyperparameters file')
-    processor_subparser.add_argument('--model-file', type=Path,
-                                     default=None,
-                                     help='Optional override for model weights file.')
-    processor_subparser.add_argument('--download-data', action="store_true",
-                                     help="Automatically Download the latest model files if they "
-                                          "are not found.")
+    load_model = ArgumentParser(add_help=False)
+    load_model.add_argument('--embeddings', type=Path,
+                            default=None,
+                            help='Optional override for the embeddings file to use.')
+    load_model.add_argument('--chars-file', type=Path,
+                            default=None,
+                            help='Optional override for the chars file to use')
+    load_model.add_argument('--hparams-file', type=Path,
+                            default=None,
+                            help='Optional override for model hyperparameters file')
+    load_model.add_argument('--model-file', type=Path,
+                            default=None,
+                            help='Optional override for model weights file.')
+    load_model.add_argument('--download-data', action="store_true",
+                            help="Automatically Download the latest model files if they "
+                                 "are not found.")
+
+    processor_subparser = subparsers.add_parser('processor',
+                                                parents=[processor_parser(), load_model])
     processor_subparser.set_defaults(f=processor)
+
+    save_model_subparser = subparsers.add_parser('save_model', parents=[load_model],
+                                                 help="Saves the model as a torchscript model.")
+    save_model_subparser.add_argument('--model-out', default="sentences-bilstm.pt")
+    save_model_subparser.set_defaults(f=save_model)
+
+    save_words_subparser = subparsers.add_parser('save_words', parents=[load_model],
+                                                 help="Saves the embeddings word list.")
+    save_words_subparser.add_argument('--words-out', default="words.txt")
+    save_words_subparser.set_defaults(f=save_words)
 
     conf = parser.parse_args(args)
     f = conf.f
