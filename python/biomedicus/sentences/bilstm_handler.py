@@ -79,7 +79,8 @@ class ModelHandler(BaseHandler):
         if not os.path.isfile(model_pt_path):
             raise RuntimeError("Missing the model.pt file")
 
-        self.model = torch.jit.load(model_pt_path)
+        self.model = torch.load(model_pt_path, map_location=self.device).eval().to(self.device)
+        self.model.share_memory()
 
         words_file = os.path.join(model_dir, "words.txt")
         words = []
@@ -90,7 +91,7 @@ class ModelHandler(BaseHandler):
         chars_file = os.path.join(model_dir, "chars.txt")
         self.char_mapping = self.load_char_mapping(chars_file)
         self.word_mapping = {word: i for i, word in enumerate(words)}
-        self.word_length = 32
+        self.word_length = self.model.hparams['word_length']
 
         self.initialized = True
 
@@ -166,7 +167,7 @@ class ModelHandler(BaseHandler):
     def predict_segment(self, text):
         if len(text) == 0 or text.isspace():
             return torch.empty(1, 0)
-        tokens, char_ids, word_ids = self.transform_text(text)
+        tokens, char_ids, word_ids = self.transform_text(text, device=self.device)
 
         if len(char_ids) == 0:
             return torch.empty(1, 0)

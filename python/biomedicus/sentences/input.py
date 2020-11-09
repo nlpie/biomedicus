@@ -66,10 +66,11 @@ class Dataset:
 
 
 class InputMapping:
-    def __init__(self, char_mapping, words, word_length):
+    def __init__(self, char_mapping, words, word_length, device=None):
         self.char_mapping = char_mapping
         self.word_mapping = {word: i for i, word in enumerate(words)}
         self.word_length = word_length
+        self.device = device or 'cpu'
 
     def load_dataset(self, input_directory, validation_split, batch_size, sequence_length):
         class_counts = [0, 0]
@@ -110,7 +111,11 @@ class InputMapping:
             char_ids.append(local_char_ids)
             word_ids.append(local_word_id)
             start_of_sequence = False
-        return actual_tokens, torch.tensor([char_ids]), torch.tensor([word_ids])
+        return (
+            actual_tokens,
+            torch.tensor([char_ids], device=self.device),
+            torch.tensor([word_ids], device=self.device)
+        )
 
     def examples_generator(self, docs, sequence_length, training, class_counts):
         for doc in docs:

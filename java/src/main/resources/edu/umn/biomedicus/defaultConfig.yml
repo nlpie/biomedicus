@@ -18,10 +18,9 @@ normalization:
   db: ${BIOMEDICUS_DATA}/normalization
   inMemory: no
 sentences:
-  hparamsFile: ${BIOMEDICUS_DATA}/sentences/1579713474.213175.yml
-  modelFile: ${BIOMEDICUS_DATA}/sentences/1579713474.213175.pt
-  wordEmbeddings: ${BIOMEDICUS_DATA}/sentences/mimic100.vec
+  modelFile: ${BIOMEDICUS_DATA}/sentences/sentences-bilstm.pt
   charsFile: ${BIOMEDICUS_DATA}/sentences/chars.txt
+  wordsFile: ${BIOMEDICUS_DATA}/sentences/words.txt
 tnt:
   trigram: ${BIOMEDICUS_DATA}/tnt/trigram.yml
   word:
@@ -32,5 +31,6 @@ tnt:
 sections:
   headersFile: ${BIOMEDICUS_DATA}/sections/header_patterns.txt
 data:
-  data_url: https://nlpie.umn.edu/downloads/open/biomedicus-3.0b6-standard-data.zip
+  # THE CERTIFICATE IS SIGNED FOR ATHENA, USE ATHENA URL
+  data_url: https://athena.ahc.umn.edu/downloads/open/biomedicus-3.0b6-standard-data.zip
   version: 3.0b6

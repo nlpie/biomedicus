@@ -11,23 +11,8 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-import os
 import shutil
-import sys
-import urllib.request
-from argparse import ArgumentParser
 from pathlib import Path
-from shutil import rmtree
-from subprocess import Popen, STDOUT, PIPE
-from tempfile import NamedTemporaryFile
-from threading import Thread
-from time import sleep
-from zipfile import ZipFile
-
-import grpc
-from tqdm import tqdm
-
-from biomedicus.config import load_config
 
 
 def main(args=None):

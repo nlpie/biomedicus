@@ -17,8 +17,9 @@ sharedProcessorConfig:
 processors:
   - implementation: python
     workers: 16
-    entryPoint: biomedicus.sentences.bi_lstm_pp
+    entryPoint: biomedicus.sentences.bi_lstm
     port: 10102
+    preArgs: ["pool_processor"]
     postArgs: ["--pool-processes", "4"]
   - implementation: java
     entryPoint: edu.umn.biomedicus.tagging.tnt.TntPosTaggerProcessor
