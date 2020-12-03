@@ -24,8 +24,6 @@ import torch
 import torch.multiprocessing as mp
 import yaml
 from mtap.processing.base import Processor
-
-from biomedicus.deployment.deploy_biomedicus import check_data
 from mtap import processor_parser, Document, DocumentProcessor, processor, run_processor
 from mtap.processing.descriptions import labels
 from time import time
@@ -34,6 +32,7 @@ from torch.nn import functional as F
 from torch.nn.utils.rnn import pad_packed_sequence, pack_padded_sequence, \
     PackedSequence
 
+from biomedicus.deployment.deploy_biomedicus import check_data
 from biomedicus.config import load_config
 from biomedicus.sentences.input import InputMapping
 from biomedicus.sentences.vocabulary import load_char_mapping, n_chars
@@ -89,7 +88,8 @@ class BiLSTM(nn.Module):
 
         self.char_cnn = CharCNN(conf, characters)
 
-        pretrained = torch.tensor(pretrained, dtype=torch.float32)
+        if not torch.is_tensor(pretrained):
+            pretrained = torch.tensor(pretrained, dtype=torch.float32)
         self.word_embeddings = nn.Embedding.from_pretrained(pretrained, padding_idx=0)
 
         concatted_word_rep_features = pretrained.shape[1] + conf.char_cnn_output_channels
@@ -110,12 +110,12 @@ class BiLSTM(nn.Module):
         sequence_lengths, sorted_indices = torch.sort(sequence_lengths, descending=True)
         chars = chars.index_select(0, sorted_indices)
         words = words.index_select(0, sorted_indices)
-        word_chars = pack_padded_sequence(chars, sequence_lengths.to('cpu'), batch_first=True)
+        word_chars = pack_padded_sequence(chars, sequence_lengths, batch_first=True)
         # run the char_cnn on it and then reshape back to [batch, sequence, ...]
         char_pools = self.char_cnn(word_chars.data).squeeze(-1)
 
         # Look up the word embeddings
-        words = pack_padded_sequence(words, sequence_lengths.to('cpu'), batch_first=True)
+        words = pack_padded_sequence(words, sequence_lengths, batch_first=True)
         embeddings = self.word_embeddings(words.data)
 
         # Create word representations from the concatenation of the char-cnn derived representation
@@ -298,6 +298,7 @@ def predict_segment(model: BiLSTM, input_mapper, text):
         predictions.extend(local_predictions[0])
     start_index = None
     prev_end = None
+    assert len(tokens) == len(predictions)
     for (start, end), prediction in zip(tokens, predictions):
         if prediction == 1:
             if start_index is not None:
@@ -473,7 +474,13 @@ def save_model(conf):
     logging.basicConfig(level=logging.INFO)
     check_data(conf.download_data)
     input_mapping, model = load_model(conf)
-    torch.jit.save(model, conf.model_out)
+    torch.save(model, conf.model_out)
+
+
+def print_hparams(conf):
+    logging.basicConfig(level=logging.INFO)
+    input_mapping, model = load_model(conf)
+    print(model.hparams)
 
 
 def save_words(conf):
@@ -509,7 +516,8 @@ def load_model(conf):
         device = conf.torch_device
     else:
         device = "cpu" if conf.force_cpu or not torch.cuda.is_available() else "cuda"
-    logger.info('Using torch device: "{}"'.format(device))
+    device = torch.device(device)
+    logger.info('Using torch device: "{}"'.format(repr(device)))
 
     logger.info('Loading characters from: {}'.format(conf.chars_file))
     char_mapping = load_char_mapping(conf.chars_file)
@@ -519,8 +527,6 @@ def load_model(conf):
     with open(conf.words_file, 'r') as f:
         for line in f:
             words.append(line[:-1])
-
-    logger.info('Loading characters from: {}'.format(conf.chars_file))
 
     logger.info('Loading model from: "{}"'.format(conf.model_file))
     with conf.model_file.open('rb') as f:
@@ -589,6 +595,9 @@ def main(args=None):
                                                  help="Saves the embeddings word list.")
     save_words_subparser.add_argument('--words-out', default="words.txt")
     save_words_subparser.set_defaults(f=save_words)
+
+    print_hparams_subparser = subparsers.add_parser('print_hparams', parents=[load_model_parser()])
+    print_hparams_subparser.set_defaults(f=print_hparams)
 
     conf = parser.parse_args(args)
     f = conf.f
