@@ -99,7 +99,10 @@ setup(
         'biomedicus': ['defaultConfig.yml',
                        'biomedicus-all.jar',
                        'negation/negex_triggers.txt',
-                       'deployment/biomedicus_deploy_config.yml']
+                       'deployment/biomedicus_deploy_config.yml',
+                       'performance_testing/performance_multiinstance.yml',
+                       'performance_testing/performance_torchserve.yml',
+                       'performance_testing/performance_multiprocess.yml']
     },
     install_requires=[
         'mtap>=0.7.0',

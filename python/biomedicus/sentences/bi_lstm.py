@@ -13,17 +13,17 @@
 # limitations under the License.
 import logging
 import re
+import signal
 from argparse import ArgumentParser
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, Tuple, List
 
 import numpy as np
 import torch
+import torch.multiprocessing as mp
 import yaml
 from mtap.processing.base import Processor
-
-from biomedicus.deployment.deploy_biomedicus import check_data
 from mtap import processor_parser, Document, DocumentProcessor, processor, run_processor
 from mtap.processing.descriptions import labels
 from time import time
@@ -32,6 +32,7 @@ from torch.nn import functional as F
 from torch.nn.utils.rnn import pad_packed_sequence, pack_padded_sequence, \
     PackedSequence
 
+from biomedicus.deployment.deploy_biomedicus import check_data
 from biomedicus.config import load_config
 from biomedicus.sentences.input import InputMapping
 from biomedicus.sentences.vocabulary import load_char_mapping, n_chars
@@ -41,6 +42,8 @@ try:
     from yaml import CLoader as Loader, CDumper as Dumper
 except ImportError:
     from yaml import Loader as Loader, Dumper as Dumper
+
+torch.multiprocessing.set_start_method('spawn', force=True)
 
 logger = logging.getLogger("biomedicus.sentences.bi_lstm")
 
@@ -85,7 +88,8 @@ class BiLSTM(nn.Module):
 
         self.char_cnn = CharCNN(conf, characters)
 
-        pretrained = torch.tensor(pretrained, dtype=torch.float32)
+        if not torch.is_tensor(pretrained):
+            pretrained = torch.tensor(pretrained, dtype=torch.float32)
         self.word_embeddings = nn.Embedding.from_pretrained(pretrained, padding_idx=0)
 
         concatted_word_rep_features = pretrained.shape[1] + conf.char_cnn_output_channels
@@ -100,48 +104,57 @@ class BiLSTM(nn.Module):
         self.dropout = nn.Dropout(p=conf.dropout)
 
     def forward(self, chars, words, sequence_lengths):
+        assert len(chars.shape) == 3
+        assert len(words.shape) == 2
         assert chars.shape[0] == words.shape[0]
         assert chars.shape[1] == words.shape[1]
-        # flatten the batch and sequence dims into words (batch * sequence, word_len, 1)
-        sequence_lengths, sorted_indices = torch.sort(sequence_lengths, descending=True)
-        chars = chars.index_select(0, sorted_indices)
-        words = words.index_select(0, sorted_indices)
-        word_chars = pack_padded_sequence(chars, sequence_lengths, batch_first=True)
-        # run the char_cnn on it and then reshape back to [batch, sequence, ...]
-        char_pools = self.char_cnn(word_chars.data).squeeze(-1)
+        if words.shape[0] == 1 and not self.training:
+            char_pools = self.char_cnn(chars[0]).squeeze(-1)[None, :, :]
+            embeddings = self.word_embeddings(words)
+            word_reps = torch.cat((char_pools, embeddings), -1)
+            contextual_word_reps, _ = self.lstm(word_reps)
+            bos = self.hidden2bos(contextual_word_reps).squeeze(-1)
+        else:
+            # flatten the batch and sequence dims into words (batch * sequence, word_len, 1)
+            sequence_lengths, sorted_indices = torch.sort(sequence_lengths, descending=True)
+            chars = chars.index_select(0, sorted_indices)
+            words = words.index_select(0, sorted_indices)
+            word_chars = pack_padded_sequence(chars, sequence_lengths, batch_first=True)
+            # run the char_cnn on it and then reshape back to [batch, sequence, ...]
+            char_pools = self.char_cnn(word_chars.data).squeeze(-1)
 
-        # Look up the word embeddings
-        words = pack_padded_sequence(words, sequence_lengths, batch_first=True)
-        embeddings = self.word_embeddings(words.data)
+            # Look up the word embeddings
+            words = pack_padded_sequence(words, sequence_lengths, batch_first=True)
+            embeddings = self.word_embeddings(words.data)
 
-        # Create word representations from the concatenation of the char-cnn derived representation
-        # and the word embedding representation
-        word_reps = torch.cat((char_pools, embeddings), -1)
+            # Create word representations from the concatenation of the char-cnn derived representation
+            # and the word embedding representation
+            word_reps = torch.cat((char_pools, embeddings), -1)
 
-        # bath normalization, batch-normalize all words
-        word_reps = self.batch_norm(word_reps)
+            # bath normalization, batch-normalize all words
+            word_reps = self.batch_norm(word_reps)
 
-        # Run LSTM on the sequences of word representations to create contextual word
-        # representations
-        word_reps = PackedSequence(word_reps, batch_sizes=word_chars.batch_sizes,
-                                   sorted_indices=sorted_indices,
-                                   unsorted_indices=None)
-        contextual_word_reps, _ = self.lstm(word_reps)
-        # Project to the "begin of sentence" space for each word
-        contextual_word_reps = self.dropout(contextual_word_reps.data)
-        bos = self.hidden2bos(contextual_word_reps).squeeze(-1)
-        bos, _ = pad_packed_sequence(PackedSequence(bos, batch_sizes=word_chars.batch_sizes,
-                                                    sorted_indices=sorted_indices,
-                                                    unsorted_indices=None),
-                                     batch_first=True)
+            # Run LSTM on the sequences of word representations to create contextual word
+            # representations
+            word_reps = PackedSequence(word_reps, batch_sizes=word_chars.batch_sizes,
+                                       sorted_indices=sorted_indices,
+                                       unsorted_indices=None)
+            contextual_word_reps, _ = self.lstm(word_reps)
+            # Project to the "begin of sentence" space for each word
+            contextual_word_reps = self.dropout(contextual_word_reps.data)
+            bos = self.hidden2bos(contextual_word_reps).squeeze(-1)
+            bos, _ = pad_packed_sequence(PackedSequence(bos, batch_sizes=word_chars.batch_sizes,
+                                                        sorted_indices=sorted_indices,
+                                                        unsorted_indices=None),
+                                         batch_first=True)
         return bos
 
 
-def predict(model, char_ids, word_ids):
+def predict(model, char_ids, word_ids, device):
     if len(char_ids[0]) == 0:
-        return []
+        return torch.empty(1, 0)
     with torch.no_grad():
-        logits = model(char_ids, word_ids, torch.tensor([len(char_ids[0])]))
+        logits = model(char_ids, word_ids, torch.tensor([len(char_ids[0])], device=device))
         predictions = torch.round(torch.sigmoid(logits))
         return predictions
 
@@ -290,10 +303,11 @@ def predict_segment(model: BiLSTM, input_mapper, text):
     predictions = []
     for char_ids, word_ids in all_ids:
         with Processor.started_stopwatch('model_predict'):
-            local_predictions = predict(model, char_ids, word_ids)
+            local_predictions = predict(model, char_ids, word_ids, device=input_mapper.device)
         predictions.extend(local_predictions[0])
     start_index = None
     prev_end = None
+    assert len(tokens) == len(predictions)
     for (start, end), prediction in zip(tokens, predictions):
         if prediction == 1:
             if start_index is not None:
@@ -336,6 +350,67 @@ class SentenceProcessor(DocumentProcessor):
         with document.get_labeler('sentences', distinct=True) as add_sentence:
             for start, end in predict_text(self.model, self.input_mapper, document.text):
                 add_sentence(start, end)
+
+
+process_locals = {}
+
+
+def setup_process(conf, mapper, model):
+    def signal_handler(sig, frame):
+        pass
+
+    signal.signal(signal.SIGINT, signal_handler)
+    if conf.log_level is not None:
+        logging.basicConfig(level=getattr(logging, conf.log_level))
+    process_locals['model'] = model
+    process_locals['mapper'] = mapper
+
+
+def predict_sentences_async(text) -> List[Tuple[int, int]]:
+    result = []
+    for start, end in predict_text(process_locals['model'], process_locals['mapper'], text):
+        result.append((start, end))
+    return result
+
+
+@processor('biomedicus-sentences',
+           human_name="Sentence Detector",
+           description="Labels sentences given document text.",
+           entry_point=__name__,
+           outputs=[
+               labels('sentences')
+           ])
+class SentencePoolProcessor(DocumentProcessor):
+    def __init__(self, conf, pool_processes, mapper, model):
+        model.share_memory()
+        self.pool = mp.Pool(pool_processes, initializer=setup_process,
+                            initargs=(conf, mapper, model))
+
+    def process_document(self, document: Document, params: Dict[str, Any]):
+        text = document.text
+        result = self.pool.apply(predict_sentences_async, args=(text,))
+        with document.get_labeler('sentences', distinct=True) as add_sentence:
+            for start, end in result:
+                add_sentence(start, end)
+
+    def close(self):
+        self.pool.close()
+        self.pool.join()
+
+
+def pool_processor(conf):
+    check_data(conf.download_data)
+    proc = create_pool_processor(conf)
+    run_processor(proc, namespace=conf)
+
+
+def create_pool_processor(conf):
+    pool_processes = conf.pool_processes
+    if pool_processes is None:
+        pool_processes = conf.workers
+    mapper, model = load_model(conf)
+    proc = SentencePoolProcessor(conf, pool_processes, mapper, model)
+    return proc
 
 
 def bi_lstm_hparams_parser():
@@ -404,41 +479,96 @@ def processor(conf):
     run_processor(proc, namespace=conf)
 
 
-def create_processor(conf):
+def save_model(conf):
+    logging.basicConfig(level=logging.INFO)
+    check_data(conf.download_data)
+    input_mapping, model = load_model(conf)
+    torch.save(model, conf.model_out)
+
+
+def print_hparams(conf):
+    logging.basicConfig(level=logging.INFO)
+    input_mapping, model = load_model(conf)
+    print(model.hparams)
+
+
+def save_words(conf):
+    logging.basicConfig(level=logging.INFO)
+    check_data(conf.download_data)
     config = load_config()
     if conf.embeddings is None:
         conf.embeddings = Path(config['sentences.wordEmbeddings'])
+    logger.info('Loading word embeddings from: "{}"'.format(conf.embeddings))
+    words, _ = load_vectors(conf.embeddings)
+    with open(conf.words_out, 'w') as f:
+        for word in words:
+            f.write(word)
+            f.write('\n')
+
+
+def create_processor(conf):
+    input_mapping, model = load_model(conf)
+    proc = SentenceProcessor(input_mapping, model)
+    return proc
+
+
+def load_model(conf):
+    config = load_config()
     if conf.chars_file is None:
         conf.chars_file = Path(config['sentences.charsFile'])
-    if conf.hparams_file is None:
-        conf.hparams_file = Path(config['sentences.hparamsFile'])
+    if conf.words_file is None:
+        conf.words_file = Path(config['sentences.wordsFile'])
     if conf.model_file is None:
         conf.model_file = Path(config['sentences.modelFile'])
 
-    logger.info('Loading hparams from: {}'.format(conf.hparams_file))
-    with conf.hparams_file.open('r') as f:
-        d = yaml.load(f, Loader)
+    if conf.torch_device is not None:
+        device = conf.torch_device
+    else:
+        device = "cpu" if conf.force_cpu or not torch.cuda.is_available() else "cuda"
+    device = torch.device(device)
+    logger.info('Using torch device: "{}"'.format(repr(device)))
 
-        class Hparams:
-            pass
-
-        hparams = Hparams()
-        hparams.__dict__.update(d)
-    logger.info('Loading word embeddings from: "{}"'.format(conf.embeddings))
-    words, vectors = load_vectors(conf.embeddings)
-    vectors = np.array(vectors)
     logger.info('Loading characters from: {}'.format(conf.chars_file))
     char_mapping = load_char_mapping(conf.chars_file)
-    input_mapping = InputMapping(char_mapping, words, hparams.word_length)
-    model = BiLSTM(hparams, n_chars(char_mapping), vectors)
-    model = torch.jit.script(model)
-    model.eval()
-    logger.info('Loading model weights from: {}'.format(conf.model_file))
+
+    logger.info('Loading words index from: "{}"'.format(conf.words_file))
+    words = []
+    with open(conf.words_file, 'r') as f:
+        for line in f:
+            words.append(line[:-1])
+
+    logger.info('Loading model from: "{}"'.format(conf.model_file))
     with conf.model_file.open('rb') as f:
-        state_dict = torch.load(f)
-        model.load_state_dict(state_dict)
-    proc = SentenceProcessor(input_mapping, model)
-    return proc
+        model = torch.load(f, map_location=device)
+    model.eval()
+    model.to(device)
+
+    class Hparams:
+        pass
+
+    hparams = Hparams()
+    vars(hparams).update(model.hparams)
+    input_mapping = InputMapping(char_mapping, words, hparams.word_length, device)
+
+    return input_mapping, model
+
+
+def load_model_parser():
+    load_model = ArgumentParser(add_help=False)
+    load_model.add_argument('--chars-file', type=Path,
+                            default=None,
+                            help='Optional override for the chars file to use')
+    load_model.add_argument('--words-file', type=Path,
+                            default=None,
+                            help='Optional override for model hyperparameters file')
+    load_model.add_argument('--model-file', type=Path,
+                            default=None,
+                            help='Optional override for model weights file.')
+    load_model.add_argument('--force-cpu', action="store_true",
+                            help="Forces pytorch to use the CPU even if CUDA is available.")
+    load_model.add_argument('--torch-device', default=None,
+                            help="Optional override to manually set the torch device identifier.")
+    return load_model
 
 
 def main(args=None):
@@ -449,23 +579,34 @@ def main(args=None):
                                                                  training_parser()])
     training_subparser.set_defaults(f=train)
 
-    processor_subparser = subparsers.add_parser('processor', parents=[processor_parser()])
-    processor_subparser.add_argument('--embeddings', type=Path,
-                                     default=None,
-                                     help='Optional override for the embeddings file to use.')
-    processor_subparser.add_argument('--chars-file', type=Path,
-                                     default=None,
-                                     help='Optional override for the chars file to use')
-    processor_subparser.add_argument('--hparams-file', type=Path,
-                                     default=None,
-                                     help='Optional override for model hyperparameters file')
-    processor_subparser.add_argument('--model-file', type=Path,
-                                     default=None,
-                                     help='Optional override for model weights file.')
+    processor_subparser = subparsers.add_parser('processor',
+                                                parents=[processor_parser(), load_model_parser()])
     processor_subparser.add_argument('--download-data', action="store_true",
                                      help="Automatically Download the latest model files if they "
                                           "are not found.")
     processor_subparser.set_defaults(f=processor)
+
+    pool_processor_sub = subparsers.add_parser('pool_processor',
+                                               parents=[processor_parser(), load_model_parser()])
+    pool_processor_sub.add_argument('--download-data', action="store_true",
+                                    help="Automatically Download the latest model files if they "
+                                         "are not found.")
+    pool_processor_sub.add_argument('--pool-processes', type=int,
+                                    help="The number of processes to spawn for processing.")
+    pool_processor_sub.set_defaults(f=pool_processor)
+
+    save_model_subparser = subparsers.add_parser('save_model', parents=[load_model_parser()],
+                                                 help="Saves the model as a torchscript model.")
+    save_model_subparser.add_argument('--model-out', default="sentences-bilstm.pt")
+    save_model_subparser.set_defaults(f=save_model)
+
+    save_words_subparser = subparsers.add_parser('save_words', parents=[load_model_parser()],
+                                                 help="Saves the embeddings word list.")
+    save_words_subparser.add_argument('--words-out', default="words.txt")
+    save_words_subparser.set_defaults(f=save_words)
+
+    print_hparams_subparser = subparsers.add_parser('print_hparams', parents=[load_model_parser()])
+    print_hparams_subparser.set_defaults(f=print_hparams)
 
     conf = parser.parse_args(args)
     f = conf.f
