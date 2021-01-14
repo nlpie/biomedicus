@@ -104,40 +104,49 @@ class BiLSTM(nn.Module):
         self.dropout = nn.Dropout(p=conf.dropout)
 
     def forward(self, chars, words, sequence_lengths):
+        assert len(chars.shape) == 3
+        assert len(words.shape) == 2
         assert chars.shape[0] == words.shape[0]
         assert chars.shape[1] == words.shape[1]
-        # flatten the batch and sequence dims into words (batch * sequence, word_len, 1)
-        sequence_lengths, sorted_indices = torch.sort(sequence_lengths, descending=True)
-        chars = chars.index_select(0, sorted_indices)
-        words = words.index_select(0, sorted_indices)
-        word_chars = pack_padded_sequence(chars, sequence_lengths, batch_first=True)
-        # run the char_cnn on it and then reshape back to [batch, sequence, ...]
-        char_pools = self.char_cnn(word_chars.data).squeeze(-1)
+        if words.shape[0] == 1 and not self.training:
+            char_pools = self.char_cnn(chars[0]).squeeze(-1)[None, :, :]
+            embeddings = self.word_embeddings(words)
+            word_reps = torch.cat((char_pools, embeddings), -1)
+            contextual_word_reps, _ = self.lstm(word_reps)
+            bos = self.hidden2bos(contextual_word_reps).squeeze(-1)
+        else:
+            # flatten the batch and sequence dims into words (batch * sequence, word_len, 1)
+            sequence_lengths, sorted_indices = torch.sort(sequence_lengths, descending=True)
+            chars = chars.index_select(0, sorted_indices)
+            words = words.index_select(0, sorted_indices)
+            word_chars = pack_padded_sequence(chars, sequence_lengths, batch_first=True)
+            # run the char_cnn on it and then reshape back to [batch, sequence, ...]
+            char_pools = self.char_cnn(word_chars.data).squeeze(-1)
 
-        # Look up the word embeddings
-        words = pack_padded_sequence(words, sequence_lengths, batch_first=True)
-        embeddings = self.word_embeddings(words.data)
+            # Look up the word embeddings
+            words = pack_padded_sequence(words, sequence_lengths, batch_first=True)
+            embeddings = self.word_embeddings(words.data)
 
-        # Create word representations from the concatenation of the char-cnn derived representation
-        # and the word embedding representation
-        word_reps = torch.cat((char_pools, embeddings), -1)
+            # Create word representations from the concatenation of the char-cnn derived representation
+            # and the word embedding representation
+            word_reps = torch.cat((char_pools, embeddings), -1)
 
-        # bath normalization, batch-normalize all words
-        word_reps = self.batch_norm(word_reps)
+            # bath normalization, batch-normalize all words
+            word_reps = self.batch_norm(word_reps)
 
-        # Run LSTM on the sequences of word representations to create contextual word
-        # representations
-        word_reps = PackedSequence(word_reps, batch_sizes=word_chars.batch_sizes,
-                                   sorted_indices=sorted_indices,
-                                   unsorted_indices=None)
-        contextual_word_reps, _ = self.lstm(word_reps)
-        # Project to the "begin of sentence" space for each word
-        contextual_word_reps = self.dropout(contextual_word_reps.data)
-        bos = self.hidden2bos(contextual_word_reps).squeeze(-1)
-        bos, _ = pad_packed_sequence(PackedSequence(bos, batch_sizes=word_chars.batch_sizes,
-                                                    sorted_indices=sorted_indices,
-                                                    unsorted_indices=None),
-                                     batch_first=True)
+            # Run LSTM on the sequences of word representations to create contextual word
+            # representations
+            word_reps = PackedSequence(word_reps, batch_sizes=word_chars.batch_sizes,
+                                       sorted_indices=sorted_indices,
+                                       unsorted_indices=None)
+            contextual_word_reps, _ = self.lstm(word_reps)
+            # Project to the "begin of sentence" space for each word
+            contextual_word_reps = self.dropout(contextual_word_reps.data)
+            bos = self.hidden2bos(contextual_word_reps).squeeze(-1)
+            bos, _ = pad_packed_sequence(PackedSequence(bos, batch_sizes=word_chars.batch_sizes,
+                                                        sorted_indices=sorted_indices,
+                                                        unsorted_indices=None),
+                                         batch_first=True)
         return bos
 
 
