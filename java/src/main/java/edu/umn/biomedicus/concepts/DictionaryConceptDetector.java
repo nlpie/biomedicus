@@ -254,7 +254,7 @@ public class DictionaryConceptDetector extends DocumentProcessor {
         metaVar = "N",
         usage = "Optional override for the length of the scanning window."
     )
-    private int windowSize = 8;
+    private int windowSize;
 
     public ConceptsOptions() {
       DataFiles.checkDataPath();
@@ -264,6 +264,7 @@ public class DictionaryConceptDetector extends DocumentProcessor {
       normalizeLocally = config.getBooleanValue("concepts.normalizeLocally");
       normalizerModel = Paths.get(config.getStringValue("normalization.db"));
       normalizerModelInMemory = config.getBooleanValue("normalization.inMemory");
+      windowSize = config.getIntegerValue("concepts.windowSize");
     }
 
     public @Nullable Path getDbPath() {

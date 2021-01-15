@@ -119,5 +119,5 @@ def fixture_test_results():
         from yaml import CDumper as Dumper
     except ImportError:
         from yaml import Dumper
-    with open('3.0b6.yml', 'w') as f:
+    with open('3.0b7-umls-license-data.yml', 'w') as f:
         yaml.dump(results, f, Dumper=Dumper)

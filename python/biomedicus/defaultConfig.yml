@@ -14,10 +14,12 @@ concepts:
   db: ${BIOMEDICUS_DATA}/concepts
   inMemory: no
   normalizeLocally: yes
+  windowSize: 6
 normalization:
   db: ${BIOMEDICUS_DATA}/normalization
   inMemory: no
 sentences:
+  hparamsFile: ${BIOMEDICUS_DATA}/sentences/sentences-bilstm.yml
   modelFile: ${BIOMEDICUS_DATA}/sentences/sentences-bilstm.pt
   charsFile: ${BIOMEDICUS_DATA}/sentences/chars.txt
   wordsFile: ${BIOMEDICUS_DATA}/sentences/words.txt
