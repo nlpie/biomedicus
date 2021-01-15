@@ -88,11 +88,18 @@ class BiLSTM(nn.Module):
 
         self.char_cnn = CharCNN(conf, characters)
 
-        if not torch.is_tensor(pretrained):
-            pretrained = torch.tensor(pretrained, dtype=torch.float32)
-        self.word_embeddings = nn.Embedding.from_pretrained(pretrained, padding_idx=0)
+        if pretrained is not None:
+            if not torch.is_tensor(pretrained):
+                pretrained = torch.tensor(pretrained, dtype=torch.float32)
+            conf.word_embeddings = pretrained.shape[0]
+            conf.word_embedding_dim = pretrained.shape[1]
+            self.word_embeddings = nn.Embedding.from_pretrained(pretrained, padding_idx=0)
+        else:
+            self.word_embeddings = nn.Embedding(num_embeddings=conf.word_embeddings,
+                                                embedding_dim=conf.word_embedding_dim,
+                                                padding_idx=0)
 
-        concatted_word_rep_features = pretrained.shape[1] + conf.char_cnn_output_channels
+        concatted_word_rep_features = conf.word_embedding_dim + conf.char_cnn_output_channels
         self.lstm = nn.LSTM(concatted_word_rep_features, conf.lstm_hidden_size,
                             bidirectional=True,
                             batch_first=True)
@@ -481,9 +488,10 @@ def processor(conf):
 
 def save_model(conf):
     logging.basicConfig(level=logging.INFO)
-    check_data(conf.download_data)
     input_mapping, model = load_model(conf)
-    torch.save(model, conf.model_out)
+    torch.save(model.state_dict(), conf.model_out / 'sentences-bilstm.pt')
+    with (conf.model_out / 'sentences-bilstm.yml').open('w') as f:
+        yaml.dump(model.hparams, f, Dumper=Dumper)
 
 
 def print_hparams(conf):
@@ -518,6 +526,8 @@ def load_model(conf):
         conf.chars_file = Path(config['sentences.charsFile'])
     if conf.words_file is None:
         conf.words_file = Path(config['sentences.wordsFile'])
+    if conf.model_hparams is None:
+        conf.model_hparams = Path(config['sentences.hparamsFile'])
     if conf.model_file is None:
         conf.model_file = Path(config['sentences.modelFile'])
 
@@ -537,17 +547,23 @@ def load_model(conf):
         for line in f:
             words.append(line[:-1])
 
-    logger.info('Loading model from: "{}"'.format(conf.model_file))
-    with conf.model_file.open('rb') as f:
-        model = torch.load(f, map_location=device)
-    model.eval()
-    model.to(device)
-
+    logger.info('Loading model parameters from: "{}"'.format(conf.model_hparams))
+    with open(conf.model_hparams, 'r') as f:
+        hparams_dict = yaml.load(f, Loader=Loader)
     class Hparams:
         pass
 
     hparams = Hparams()
-    vars(hparams).update(model.hparams)
+    vars(hparams).update(hparams_dict)
+
+    logger.info('Loading model weights from: "{}"'.format(conf.model_file))
+    model = BiLSTM(hparams, len(char_mapping) + 1, None)
+    with conf.model_file.open('rb') as f:
+        state_dict = torch.load(f, map_location=device)
+    model.load_state_dict(state_dict, strict=True)
+    model.eval()
+    model.to(device)
+
     input_mapping = InputMapping(char_mapping, words, hparams.word_length, device)
 
     return input_mapping, model
@@ -561,8 +577,9 @@ def load_model_parser():
     load_model.add_argument('--words-file', type=Path,
                             default=None,
                             help='Optional override for model hyperparameters file')
-    load_model.add_argument('--model-file', type=Path,
-                            default=None,
+    load_model.add_argument('--model-hparams', type=Path, default=None,
+                            help='Optional override for model hparams file.')
+    load_model.add_argument('--model-file', type=Path, default=None,
                             help='Optional override for model weights file.')
     load_model.add_argument('--force-cpu', action="store_true",
                             help="Forces pytorch to use the CPU even if CUDA is available.")
@@ -596,8 +613,8 @@ def main(args=None):
     pool_processor_sub.set_defaults(f=pool_processor)
 
     save_model_subparser = subparsers.add_parser('save_model', parents=[load_model_parser()],
-                                                 help="Saves the model as a torchscript model.")
-    save_model_subparser.add_argument('--model-out', default="sentences-bilstm.pt")
+                                                 help="Saves the model state dict and parameters.")
+    save_model_subparser.add_argument('--model-out', default=Path.cwd(), type=Path)
     save_model_subparser.set_defaults(f=save_model)
 
     save_words_subparser = subparsers.add_parser('save_words', parents=[load_model_parser()],

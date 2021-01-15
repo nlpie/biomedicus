@@ -12,27 +12,26 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 from argparse import Namespace
-from pathlib import Path
 
 import pytest
 from mtap import Document, GenericLabel
 
-from biomedicus.config import load_config
 from biomedicus.deployment.deploy_biomedicus import check_data
-from biomedicus.sentences.bi_lstm import create_processor
+# BiLSTM import required for pickle
+from biomedicus.sentences import bi_lstm
 
 
 @pytest.fixture(name='bi_lstm_model')
 def fixture_bi_lstm_model():
     check_data()
-    config = load_config()
     conf = Namespace(
-        embeddings=Path(config['sentences.wordEmbeddings']),
-        chars_file=Path(config['sentences.charsFile']),
-        hparams_file=Path(config['sentences.hparamsFile']),
-        model_file=Path(config['sentences.modelFile'])
+        chars_file=None,
+        words_file=None,
+        model_hparams=None,
+        model_file=None,
+        torch_device='cpu'
     )
-    proc = create_processor(conf)
+    proc = bi_lstm.create_processor(conf)
     yield proc
     proc.close()
 

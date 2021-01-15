@@ -126,16 +126,20 @@ public class DictionaryConceptDetector extends DocumentProcessor {
 
   private static final Pattern PUNCT = Pattern.compile("[\\p{Punct}]+");
 
-  private static final int SPAN_SIZE = 5;
 
   private final ConceptDictionary conceptDictionary;
+
+  private final int spanSize;
 
   @Nullable
   private final NormalizerModel normalizerModel;
 
-  DictionaryConceptDetector(ConceptDictionary conceptDictionary, @Nullable NormalizerModel normalizerModel) {
+  DictionaryConceptDetector(ConceptDictionary conceptDictionary,
+                            @Nullable NormalizerModel normalizerModel,
+                            int spanSize) {
     this.conceptDictionary = conceptDictionary;
     this.normalizerModel = normalizerModel;
+    this.spanSize = spanSize;
   }
 
   public static @NotNull DictionaryConceptDetector createConceptDetector(
@@ -150,14 +154,16 @@ public class DictionaryConceptDetector extends DocumentProcessor {
       normalizerOptions.setInMemory(conceptsOptions.getNormalizerModelInMemory());
       normalizerModel = NormalizationProcessor.loadModel(normalizerOptions);
     }
-    return new DictionaryConceptDetector(conceptDictionary, normalizerModel);
+    return new DictionaryConceptDetector(conceptDictionary, normalizerModel,
+        conceptsOptions.getWindowSize());
   }
 
   @NotNull
   public static ConceptDictionary loadConceptsDictionary(
       @NotNull DictionaryConceptDetector.ConceptsOptions conceptsOptions
   ) throws RocksDBException, IOException {
-    return RocksDbConceptDictionary.loadModel(conceptsOptions.getDbPath(), conceptsOptions.getInMemory());
+    return RocksDbConceptDictionary.loadModel(conceptsOptions.getDbPath(),
+        conceptsOptions.getInMemory());
   }
 
   public static void runDictionaryConceptDetector(
@@ -243,6 +249,13 @@ public class DictionaryConceptDetector extends DocumentProcessor {
     )
     private boolean normalizerModelInMemory;
 
+    @Option(
+        name = "--window-size",
+        metaVar = "N",
+        usage = "Optional override for the length of the scanning window."
+    )
+    private int windowSize;
+
     public ConceptsOptions() {
       DataFiles.checkDataPath();
       Config config = Config.loadFromDefaultLocations();
@@ -251,6 +264,7 @@ public class DictionaryConceptDetector extends DocumentProcessor {
       normalizeLocally = config.getBooleanValue("concepts.normalizeLocally");
       normalizerModel = Paths.get(config.getStringValue("normalization.db"));
       normalizerModelInMemory = config.getBooleanValue("normalization.inMemory");
+      windowSize = config.getIntegerValue("concepts.windowSize");
     }
 
     public @Nullable Path getDbPath() {
@@ -291,6 +305,14 @@ public class DictionaryConceptDetector extends DocumentProcessor {
 
     public void setNormalizerModelInMemory(boolean normalizerModelInMemory) {
       this.normalizerModelInMemory = normalizerModelInMemory;
+    }
+
+    public int getWindowSize() {
+      return windowSize;
+    }
+
+    public void setWindowSize(int windowSize) {
+      this.windowSize = windowSize;
     }
   }
 
@@ -348,7 +370,7 @@ public class DictionaryConceptDetector extends DocumentProcessor {
 
 
         for (int from = 0; from < sentenceTokens.size(); from++) {
-          int to = Math.min(from + SPAN_SIZE, sentenceTokens.size());
+          int to = Math.min(from + spanSize, sentenceTokens.size());
           List<GenericLabel> window = sentenceTokens.subList(from, to);
 
           Label first = window.get(0);

@@ -13,6 +13,7 @@
 #  limitations under the License.
 import logging
 import os
+import shutil
 from pathlib import Path
 from subprocess import STDOUT, PIPE, Popen
 from threading import Thread
@@ -47,6 +48,17 @@ def run_java(conf):
         pass
 
 
+def write_config(conf):
+    config_path = str(Path(__file__).parent / 'defaultConfig.yml')
+    if conf.path is not None:
+        output_path = str(Path(conf.path) / 'biomedicusConfig.yml')
+    else:
+        output_path = str(Path.cwd() / 'biomedicusConfig.yml')
+
+    print('Copying biomedicus configuration to "{}"'.format(output_path))
+    shutil.copy2(config_path, output_path)
+
+
 def main(args=None):
     from argparse import ArgumentParser
     from biomedicus.deployment.deploy_biomedicus import deployment_parser, deploy
@@ -70,6 +82,14 @@ def main(args=None):
                                                     "the classpath.")
     run_java_subparser.add_argument('args', nargs='+')
     run_java_subparser.set_defaults(f=run_java)
+
+    write_config_subparser = subparsers.add_parser('write-config',
+                                                   help="Writes the default biomedicus "
+                                                        "configuration to disc so it can be "
+                                                        "edited.")
+    write_config_subparser.add_argument('path', metavar="PATH_TO", nargs='?',
+                                        help="The location to write the config file to.")
+    write_config_subparser.set_defaults(f=write_config)
 
     conf = parser.parse_args(args)
     logging.basicConfig(level=conf.log_level)
