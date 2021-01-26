@@ -34,5 +34,5 @@ sections:
   headersFile: ${BIOMEDICUS_DATA}/sections/header_patterns.txt
 data:
   # THE CERTIFICATE IS SIGNED FOR ATHENA, USE ATHENA URL
-  data_url: https://athena.ahc.umn.edu/downloads/open/biomedicus-3.0b6-standard-data.zip
-  version: 3.0b6
+  data_url: https://athena.ahc.umn.edu/downloads/open/biomedicus-3.0b8-standard-data.zip
+  version: 3.0b8
