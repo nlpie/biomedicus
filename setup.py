@@ -105,7 +105,7 @@ setup(
                        'performance_testing/performance_multiprocess.yml']
     },
     install_requires=[
-        'mtap>=0.7.0',
+        'mtap>=0.8.0',
         'numpy',
         'pyyaml',
         'regex',
