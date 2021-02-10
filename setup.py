@@ -15,7 +15,8 @@ def build_java():
     """
     cwd = Path(__file__).parent / 'java'
     if cwd.exists():
-        p = Popen(['./gradlew', 'clean', 'build', 'shadowJar'], cwd=str(cwd), stdout=PIPE, stderr=STDOUT)
+        p = Popen(['./gradlew', 'clean', 'build', 'shadowJar'], cwd=str(cwd), stdout=PIPE,
+                  stderr=STDOUT)
         for line in p.stdout:
             print(line.decode(), end='')
         return_code = p.wait()
@@ -96,13 +97,16 @@ setup(
     package_dir={'': 'python'},
     packages=find_packages(where='python', exclude=['tests']),
     package_data={
-        'biomedicus': ['defaultConfig.yml',
-                       'biomedicus-all.jar',
-                       'negation/negex_triggers.txt',
-                       'deployment/biomedicus_deploy_config.yml',
-                       'performance_testing/performance_multiinstance.yml',
-                       'performance_testing/performance_torchserve.yml',
-                       'performance_testing/performance_multiprocess.yml']
+        'biomedicus': [
+            'defaultConfig.yml',
+            'biomedicus-all.jar',
+            'negation/negex_triggers.txt',
+            'deployment/biomedicus_deploy_config.yml',
+            'performance_testing/performance_multiinstance.yml',
+            'performance_testing/performance_torchserve.yml',
+            'performance_testing/performance_multiprocess.yml',
+            'pipeline/biomedicus_default_pipeline.yml',
+        ]
     },
     install_requires=[
         'mtap>=0.8.0',

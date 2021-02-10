@@ -1,0 +1,18 @@
+name: biomedicus-default-pipeline
+components:
+  - processorId: biomedicus-sentences
+    address: localhost:10102
+  - processorId: biomedicus-tnt-tagger
+    address: localhost:10103
+  - processorId: biomedicus-acronyms
+    address: localhost:10104
+  - processorId: biomedicus-concepts
+    address: localhost:10105
+  - processorId: biomedicus-negex-triggers
+    address: localhost:10106
+  - processorId: biomedicus-selective-dependencies
+    address: localhost:10107
+  - processorId: biomedicus-deepen
+    address: localhost:10108
+  - processorId: biomedicus-section-headers
+    address: localhost:10109
