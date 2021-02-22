@@ -34,10 +34,9 @@ def fixture_sentences_service(events_service, processor_watcher, processor_timeo
     yield from processor_watcher(address, p, timeout=processor_timeout)
 
 
-@pytest.mark.phi_test_data
-@pytest.mark.performance
+@pytest.mark.phi_performance
 def test_sentence_performance(events_service, sentences_service, test_results):
-    input_dir = Path(os.environ['BIOMEDICUS_TEST_DATA']) / 'sentences'
+    input_dir = Path(os.environ['BIOMEDICUS_PHI_TEST_DATA']) / 'sentences'
 
     confusion = metrics.FirstTokenConfusion()
     with EventsClient(address=events_service) as client, Pipeline(
@@ -51,7 +50,7 @@ def test_sentence_performance(events_service, sentences_service, test_results):
                 results = pipeline.run(document)
                 print('F1 for event - "{}": {:0.3f} - elapsed: {}'.format(
                     event.event_id,
-                    results.component_result('metrics').results['first_token_confusion']['f1'],
+                    results.component_result('metrics').result_dict['first_token_confusion']['f1'],
                     results.component_result('biomedicus-sentences').timing_info['process_method'])
                 )
 
@@ -60,7 +59,7 @@ def test_sentence_performance(events_service, sentences_service, test_results):
         print('Overall F1:', confusion.f1)
         pipeline.print_times()
         timing_info = pipeline.processor_timer_stats('biomedicus-sentences').timing_info
-        test_results['Sentences'] = {
+        test_results['biomedicus-sentences'] = {
             'Precision': confusion.precision,
             'Recall': confusion.recall,
             'F1': confusion.f1,
