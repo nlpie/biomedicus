@@ -30,7 +30,7 @@ def pytest_configure(config):
         "markers", "performance"
     )
     config.addinivalue_line(
-        "markers", "phi_test_data"
+        "markers", "phi_performance"
     )
 
 
@@ -44,8 +44,8 @@ def pytest_addoption(parser):
         help="Runs performance testing",
     )
     parser.addoption(
-        "--phi-test-data", action="store_true", default=False,
-        help="Runs tests which require the internal UMN PHI test data."
+        "--phi-performance", action="store_true", default=False,
+        help="Runs performance tests which require the internal UMN PHI test data."
     )
     parser.addoption(
         "--timeout", type=float, default=20, help="The timeout for processors"
@@ -63,10 +63,10 @@ def pytest_collection_modifyitems(config, items):
         for item in items:
             if "performance" in item.keywords:
                 item.add_marker(skip_consul)
-    if not config.getoption("--phi-test-data"):
-        skip_phi_test_data = pytest.mark.skip(reason="need --phi-test-data option to run")
+    if not config.getoption("--phi-performance"):
+        skip_phi_test_data = pytest.mark.skip(reason="need --phi-performance option to run")
         for item in items:
-            if "phi_test_data" in item.keywords:
+            if "phi_performance" in item.keywords:
                 item.add_marker(skip_phi_test_data)
 
 

@@ -11,6 +11,8 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+import multiprocessing
+import os
 import shutil
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
@@ -105,13 +107,18 @@ def default_pipeline_parser():
                         help="The identifier for the serializer to use, see MTAP serializers.")
     parser.add_argument('--include-label-text', action='store_true',
                         help="Flag to include the covered text for every label")
-    parser.add_argument('--threads', default=8, type=int,
+    parser.add_argument('--threads', type=int,
                         help="The number of threads (documents being processed in parallel) "
-                             "to use for processing")
+                             "to use for processing. By default will use the cpu count divided"
+                             "by 2.")
     return parser
 
 
 def run_default_pipeline(config: Namespace):
+    threads = config.threads
+    if threads is None:
+        threads = max(os.cpu_count() // 2, 1)
+
     with DefaultPipeline(conf_path=config.config,
                          output_directory=config.output_directory,
                          events_address=config.events,
@@ -120,7 +127,7 @@ def run_default_pipeline(config: Namespace):
         source = FilesInDirectoryProcessingSource(default_pipeline.events_client,
                                                   config.input_directory,
                                                   extension_glob=config.extension_glob)
-        default_pipeline.pipeline.run_multithread(source, n_threads=config.threads)
+        default_pipeline.pipeline.run_multithread(source, n_threads=threads)
         default_pipeline.pipeline.print_times()
 
 

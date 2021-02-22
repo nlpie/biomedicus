@@ -35,10 +35,9 @@ def fixture_acronyms_service(events_service, processor_watcher, processor_timeou
     yield from processor_watcher(address, p, timeout=processor_timeout)
 
 
-@pytest.mark.phi_test_data
-@pytest.mark.performance
+@pytest.mark.phi_performance
 def test_acronyms_performance(events_service, acronyms_service, test_results):
-    input_dir = Path(os.environ['BIOMEDICUS_TEST_DATA']) / 'acronyms'
+    input_dir = Path(os.environ['BIOMEDICUS_PHI_TEST_DATA']) / 'acronyms'
     top_score_accuracy = Accuracy(name='top_score_accuracy', fields=['expansion'])
     any_accuracy = Accuracy(name='any_accuracy', mode='any', fields=['expansion'])
     detection_recall = Accuracy(name='detection_recall', mode='location', fields=['expansion'])
