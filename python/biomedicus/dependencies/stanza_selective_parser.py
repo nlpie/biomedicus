@@ -76,6 +76,7 @@ from biomedicus.dependencies.stanza_parser import stanza_deps_and_upos_tags
 class StanzaSelectiveParser(DocumentProcessor):
     def __init__(self):
         stanza.download('en')
+        self.tokenize = stanza.Pipeline('en', processors='tokenize')
         self.nlp = stanza.Pipeline('en', processors='tokenize,pos,lemma,depparse',
                                    tokenize_no_ssplit=True)
 
@@ -88,12 +89,16 @@ class StanzaSelectiveParser(DocumentProcessor):
 
         all_deps = []
         all_upos_tags = []
+        sentences = []
+        sentence_texts = []
         for sentence in document.labels['sentences']:
             if len(terms.inside(sentence)) == 0 or len(negation_triggers.inside(sentence)) == 0:
                 continue
+            sentences.append(sentence)
+            sentence_texts.append(sentence.text)
 
-            stanza_doc = self.nlp([sentence.text])
-            stanza_sentence = stanza_doc.sentences[0]
+        stanza_doc = self.nlp(sentence_texts)
+        for (sentence, stanza_sentence) in zip(sentences, stanza_doc.sentences):
             sentence_deps, sentence_upos_tags = stanza_deps_and_upos_tags(sentence, stanza_sentence)
             all_deps.extend(sentence_deps)
             all_upos_tags.extend(sentence_upos_tags)
