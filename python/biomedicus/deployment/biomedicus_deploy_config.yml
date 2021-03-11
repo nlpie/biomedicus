@@ -38,6 +38,7 @@ processors:
   - implementation: python
     entryPoint: biomedicus.dependencies.stanza_selective_parser
     port: 10107
+    startupTimeout: 180
   - implementation: python
     entryPoint: biomedicus.negation.deepen
     port: 10108

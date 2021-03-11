@@ -109,12 +109,12 @@ setup(
         ]
     },
     install_requires=[
-        'mtap>=0.8.0',
+        'mtap>=0.8.3',
         'numpy',
         'pyyaml',
         'regex',
         'tqdm',
-        'stanza',
+        'stanza==1.2.0',
         'requests'
     ],
     setup_requires=[
