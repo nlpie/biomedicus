@@ -18,6 +18,7 @@ package edu.umn.biomedicus.rtf;
 
 import edu.umn.biomedicus.common.data.DataFiles;
 import edu.umn.biomedicus.rtf.reader.RtfParser;
+import edu.umn.biomedicus.rtf.reader.RtfParserFactory;
 import edu.umn.biomedicus.rtf.reader.RtfSource;
 import edu.umn.nlpie.mtap.common.JsonObject;
 import edu.umn.nlpie.mtap.common.JsonObjectBuilder;
@@ -52,11 +53,10 @@ import java.io.IOException;
             description = "Rtf underlined formatting."),
     })
 public class RtfProcessor extends EventProcessor {
-
-  private final RtfParser parser;
+  private final RtfParserFactory factory;
 
   public RtfProcessor() throws IOException {
-    parser = RTF.getParser();
+    factory = RTF.getFactory();
   }
 
   public static void main(String[] args) {
@@ -101,6 +101,7 @@ public class RtfProcessor extends EventProcessor {
         bis.reset();
         RtfSource rtfSource = new RtfSource(bis);
         MTAPDocumentsSink sink = new MTAPDocumentsSink();
+        RtfParser parser = factory.create();
         parser.parseRtf(rtfSource, sink);
         sink.done(event, outputDocumentName);
       } else {

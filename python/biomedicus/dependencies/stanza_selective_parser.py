@@ -1,4 +1,4 @@
-##  Copyright 2020 Regents of the University of Minnesota.
+#  Copyright 2020 Regents of the University of Minnesota.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -11,9 +11,11 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+import multiprocessing
 from typing import Dict, Any
 
 import stanza
+import torch
 from mtap import Document, processor, run_processor
 from mtap.processing import DocumentProcessor
 from mtap.processing.descriptions import labels, label_property
@@ -75,8 +77,6 @@ from biomedicus.dependencies.stanza_parser import stanza_deps_and_upos_tags
            ])
 class StanzaSelectiveParser(DocumentProcessor):
     def __init__(self):
-        stanza.download('en')
-        self.tokenize = stanza.Pipeline('en', processors='tokenize')
         self.nlp = stanza.Pipeline('en', processors='tokenize,pos,lemma,depparse',
                                    tokenize_no_ssplit=True)
 
@@ -108,7 +108,14 @@ class StanzaSelectiveParser(DocumentProcessor):
 
 
 def main(args=None):
-    run_processor(StanzaSelectiveParser(), args=args)
+    torch.multiprocessing.set_start_method('fork')
+    torch.set_num_threads(1)
+    torch.set_num_interop_threads(1)
+    stanza.download('en')
+    run_processor(StanzaSelectiveParser,
+                  mp=True,
+                  mp_context=torch.multiprocessing,
+                  args=args)
 
 
 if __name__ == '__main__':

@@ -1,0 +1,4 @@
+name: rtf-to-text
+components:
+  - processorId: biomedicus-rtf
+    address: localhost:50200

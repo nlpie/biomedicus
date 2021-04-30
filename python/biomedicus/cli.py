@@ -18,8 +18,6 @@ from pathlib import Path
 from subprocess import STDOUT, PIPE, Popen
 from threading import Thread
 
-from biomedicus.pipeline.default_pipeline import run_write_pipeline_config
-
 
 class ProcessListener(Thread):
     def __init__(self, p: Popen, **kwargs):
@@ -93,10 +91,11 @@ def main(args=None):
                                         help="The location to write the config file to.")
     write_config_subparser.set_defaults(f=write_config)
 
-    write_pipeline_subparser = subparsers.add_parser('write-pipeline',
-                                                     help="Writes the default biomedicus pipeline"
-                                                          "to the current working directory.")
-    write_pipeline_subparser.set_defaults(f=run_write_pipeline_config)
+    from biomedicus.deployment import deploy_rtf_to_text
+    deploy_rtf_to_text.add_cli_subparsers(subparsers)
+
+    from biomedicus.pipeline import rtf_to_text
+    rtf_to_text.add_cli_subparsers(subparsers)
 
     conf = parser.parse_args(args)
     logging.basicConfig(level=conf.log_level)
