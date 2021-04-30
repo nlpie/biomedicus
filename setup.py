@@ -102,10 +102,12 @@ setup(
             'biomedicus-all.jar',
             'negation/negex_triggers.txt',
             'deployment/biomedicus_deploy_config.yml',
+            'deployment/rtf_to_text_deploy_config.yml',
             'performance_testing/performance_multiinstance.yml',
             'performance_testing/performance_torchserve.yml',
             'performance_testing/performance_multiprocess.yml',
             'pipeline/biomedicus_default_pipeline.yml',
+            'pipeline/rtf_to_text_pipeline.yml',
         ]
     },
     install_requires=[

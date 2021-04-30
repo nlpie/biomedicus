@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
+import multiprocessing
 import re
 from argparse import ArgumentParser
 from datetime import datetime
@@ -337,7 +338,8 @@ class SentenceProcessor(DocumentProcessor):
 
     def process_document(self, document: Document, params: Dict[str, Any]):
         with document.get_labeler('sentences', distinct=True) as add_sentence:
-            for start, end in predict_text(self.model, self.input_mapper, document.text, self.device):
+            for start, end in predict_text(self.model, self.input_mapper, document.text,
+                                           self.device):
                 add_sentence(start, end)
 
 
@@ -401,13 +403,10 @@ def train(conf):
 
 
 def processor(conf):
+    torch.set_num_threads(1)
+    torch.set_num_interop_threads(1)
     logging.basicConfig(level=logging.INFO)
     check_data(conf.download_data)
-    proc = create_processor(conf)
-    run_processor(proc, namespace=conf)
-
-
-def create_processor(conf):
     config = load_config()
     if conf.embeddings is None:
         conf.embeddings = Path(config['sentences.wordEmbeddings'])
@@ -443,12 +442,17 @@ def create_processor(conf):
     model = BiLSTM(hparams, n_chars(char_mapping), vectors)
     model.eval()
     model.to(device=device)
+    model.share_memory()
     logger.info('Loading model weights from: {}'.format(conf.model_file))
     with conf.model_file.open('rb') as f:
         state_dict = torch.load(f)
         model.load_state_dict(state_dict)
-    proc = SentenceProcessor(input_mapping, model, device)
-    return proc
+    torch.multiprocessing.set_start_method('fork')
+    run_processor(SentenceProcessor,
+                  proc_args=(input_mapping, model, device),
+                  namespace=conf,
+                  mp=True,
+                  mp_context=torch.multiprocessing)
 
 
 def main(args=None):

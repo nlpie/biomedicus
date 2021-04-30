@@ -4,11 +4,11 @@ global:
   logLevel: INFO
   register: no
 eventsService:
-  enabled: yes
+  enabled: no
   port: 50100
   workers: 8
 sharedProcessorConfig:
-  eventsAddress: null
+  eventsAddress: 127.0.0.1:50100
   workers: 8
   args: [ ]
   jvmArgs: [ "-Xms32m", "-Xmx8g" ]

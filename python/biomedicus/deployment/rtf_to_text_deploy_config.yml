@@ -1,0 +1,20 @@
+global:
+  host: null
+  mtapConfig: null
+  logLevel: INFO
+  register: no
+eventsService:
+  enabled: yes
+  port: 50100
+  workers: 8
+sharedProcessorConfig:
+  eventsAddress: null
+  workers: 8
+  args: [ ]
+  jvmArgs: [ "-Xms32m", "-Xmx8g" ]
+  javaClasspath: null
+# Below this is a list of the processors to be deployed and their individual settings.
+processors:
+  - implementation: java
+    entryPoint: edu.umn.biomedicus.rtf.RtfProcessor
+    port: 50200

@@ -33,18 +33,11 @@ class DefaultPipeline:
     """
     def __init__(self, conf_path: Union[str, Path],
                  output_directory: Union[str, Path],
-                 *, events_address: Optional[str] = None,
-                 events_client: EventsClient = None,
+                 events_address: str,
+                 *,
                  serializer: Optional[str] = None,
                  include_label_text: bool = False):
-        if events_address == 'None' or events_address == 'none' or events_address == 'null' or events_address == '':
-            events_address = None
-        if events_client is not None:
-            self.close_client = False
-            self.events_client = events_client
-        else:
-            self.close_client = True
-            self.events_client = EventsClient(address=events_address)
+        self.events_client = EventsClient(address=events_address)
 
         self.pipeline = Pipeline.from_yaml_file(conf_path)
 
@@ -55,7 +48,7 @@ class DefaultPipeline:
                                                         output_directory,
                                                         include_label_text=include_label_text)
             ser_comp = LocalProcessor(serialization_proc, component_id='serializer',
-                                      client=self.events_client)
+                                      events_address=events_address)
             self.pipeline.append(ser_comp)
 
     def process_text(self, text: str, *, event_id: str = None) -> ProcessingResult:
@@ -69,8 +62,7 @@ class DefaultPipeline:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.pipeline.close()
-        if self.close_client:
-            self.events_client.close()
+        self.events_client.close()
 
 
 def _add_address(parser: ArgumentParser, service: str, default_port: str,
@@ -99,7 +91,7 @@ def default_pipeline_parser():
     default_config = str(Path(__file__).parent / 'biomedicus_default_pipeline.yml')
     parser.add_argument('--config', default=default_config,
                         help='Path to the pipeline configuration file.')
-    parser.add_argument('--events', default='localhost:10100',
+    parser.add_argument('--events', default='localhost:50100',
                         help="The address for the events service.")
     parser.add_argument('--extension-glob', default='*.txt',
                         help="The extension glob used to find files to process.")
@@ -111,10 +103,18 @@ def default_pipeline_parser():
                         help="The number of threads (documents being processed in parallel) "
                              "to use for processing. By default will use the cpu count divided"
                              "by 2.")
+    parser.add_argument('--write-config', action='store_true',
+                        help="Writes the configuration for the pipeline and exits.")
     return parser
 
 
 def run_default_pipeline(config: Namespace):
+    if config.write_config:
+        from_path = str(Path(__file__).parent / 'biomedicus_default_pipeline.yml')
+        print('Copying from "{}" to "{}"'.format(from_path, str(Path.cwd() / 'biomedicus_default_pipeline.yml')))
+        shutil.copy2(from_path, 'biomedicus_default_pipeline.yml')
+        return
+
     threads = config.threads
     if threads is None:
         threads = max(os.cpu_count() // 2, 1)
@@ -129,9 +129,3 @@ def run_default_pipeline(config: Namespace):
                                                   extension_glob=config.extension_glob)
         default_pipeline.pipeline.run_multithread(source, n_threads=threads)
         default_pipeline.pipeline.print_times()
-
-
-def run_write_pipeline_config(_: Namespace):
-    from_path = str(Path(__file__).parent / 'biomedicus_default_pipeline.yml')
-    print('Copying from "{}" to "{}"'.format(from_path, str(Path.cwd() / 'biomedicus_default_pipeline.yml')))
-    shutil.copy2(from_path, 'biomedicus_default_pipeline.yml')

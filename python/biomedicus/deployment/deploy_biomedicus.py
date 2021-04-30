@@ -11,6 +11,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+import logging
 import os
 import shutil
 from argparse import ArgumentParser
@@ -26,6 +27,8 @@ from mtap.deployment import Deployment
 from tqdm import tqdm
 
 from biomedicus.config import load_config
+
+logger = logging.getLogger(__name__)
 
 
 def _listen(process: Popen) -> int:
@@ -55,7 +58,7 @@ def check_data(download=False):
             print('Data folder ({}) is not most recent version ({})'.format(existing_version,
                                                                             data_version))
         else:
-            print('Data folder is up to date version {}'.format(data_version))
+            logger.info('Data folder is up to date version {}'.format(data_version))
             return
     if not download:
         print(
@@ -104,7 +107,7 @@ def default_deployment_config() -> Path:
 
 
 def deploy(conf):
-    if conf.write_deployment_config:
+    if conf.write_config:
         shutil.copyfile(default_deployment_config(), 'biomedicus_deploy_config.yml')
         return
     try:
@@ -135,7 +138,7 @@ def deployment_parser():
         help="Enables the RTF processor."
     )
     parser.add_argument(
-        '--write-deployment-config', action='store_true',
+        '--write-config', action='store_true',
         help="Writes the default configuration file to the current directory and immediately exits."
              "Provides a base example for customization."
     )

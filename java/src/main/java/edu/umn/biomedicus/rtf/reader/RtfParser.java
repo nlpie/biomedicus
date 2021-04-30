@@ -78,14 +78,16 @@ public class RtfParser {
           state = stateStack.removeFirst();
           break;
         case '\\':
-          KeywordAction keywordAction = parseKeyword(index, source);
-          if (state.isSkipDestinationIfUnknown()) {
-            state.setSkipDestinationIfUnknown(false);
-            if (!keywordAction.isKnown()) {
-              state.setSkippingDestination(true);
+          if (!state.isSkippingDestination()) {
+            KeywordAction keywordAction = parseKeyword(index, source);
+            if (state.isSkipDestinationIfUnknown()) {
+              state.setSkipDestinationIfUnknown(false);
+              if (!keywordAction.isKnown()) {
+                state.setSkippingDestination(true);
+              }
             }
+            keywordAction.executeAction(state, source, sink);
           }
-          keywordAction.executeAction(state, source, sink);
           break;
         case '\n':
         case '\r':
@@ -109,10 +111,6 @@ public class RtfParser {
             break;
           }
       }
-    }
-
-    if (stateStack.size() > 0) {
-      throw new RtfReaderException("Ended with unpopped state (unbalanced curly brackets).");
     }
   }
 
