@@ -15,7 +15,7 @@ def build_java():
     """
     cwd = Path(__file__).parent / 'java'
     if cwd.exists():
-        p = Popen(['./gradlew', 'clean', 'build', 'shadowJar'], cwd=str(cwd), stdout=PIPE,
+        p = Popen(['./gradlew', 'build', 'shadowJar'], cwd=str(cwd), stdout=PIPE,
                   stderr=STDOUT)
         for line in p.stdout:
             print(line.decode(), end='')
@@ -116,6 +116,7 @@ setup(
         'pyyaml',
         'regex',
         'tqdm',
+        'torch',
         'stanza==1.2.0',
         'requests'
     ],
@@ -127,8 +128,7 @@ setup(
         'pytest'
     ],
     extras_require={
-        'torch': 'torch',
-        'torch-gpu': 'torch-gpu',
+        'palliative': ['transformers[torch]', 'accelerate', 'datasets'],
         'tests': ['pytest-runner', 'pytest'],
         'docs': ['sphinx']
     },

@@ -40,6 +40,7 @@ class DefaultPipeline:
         self.events_client = EventsClient(address=events_address)
 
         self.pipeline = Pipeline.from_yaml_file(conf_path)
+        self.pipeline.events_client = self.events_client
 
         if serializer == 'None':
             serializer = None
@@ -47,8 +48,7 @@ class DefaultPipeline:
             serialization_proc = SerializationProcessor(get_serializer(serializer),
                                                         output_directory,
                                                         include_label_text=include_label_text)
-            ser_comp = LocalProcessor(serialization_proc, component_id='serializer',
-                                      events_address=events_address)
+            ser_comp = LocalProcessor(serialization_proc, component_id='serializer')
             self.pipeline.append(ser_comp)
 
     def process_text(self, text: str, *, event_id: str = None) -> ProcessingResult:
@@ -127,5 +127,5 @@ def run_default_pipeline(config: Namespace):
         source = FilesInDirectoryProcessingSource(default_pipeline.events_client,
                                                   config.input_directory,
                                                   extension_glob=config.extension_glob)
-        default_pipeline.pipeline.run_multithread(source, n_threads=threads)
+        default_pipeline.pipeline.run_multithread(source, workers=threads)
         default_pipeline.pipeline.print_times()
