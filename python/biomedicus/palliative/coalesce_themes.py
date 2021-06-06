@@ -15,7 +15,7 @@ from typing import Dict, Any, Optional
 
 from mtap import DocumentProcessor, processor
 
-THEMES = ('care_recs', 'communication', 'critical_abilities', 'decision_making', 'family',
+THEMES = ('communication', 'critical_abilities', 'decision_making', 'family',
           'fears_worries', 'goals', 'legal_docc', 'prognosis', 'strength', 'tradeoffs',
           'understanding')
 
@@ -23,17 +23,14 @@ THEMES = ('care_recs', 'communication', 'critical_abilities', 'decision_making',
 @processor('coalesce-palliative-themes')
 class CoalescePalliativeThemesProcessor(DocumentProcessor):
     def process_document(self, document, params):
+        annotators = document.labels['palliative_annotators'][0].annotators
         themes_idx = document.labels['annotator_themes']
         with document.get_labeler('palliative_themes', ) as PalliativeThemes:
             for sentence in document.labels['sentences']:
-                themes = {}
+                themes = {annotator_name: set() for annotator_name in annotators}
                 for overlapping_theme in themes_idx.overlapping(sentence):
                     annotator_name = overlapping_theme.annotator_name
-                    try:
-                        annotator_themes = themes[annotator_name]
-                    except KeyError:
-                        annotator_themes = set()
-                        themes[annotator_name] = annotator_themes
+                    annotator_themes = themes[annotator_name]
                     for theme_name in THEMES:
                         if getattr(overlapping_theme, theme_name, False):
                             annotator_themes.add(theme_name)
@@ -42,7 +39,8 @@ class CoalescePalliativeThemesProcessor(DocumentProcessor):
                     sentence.start_index,
                     sentence.end_index,
                     annotator_themes={
-                        annotator_name: {theme_name: theme_name in annotator_themes for theme_name in THEMES}
-                        for annotator_name, annotator_themes in themes.items()
+                        annotator_name: {theme_name: (theme_name in themes[annotator_name])
+                                         for theme_name in THEMES}
+                        for annotator_name in annotators
                     }
                 )
