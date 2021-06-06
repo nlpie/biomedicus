@@ -27,22 +27,17 @@ def run_themes_pipeline(input_directory, annotations_directory, output_directory
     with Pipeline(
         RemoteProcessor('biomedicus-sentences', address='localhost:50300'),
         LocalProcessor(
-            AttachPalliativeThemesProcessor, (annotations_directory,),
-            events_address=events_address,
-            component_id='attach-palliative-themes'
+            AttachPalliativeThemesProcessor(annotations_directory)
         ),
         LocalProcessor(
-            CoalescePalliativeThemesProcessor, (),
-            events_address=events_address,
-            component_id='coalesce-palliative-themes'
+            CoalescePalliativeThemesProcessor(),
         ),
         LocalProcessor(
-            SerializationProcessor, (JsonSerializer, output_directory),
-            events_address=events_address,
-            component_id='serialization'
-        )
-    ) as pipeline, EventsClient(address=events_address) as events_client:
-        source = FilesInDirectoryProcessingSource(events_client, input_directory)
+            SerializationProcessor(JsonSerializer, output_directory)
+        ),
+        events_address=events_address
+    ) as pipeline:
+        source = FilesInDirectoryProcessingSource(pipeline.events_client, input_directory)
         pipeline.run_multithread(source, workers=8)
 
 
