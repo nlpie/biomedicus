@@ -1,4 +1,3 @@
-import csv
 import json
 import logging
 import random
@@ -11,12 +10,36 @@ from tqdm import tqdm
 
 logger = logging.getLogger("biomedicus.palliative.write_training_folds")
 
+THEME_GROUPS = [
+    ('communication', ['communication']),
+    ('abilities_goals_tradeoffs', ['critical_abilities', 'goals', 'tradeoffs']),
+    ('decision_making', ['decision_making']),
+    ('family', ['family']),
+    ('fears_worries', ['fears_worries']),
+    ('legal_docc', ['legal_docc']),
+    ('prognosis', ['prognosis']),
+    ('strength', ['strength']),
+    ('understanding', ['understanding'])
+]
 
-def reduce_class(palliative_themes, n_annotators):
-    is_palliative = (sum(any(themes.values())
-                         for themes in palliative_themes.annotator_themes.values())
-                     >= (n_annotators / 2))
-    return 'theme' if is_palliative else 'no_theme'
+
+def reduce_class(palliative_themes, n_annotators, out):
+    any_theme = set()
+    for theme_group, constituents in THEME_GROUPS:
+        annotators_count = 0
+        for annotator_name, annotators_themes in palliative_themes.annotator_themes.items():
+            theme_present = False
+            for theme_name in constituents:
+                theme_present = annotators_themes.get(theme_name, False)
+                if theme_present:
+                    break
+            if theme_present:
+                annotators_count += 1
+                any_theme.add(annotator_name)
+        theme_present = annotators_count >= n_annotators / 2
+        out[theme_group] = theme_present
+    out["any_theme"] = len(any_theme) >= n_annotators / 2
+    return out
 
 
 def write_doc_examples(doc, f: TextIO):
@@ -24,9 +47,10 @@ def write_doc_examples(doc, f: TextIO):
     prev_text = ''
     for annotator_themes in doc.labels['palliative_themes']:
         text = annotator_themes.text
-        sentence_class = reduce_class(annotator_themes, n_annotators)
-        if sentence_class is not None:
-            f.write(json.dumps({'sentence1': prev_text, 'sentence2': text, 'label': sentence_class}))
+        out = {'sentence1': prev_text, 'sentence2': text}
+        out = reduce_class(annotator_themes, n_annotators, out)
+        if out is not None:
+            f.write(json.dumps(out))
             f.write('\n')
         prev_text = text
 
@@ -43,8 +67,8 @@ def write_examples(input_dir, output_dir, n_folds):
 
     for i in range(n_folds):
         logger.info(f'Fold {i}')
-        with (output_dir / '{}-validation.csv'.format(i)).open('w') as f_validation, \
-                (output_dir / '{}-train.csv'.format(i)).open('w') as f_train:
+        with (output_dir / '{}-validation.json'.format(i)).open('w') as f_validation, \
+                (output_dir / '{}-train.json'.format(i)).open('w') as f_train:
             for j, path in enumerate(tqdm(files)):
                 event = deserializer.file_to_event(path)
                 if j in range(fold_len * i, fold_len * (i + 1)):
