@@ -13,7 +13,6 @@
 #  limitations under the License.
 import logging
 import os
-import shutil
 from argparse import ArgumentParser
 from pathlib import Path
 from shutil import rmtree
@@ -29,6 +28,8 @@ from tqdm import tqdm
 from biomedicus.config import load_config
 
 logger = logging.getLogger(__name__)
+
+default_deployment_config = Path(__file__).parent / 'biomedicus_deploy_config.yml'
 
 
 def _listen(process: Popen) -> int:
@@ -94,30 +95,20 @@ def download_data_to(download_url, data):
 
 def attach_biomedicus_jar(deployment: Deployment, append_to: Optional[str] = None):
     jar_path = str(Path(__file__).parent.parent / 'biomedicus-all.jar')
-    classpath = deployment.shared_processor_config.classpath
+    classpath = deployment.shared_processor_config.java_classpath
     classpath = classpath + ':' if classpath is not None else ''
     if append_to is not None:
         classpath += append_to + ':'
     classpath += jar_path
-    deployment.shared_processor_config.classpath = classpath
-
-
-def default_deployment_config() -> Path:
-    return Path(__file__).parent / 'biomedicus_deploy_config.yml'
+    deployment.shared_processor_config.java_classpath = classpath
 
 
 def deploy(conf):
-    if conf.write_config:
-        shutil.copyfile(default_deployment_config(), 'biomedicus_deploy_config.yml')
-        return
     try:
         check_data(conf.download_data)
     except ValueError:
         return
-    deployment_config_file = conf.config
-    if deployment_config_file is None:
-        deployment_config_file = default_deployment_config()
-    deployment = Deployment.from_yaml_file(deployment_config_file)
+    deployment = Deployment.from_yaml_file(conf.config)
     attach_biomedicus_jar(deployment, conf.jvm_classpath)
     deployment.run_servers()
 
@@ -126,6 +117,7 @@ def deployment_parser():
     parser = ArgumentParser(add_help=False)
     parser.add_argument(
         '--config',
+        default=default_deployment_config,
         help='A path to a deployment configuration file to use instead of the'
              'default deployment configuration.'
     )
@@ -136,11 +128,6 @@ def deployment_parser():
     parser.add_argument(
         '--with-rtf', action='store_true',
         help="Enables the RTF processor."
-    )
-    parser.add_argument(
-        '--write-config', action='store_true',
-        help="Writes the default configuration file to the current directory and immediately exits."
-             "Provides a base example for customization."
     )
     parser.add_argument(
         '--download-data', action='store_true',

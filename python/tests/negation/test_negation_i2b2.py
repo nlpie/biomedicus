@@ -79,7 +79,8 @@ def fixture_negex_service(events_service, processor_watcher, processor_timeout):
 def fixture_negex_triggers_service(events_service, processor_watcher, processor_timeout):
     port = str(find_free_port())
     address = '127.0.0.1:' + port
-    p = Popen(['python', '-m', 'biomedicus.negation.negex_triggers', '-p', port, '--events', events_service],
+    p = Popen(['python', '-m', 'biomedicus.negation.negex_triggers', '-p', port, '--events',
+               events_service],
               stdin=PIPE, stdout=PIPE, stderr=STDOUT)
     yield from processor_watcher(address, p, processor_timeout)
 
@@ -140,7 +141,8 @@ def test_negex_performance(events_service, negex_service, test_results):
     with EventsClient(address=events_service) as client, Pipeline(
             RemoteProcessor('biomedicus-negation', address=negex_service,
                             params={'terms_index': 'i2b2concepts'}),
-            LocalProcessor(metrics_processor, component_id='metrics', client=client)
+            LocalProcessor(metrics_processor, component_id='metrics'),
+            events_client=client
     ) as pipeline:
         for test_file in input_dir.glob('**/*.pickle'):
             with PickleSerializer.file_to_event(test_file, client=client) as event:
@@ -177,7 +179,8 @@ def test_modification_detector_performance(events_service, modification_detector
     with EventsClient(address=events_service) as client, Pipeline(
             RemoteProcessor('biomedicus-negation', address=modification_detector_service,
                             params={'terms_index': 'i2b2concepts'}),
-            LocalProcessor(metrics_processor, component_id='metrics', client=client)
+            LocalProcessor(metrics_processor, component_id='metrics'),
+            events_client=client
     ) as pipeline:
         for test_file in input_dir.glob('**/*.pickle'):
             with PickleSerializer.file_to_event(test_file, client=client) as event:
@@ -219,7 +222,8 @@ def test_deepen_performance(events_service, negex_triggers_service, dependencies
                             params={'terms_index': 'i2b2concepts'}),
             RemoteProcessor('biomedicus-deepen', address=deepen_negation_service,
                             params={'terms_index': 'i2b2concepts'}),
-            LocalProcessor(metrics_processor, component_id='metrics', client=client)
+            LocalProcessor(metrics_processor, component_id='metrics'),
+            events_client=client
     ) as pipeline:
         for test_file in input_dir.glob('**/*.pickle'):
             with PickleSerializer.file_to_event(test_file, client=client) as event:
@@ -228,7 +232,8 @@ def test_deepen_performance(events_service, negex_triggers_service, dependencies
                 print('F1 for event - "{}": {:0.3f} - elapsed: {}'.format(
                     event.event_id,
                     results.component_result('metrics').result_dict['first_token_confusion']['f1'],
-                    results.component_result('biomedicus-selective-dependencies').timing_info['process_method']
+                    results.component_result('biomedicus-selective-dependencies').timing_info[
+                        'process_method']
                 ))
 
         print('Overall Precision:', confusion.precision)
@@ -236,7 +241,8 @@ def test_deepen_performance(events_service, negex_triggers_service, dependencies
         print('Overall F1:', confusion.f1)
         pipeline.print_times()
         timing_info = pipeline.processor_timer_stats('biomedicus-deepen').timing_info
-        timing_info_parse = pipeline.processor_timer_stats('biomedicus-selective-dependencies').timing_info
+        timing_info_parse = pipeline.processor_timer_stats(
+            'biomedicus-selective-dependencies').timing_info
         test_results['biomedicus-deepen'] = {
             'Gold Standard': "2010 i2b2-VA",
             'Precision': confusion.precision,

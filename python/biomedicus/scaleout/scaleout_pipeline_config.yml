@@ -1,10 +1,18 @@
 name: biomedicus-default-pipeline
-events_address: localhost:50100
+events_addresses:
+  - localhost:50100
+  - localhost:50101
+  - localhost:50102
+  - localhost:50103
+  - localhost:50104
+  - localhost:50105
+  - localhost:50106
+  - localhost:50107
 mp_config:
   max_failures: 0
   show_progress: True
-  workers: 4
-  read_ahead: 4
+  workers: 32
+  read_ahead: 32
   close_events: True
 components:
   - processor_id: biomedicus-sentences

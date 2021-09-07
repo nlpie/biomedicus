@@ -402,7 +402,7 @@ def train(conf):
     training.run()
 
 
-def processor(conf):
+def create_processor(conf):
     torch.set_num_threads(1)
     torch.set_num_interop_threads(1)
     logging.basicConfig(level=logging.INFO)
@@ -416,14 +416,12 @@ def processor(conf):
         conf.hparams_file = Path(config['sentences.hparamsFile'])
     if conf.model_file is None:
         conf.model_file = Path(config['sentences.modelFile'])
-
     if conf.torch_device is not None:
         device = conf.torch_device
     else:
         device = "cpu" if conf.force_cpu or not torch.cuda.is_available() else "cuda"
     device = torch.device(device)
     logger.info('Using torch device: "{}"'.format(repr(device)))
-
     logger.info('Loading hparams from: {}'.format(conf.hparams_file))
     with conf.hparams_file.open('r') as f:
         d = yaml.load(f, Loader)
@@ -448,9 +446,14 @@ def processor(conf):
         state_dict = torch.load(f)
         model.load_state_dict(state_dict)
     torch.multiprocessing.set_start_method('fork')
-    run_processor(SentenceProcessor,
-                  proc_args=(input_mapping, model, device),
-                  namespace=conf,
+    processor = SentenceProcessor(input_mapping, model, device)
+    return processor
+
+
+def processor(conf):
+    processor = create_processor(conf)
+    run_processor(processor,
+                  options=conf,
                   mp=True,
                   mp_context=torch.multiprocessing)
 

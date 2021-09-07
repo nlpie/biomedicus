@@ -80,6 +80,9 @@ class StanzaSelectiveParser(DocumentProcessor):
         self.nlp = stanza.Pipeline('en', processors='tokenize,pos,lemma,depparse',
                                    tokenize_no_ssplit=True)
 
+    def __reduce__(self):
+        return StanzaSelectiveParser, ()
+
     def process_document(self,
                          document: Document,
                          params: Dict[str, Any]):
@@ -112,7 +115,7 @@ def main(args=None):
     torch.set_num_threads(1)
     torch.set_num_interop_threads(1)
     stanza.download('en')
-    run_processor(StanzaSelectiveParser,
+    run_processor(StanzaSelectiveParser(),
                   mp=True,
                   mp_context=torch.multiprocessing,
                   args=args)

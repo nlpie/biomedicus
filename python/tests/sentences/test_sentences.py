@@ -26,10 +26,12 @@ def fixture_bi_lstm_model():
     check_data()
     conf = Namespace(
         chars_file=None,
-        words_file=None,
-        model_hparams=None,
+        hparams_file=None,
         model_file=None,
-        torch_device='cpu'
+        words_file=None,
+        torch_device='cpu',
+        download_data=False,
+        embeddings=None,
     )
     proc = bi_lstm.create_processor(conf)
     yield proc
