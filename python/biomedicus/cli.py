@@ -49,11 +49,12 @@ def run_java(conf):
 
 
 def write_config(conf):
-    config_path = str(Path(__file__).parent / 'defaultConfig.yml')
+    config_path = conf.files[conf.config]
+    name = Path(config_path).name
     if conf.path is not None:
-        output_path = str(Path(conf.path) / 'biomedicusConfig.yml')
+        output_path = str(Path(conf.path) / name)
     else:
-        output_path = str(Path.cwd() / 'biomedicusConfig.yml')
+        output_path = str(Path.cwd() / name)
 
     print('Copying biomedicus configuration to "{}"'.format(output_path))
     shutil.copy2(config_path, output_path)
@@ -61,8 +62,12 @@ def write_config(conf):
 
 def main(args=None):
     from argparse import ArgumentParser
-    from biomedicus.deployment.deploy_biomedicus import deployment_parser, deploy
-    from biomedicus.pipeline.default_pipeline import default_pipeline_parser, run_default_pipeline
+    from biomedicus.deployment.deploy_biomedicus import deployment_parser, deploy, \
+        default_deployment_config
+    from biomedicus.pipeline.default_pipeline import default_pipeline_parser, run_default_pipeline, \
+        default_pipeline_config
+    from biomedicus.scaleout import scaleout_deploy_config, scaleout_pipeline_config
+
     parser = ArgumentParser()
     parser.set_defaults(f=lambda _: parser.print_help())
     parser.add_argument('--log-level', default='INFO')
@@ -83,13 +88,22 @@ def main(args=None):
     run_java_subparser.add_argument('args', nargs='+')
     run_java_subparser.set_defaults(f=run_java)
 
+    writeable_configs = {
+        'biomedicus': str(Path(__file__).parent / 'defaultConfig.yml'),
+        'pipeline': default_pipeline_config,
+        'deploy': default_deployment_config,
+        'scaleout_pipeline': scaleout_pipeline_config,
+        'scaleout_deploy': scaleout_deploy_config
+    }
+
     write_config_subparser = subparsers.add_parser('write-config',
                                                    help="Writes the default biomedicus "
                                                         "configuration to disc so it can be "
                                                         "edited.")
+    write_config_subparser.add_argument('config', choices=writeable_configs.keys())
     write_config_subparser.add_argument('path', metavar="PATH_TO", nargs='?',
                                         help="The location to write the config file to.")
-    write_config_subparser.set_defaults(f=write_config)
+    write_config_subparser.set_defaults(files=writeable_configs, f=write_config)
 
     from biomedicus.deployment import deploy_rtf_to_text
     deploy_rtf_to_text.add_cli_subparsers(subparsers)

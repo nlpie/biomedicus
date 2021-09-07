@@ -188,7 +188,7 @@ class DeepenProcessor(mtap.processing.DocumentProcessor):
 
 
 def main(args=None):
-    mtap.run_processor(DeepenProcessor, args=args, mp=True)
+    mtap.run_processor(DeepenProcessor(), args=args, mp=True)
 
 
 if __name__ == '__main__':

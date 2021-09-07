@@ -62,7 +62,8 @@ def test_dependencies(events_service, dependencies_service, test_results):
                 RemoteProcessor(processor_id='biomedicus-dependencies',
                                 address=dependencies_service),
                 LocalProcessor(Metrics(uas, las, tested='dependencies', target='gold_dependencies'),
-                               component_id='accuracy', client=client)
+                               component_id='accuracy'),
+                events_client=client
             ) as pipeline:
         for test_file in test_dir.glob('**/*.pickle'):
             with PickleSerializer.file_to_event(test_file, client=client) as event:

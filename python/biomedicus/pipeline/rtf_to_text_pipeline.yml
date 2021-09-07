@@ -1,4 +1,11 @@
 name: rtf-to-text
+events_address: localhost:50100
+mp_config:
+  max_failures: 0
+  show_progress: True
+  workers: 4
+  read_ahead: 4
+  close_events: True
 components:
-  - processorId: biomedicus-rtf
+  - processor_id: biomedicus-rtf
     address: localhost:50200

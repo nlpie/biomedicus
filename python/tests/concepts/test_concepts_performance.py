@@ -44,9 +44,10 @@ def test_concepts_performance(events_service, concepts_service, test_results):
             Pipeline(
                 RemoteProcessor(processor_id='biomedicus-concepts', address=concepts_service),
                 LocalProcessor(Metrics(recall, tested='umls_concepts', target='gold_concepts'),
-                               component_id='metrics', client=client),
+                               component_id='metrics'),
                 LocalProcessor(Metrics(precision, tested='gold_concepts', target='umls_concepts'),
-                               component_id='metrics_reverse', client=client)
+                               component_id='metrics_reverse'),
+                events_client=client
             ) as pipeline:
         for test_file in input_dir.glob('**/*.pickle'):
             with PickleSerializer.file_to_event(test_file, client=client) as event:

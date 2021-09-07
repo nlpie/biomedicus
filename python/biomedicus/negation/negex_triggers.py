@@ -108,7 +108,7 @@ class NegexTriggersProcessor(DocumentProcessor):
 
 
 def main(args=None):
-    mtap.run_processor(NegexTriggersProcessor, args=args, mp=True)
+    mtap.run_processor(NegexTriggersProcessor(), mp=True, args=args)
 
 
 if __name__ == '__main__':

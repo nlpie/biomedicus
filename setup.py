@@ -108,6 +108,8 @@ setup(
             'performance_testing/performance_multiprocess.yml',
             'pipeline/biomedicus_default_pipeline.yml',
             'pipeline/rtf_to_text_pipeline.yml',
+            'scaleout/scaleout_deploy_config.yml',
+            'scaleout/scaleout_pipeline_config.yml'
         ]
     },
     install_requires=[

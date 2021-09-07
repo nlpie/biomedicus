@@ -44,7 +44,8 @@ def test_tnt_performance(events_service, pos_tags_service, test_results):
             RemoteProcessor(processor_id='biomedicus-tnt-tagger', address=pos_tags_service,
                             params={'token_index': 'gold_tags'}),
             LocalProcessor(Metrics(accuracy, tested='pos_tags', target='gold_tags'),
-                           component_id='metrics', client=client)
+                           component_id='metrics'),
+            events_client=client
     ) as pipeline:
         for test_file in input_dir.glob('**/*.pickle'):
             event = PickleSerializer.file_to_event(test_file, client=client)
