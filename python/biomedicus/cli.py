@@ -19,6 +19,66 @@ from subprocess import STDOUT, PIPE, Popen
 from threading import Thread
 
 
+def subparser_fs():
+    from biomedicus.deployment import deploy_rtf_to_text
+    from biomedicus.pipeline import rtf_to_text
+
+    return [
+        deployment_subparser,
+        run_subparser,
+        run_java_subparser,
+        write_config_subparser,
+        deploy_rtf_to_text.add_cli_subparsers,
+        rtf_to_text.add_cli_subparsers,
+    ]
+
+
+def deployment_subparser(subparsers):
+    from biomedicus.deployment.deploy_biomedicus import deployment_parser, deploy
+    subparser = subparsers.add_parser('deploy', parents=[deployment_parser()],
+                                      help='Deploys the default biomedicus pipeline.')
+    subparser.set_defaults(f=deploy)
+
+
+def run_subparser(subparsers):
+    from biomedicus.pipeline.default_pipeline import default_pipeline_parser, run_default_pipeline
+
+    subparser = subparsers.add_parser('run', parents=[default_pipeline_parser()],
+                                      help="Runs the default biomedicus pipeline on files "
+                                           "in a directory.")
+    subparser.set_defaults(f=run_default_pipeline)
+
+
+def run_java_subparser(subparsers):
+    subparser = subparsers.add_parser('java',
+                                      help="Calls Java with the biomedicus jar on "
+                                           "the classpath.")
+    subparser.add_argument('args', nargs='+')
+    subparser.set_defaults(f=run_java)
+
+
+def write_config_subparser(subparsers):
+    from biomedicus.deployment.deploy_biomedicus import default_deployment_config
+    from biomedicus.pipeline.default_pipeline import default_pipeline_config
+    from biomedicus.scaleout import scaleout_deploy_config, scaleout_pipeline_config
+    writeable_configs = {
+        'biomedicus': str(Path(__file__).parent / 'defaultConfig.yml'),
+        'pipeline': default_pipeline_config,
+        'deploy': default_deployment_config,
+        'scaleout_pipeline': scaleout_pipeline_config,
+        'scaleout_deploy': scaleout_deploy_config
+    }
+
+    write_config_subparser = subparsers.add_parser('write-config',
+                                                   help="Writes the default biomedicus "
+                                                        "configuration to disc so it can be "
+                                                        "edited.")
+    write_config_subparser.add_argument('config', choices=writeable_configs.keys())
+    write_config_subparser.add_argument('path', metavar="PATH_TO", nargs='?',
+                                        help="The location to write the config file to.")
+    write_config_subparser.set_defaults(files=writeable_configs, f=write_config)
+
+
 class ProcessListener(Thread):
     def __init__(self, p: Popen, **kwargs):
         super().__init__(**kwargs)
@@ -62,54 +122,13 @@ def write_config(conf):
 
 def main(args=None):
     from argparse import ArgumentParser
-    from biomedicus.deployment.deploy_biomedicus import deployment_parser, deploy, \
-        default_deployment_config
-    from biomedicus.pipeline.default_pipeline import default_pipeline_parser, run_default_pipeline, \
-        default_pipeline_config
-    from biomedicus.scaleout import scaleout_deploy_config, scaleout_pipeline_config
-
     parser = ArgumentParser()
     parser.set_defaults(f=lambda _: parser.print_help())
     parser.add_argument('--log-level', default='INFO')
     subparsers = parser.add_subparsers()
 
-    deployment_subparser = subparsers.add_parser('deploy', parents=[deployment_parser()],
-                                                 help='Deploys the default biomedicus pipeline.')
-    deployment_subparser.set_defaults(f=deploy)
-
-    run_subparser = subparsers.add_parser('run', parents=[default_pipeline_parser()],
-                                          help="Runs the default biomedicus pipeline on files "
-                                               "in a directory.")
-    run_subparser.set_defaults(f=run_default_pipeline)
-
-    run_java_subparser = subparsers.add_parser('java',
-                                               help="Calls Java with the biomedicus jar on "
-                                                    "the classpath.")
-    run_java_subparser.add_argument('args', nargs='+')
-    run_java_subparser.set_defaults(f=run_java)
-
-    writeable_configs = {
-        'biomedicus': str(Path(__file__).parent / 'defaultConfig.yml'),
-        'pipeline': default_pipeline_config,
-        'deploy': default_deployment_config,
-        'scaleout_pipeline': scaleout_pipeline_config,
-        'scaleout_deploy': scaleout_deploy_config
-    }
-
-    write_config_subparser = subparsers.add_parser('write-config',
-                                                   help="Writes the default biomedicus "
-                                                        "configuration to disc so it can be "
-                                                        "edited.")
-    write_config_subparser.add_argument('config', choices=writeable_configs.keys())
-    write_config_subparser.add_argument('path', metavar="PATH_TO", nargs='?',
-                                        help="The location to write the config file to.")
-    write_config_subparser.set_defaults(files=writeable_configs, f=write_config)
-
-    from biomedicus.deployment import deploy_rtf_to_text
-    deploy_rtf_to_text.add_cli_subparsers(subparsers)
-
-    from biomedicus.pipeline import rtf_to_text
-    rtf_to_text.add_cli_subparsers(subparsers)
+    for subparser_f in subparser_fs():
+        subparser_f(subparsers)
 
     conf = parser.parse_args(args)
     logging.basicConfig(level=conf.log_level)
