@@ -15,9 +15,11 @@ from argparse import ArgumentParser, Namespace
 from pathlib import Path
 from typing import Optional, Union
 
-from mtap import Pipeline, Event, LocalProcessor
+from mtap import Pipeline, Event, LocalProcessor, RemoteProcessor
 from mtap.io.serialization import get_serializer, SerializationProcessor
 from mtap.processing import ProcessingResult, FilesInDirectoryProcessingSource
+
+from biomedicus.pipeline.sources import rtf_source
 
 default_pipeline_config = str(Path(__file__).parent / 'biomedicus_default_pipeline.yml')
 
@@ -30,6 +32,7 @@ class DefaultPipeline:
         pipeline (mtap.Pipeline): An MTAP pipeline to use to process documents.
 
     """
+
     def __init__(self, conf_path: Union[str, Path],
                  output_directory: Union[str, Path],
                  *,
@@ -89,12 +92,17 @@ def default_pipeline_parser():
                         help='Path to the pipeline configuration file.')
     parser.add_argument('--events-addresses', default=None,
                         help="The address (or addresses, comma separated) for the events service.")
-    parser.add_argument('--extension-glob', default='*.txt',
+    parser.add_argument('--extension-glob', default=None,
                         help="The extension glob used to find files to process.")
     parser.add_argument('--serializer', default='json', choices=['json', 'yml', 'pickle', 'None'],
                         help="The identifier for the serializer to use, see MTAP serializers.")
     parser.add_argument('--include-label-text', action='store_true',
                         help="Flag to include the covered text for every label")
+    parser.add_argument('--rtf', action='store_true',
+                        help="Flag to use a source for the rtf reader instead of plain text.")
+    parser.add_argument('--rtf-address', default="localhost:50200",
+                        help="The address (or addresses, comma separated) for the"
+                             "rtf to text converter processor.")
     return parser
 
 
@@ -104,8 +112,20 @@ def run_default_pipeline(config: Namespace):
                          events_addresses=config.events_addresses,
                          serializer=config.serializer,
                          include_label_text=config.include_label_text) as default_pipeline:
-        source = FilesInDirectoryProcessingSource(default_pipeline.pipeline.events_client,
-                                                  config.input_directory,
-                                                  extension_glob=config.extension_glob)
-        default_pipeline.pipeline.run_multithread(source)
+        if config.rtf:
+            rtf_processor = RemoteProcessor(processor_id='biomedicus-rtf',
+                                            address=config.rtf_address,
+                                            params={'output_document_name': 'plaintext'})
+            default_pipeline.pipeline.insert(0, rtf_processor)
+            extension_glob = config.extension_glob or "**/*.rtf"
+            source = rtf_source(config.input_directory, extension_glob,
+                                default_pipeline.pipeline.events_client)
+            params = {'document_name': 'plaintext'}
+        else:
+            extension_glob = config.extension_glob or "**/*.txt"
+            source = FilesInDirectoryProcessingSource(default_pipeline.pipeline.events_client,
+                                                      config.input_directory,
+                                                      extension_glob=extension_glob)
+            params = None
+        default_pipeline.pipeline.run_multithread(source, params=params)
         default_pipeline.pipeline.print_times()

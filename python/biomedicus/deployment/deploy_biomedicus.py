@@ -110,6 +110,11 @@ def deploy(conf):
         return
     deployment = Deployment.from_yaml_file(conf.config)
     attach_biomedicus_jar(deployment, conf.jvm_classpath)
+    if conf.rtf:
+        for processor in deployment.processors:
+            if processor.entry_point == 'edu.umn.biomedicus.rtf.RtfProcessor':
+                processor.enabled = True
+                break
     deployment.run_servers()
 
 
@@ -126,7 +131,7 @@ def deployment_parser():
         help="A java -classpath string that will be used in addition to the biomedicus jar."
     )
     parser.add_argument(
-        '--with-rtf', action='store_true',
+        '--rtf', action='store_true',
         help="Enables the RTF processor."
     )
     parser.add_argument(

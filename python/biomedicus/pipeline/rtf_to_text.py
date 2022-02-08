@@ -16,7 +16,9 @@ import shutil
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
-from mtap import Pipeline, Event, EventsClient, LocalProcessor, EventProcessor, processor
+from mtap import Pipeline, EventsClient, LocalProcessor, EventProcessor, processor
+
+from biomedicus.pipeline.sources import rtf_source
 
 
 @processor('write-plaintext')
@@ -74,26 +76,16 @@ def run_rtf_to_text_pipeline(config: Namespace):
     if workers is None:
         workers = max(os.cpu_count() // 2, 1)
 
-    with Pipeline.from_yaml_file(config_file) as pipeline, \
-            EventsClient(address=config.events) as events:
+    with Pipeline.from_yaml_file(config_file) as pipeline:
         pipeline += [LocalProcessor(
             WritePlaintext(Path(config.output_directory)),
-            events_address=config.events,
             component_id='write_text'
         )]
 
         input_directory = Path(config.input_directory)
 
-        def source_gen():
-            for path in input_directory.rglob(config.extension_glob):
-                with path.open('rb', errors=None) as f:
-                    rtf = f.read()
-                relative = str(path.relative_to(input_directory))
-                with Event(event_id=relative, client=events, only_create_new=True) as event:
-                    event.binaries['rtf'] = rtf
-                    yield event
-
-        source = source_gen()
+        source = rtf_source(input_directory, config.extension_glob,
+                            pipeline.events_client)
         total = sum(1 for _ in input_directory.rglob(config.extension_glob))
 
         pipeline.run_multithread(source, workers=workers, total=total, max_failures=config.max_failures)
