@@ -30,6 +30,7 @@ def subparser_fs():
         write_config_subparser,
         deploy_rtf_to_text.add_cli_subparsers,
         rtf_to_text.add_cli_subparsers,
+        download_data_subparser,
     ]
 
 
@@ -78,6 +79,11 @@ def write_config_subparser(subparsers):
                                         help="The location to write the config file to.")
     write_config_subparser.set_defaults(files=writeable_configs, f=write_config)
 
+
+def download_data_subparser(subparsers):
+    from biomedicus.deployment.deploy_biomedicus import download_data
+    sp = subparsers.add_parser('download-data', help="Just downloads the biomedicus data.")
+    sp.set_defaults(f=download_data)
 
 class ProcessListener(Thread):
     def __init__(self, p: Popen, **kwargs):
