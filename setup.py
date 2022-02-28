@@ -113,14 +113,15 @@ setup(
         ]
     },
     install_requires=[
-        'mtap>=1.0rc0',
+        'mtap>=1.0rc1',
         'numpy',
         'pyyaml',
         'regex',
         'tqdm',
         'torch',
         'stanza==1.2.0',
-        'requests'
+        'requests',
+        'watchdog'
     ],
     setup_requires=[
         'pytest-runner',

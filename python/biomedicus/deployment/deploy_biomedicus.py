@@ -118,6 +118,13 @@ def deploy(conf):
     deployment.run_servers()
 
 
+def download_data(_):
+    try:
+        check_data(True)
+    except ValueError:
+        return
+
+
 def deployment_parser():
     parser = ArgumentParser(add_help=False)
     parser.add_argument(

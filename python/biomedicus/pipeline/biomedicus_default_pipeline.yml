@@ -6,6 +6,7 @@ mp_config:
   workers: 4
   read_ahead: 4
   close_events: True
+  mp_start_method: spawn
 components:
   - processor_id: biomedicus-sentences
     address: localhost:50300

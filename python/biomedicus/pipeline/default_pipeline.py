@@ -19,7 +19,7 @@ from mtap import Pipeline, Event, LocalProcessor, RemoteProcessor
 from mtap.io.serialization import get_serializer, SerializationProcessor
 from mtap.processing import ProcessingResult, FilesInDirectoryProcessingSource
 
-from biomedicus.pipeline.sources import rtf_source
+from biomedicus.pipeline.sources import rtf_source, WatcherSource, RtfHandler, TxtHandler
 
 default_pipeline_config = str(Path(__file__).parent / 'biomedicus_default_pipeline.yml')
 
@@ -103,6 +103,8 @@ def default_pipeline_parser():
     parser.add_argument('--rtf-address', default="localhost:50200",
                         help="The address (or addresses, comma separated) for the"
                              "rtf to text converter processor.")
+    parser.add_argument('--watch', action='store_true',
+                        help="Watch the input directory for added files and process the files.")
     return parser
 
 
@@ -118,14 +120,22 @@ def run_default_pipeline(config: Namespace):
                                             params={'output_document_name': 'plaintext'})
             default_pipeline.pipeline.insert(0, rtf_processor)
             extension_glob = config.extension_glob or "**/*.rtf"
-            source = rtf_source(config.input_directory, extension_glob,
-                                default_pipeline.pipeline.events_client)
+            if config.watch:
+                source = WatcherSource(RtfHandler(config.input_directory, extension_glob,
+                                                  default_pipeline.pipeline.events_client))
+            else:
+                source = rtf_source(config.input_directory, extension_glob,
+                                    default_pipeline.pipeline.events_client)
             params = {'document_name': 'plaintext'}
         else:
             extension_glob = config.extension_glob or "**/*.txt"
-            source = FilesInDirectoryProcessingSource(default_pipeline.pipeline.events_client,
-                                                      config.input_directory,
-                                                      extension_glob=extension_glob)
+            if config.watch:
+                source = WatcherSource(TxtHandler(config.input_directory, extension_glob,
+                                                  default_pipeline.pipeline.events_client))
+            else:
+                source = FilesInDirectoryProcessingSource(default_pipeline.pipeline.events_client,
+                                                          config.input_directory,
+                                                          extension_glob=extension_glob)
             params = None
         default_pipeline.pipeline.run_multithread(source, params=params)
         default_pipeline.pipeline.print_times()
