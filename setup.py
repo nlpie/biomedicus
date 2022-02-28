@@ -120,7 +120,8 @@ setup(
         'tqdm',
         'torch',
         'stanza==1.2.0',
-        'requests'
+        'requests',
+        'watchdog'
     ],
     setup_requires=[
         'pytest-runner',
