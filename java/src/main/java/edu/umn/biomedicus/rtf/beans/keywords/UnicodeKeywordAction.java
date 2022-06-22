@@ -38,6 +38,7 @@ public class UnicodeKeywordAction extends AbstractKeywordAction {
     if (!hasParameter()) {
       throw new RtfReaderException("Unicode keyword without a parameter.");
     }
+    state.setCharactersToSkip(state.getPropertyValue("DocumentFormatting", "UnicodeByteCount"));
     sink.writeCharacter(state.getDestination(), (char) getParameter(), getStartIndex(), getEnd());
   }
 

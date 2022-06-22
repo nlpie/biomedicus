@@ -70,6 +70,6 @@ class OutputKeywordActionTest {
     action.setEnd(2);
     action.setOutputString("z");
     action.executeAction(state, null, sink);
-    verify(sink).writeCharacter(null, 'z', 0, 2);  // bullet point
+    verify(sink).writeCharacter("Rtf", 'z', 0, 2);  // bullet point
   }
 }

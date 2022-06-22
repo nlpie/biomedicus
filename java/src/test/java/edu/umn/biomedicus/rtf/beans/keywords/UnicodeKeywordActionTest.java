@@ -35,7 +35,7 @@ class UnicodeKeywordActionTest {
   @BeforeEach
   void setUp() {
     sink = mock(RtfSink.class);
-    state = new RtfState(null);
+    state = mock(RtfState.class);
   }
 
   @Test

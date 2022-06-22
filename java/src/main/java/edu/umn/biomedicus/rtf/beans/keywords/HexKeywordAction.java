@@ -26,6 +26,7 @@ import javax.xml.bind.annotation.XmlType;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
+import java.util.Locale;
 
 /**
  *
@@ -49,7 +50,7 @@ public class HexKeywordAction extends AbstractKeywordAction {
     if (state.isSkippingDestination()) {
       return;
     }
-    byte code = (byte) Integer.parseInt(new String(chars), 16);
+    byte code = (byte) Integer.parseInt(new String(chars).trim().toUpperCase(Locale.ROOT), 16);
     ByteBuffer bb = ByteBuffer.allocate(1).put(code);
     bb.rewind();
     CharBuffer decode = state.getDecoder().decode(bb);

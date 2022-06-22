@@ -26,6 +26,8 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CodingErrorAction;
 
 @XmlRootElement
 @XmlType
@@ -44,7 +46,10 @@ public class EncodingKeywordAction extends AbstractKeywordAction {
 
   @Override
   public void executeAction(RtfState state, RtfSource source, RtfSink sink) throws IOException {
-    state.setDecoder(Charset.forName(encoding).newDecoder());
+    CharsetDecoder decoder = Charset.forName(encoding).newDecoder();
+    decoder.onMalformedInput(CodingErrorAction.REPLACE);
+    decoder.onUnmappableCharacter(CodingErrorAction.REPLACE);
+    state.setDecoder(decoder);
   }
 
   @Override

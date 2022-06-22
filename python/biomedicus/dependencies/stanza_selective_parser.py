@@ -12,11 +12,12 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 import multiprocessing
+from argparse import ArgumentParser
 from typing import Dict, Any
 
 import stanza
 import torch
-from mtap import Document, processor, run_processor
+from mtap import Document, processor, run_processor, processor_parser
 from mtap.processing import DocumentProcessor
 from mtap.processing.descriptions import labels, label_property
 
@@ -111,14 +112,21 @@ class StanzaSelectiveParser(DocumentProcessor):
 
 
 def main(args=None):
+    parser = ArgumentParser(parents=[processor_parser()])
+    parser.add_argument('--offline', action='store_true')
+
+    options = parser.parse_args(args)
+
     torch.multiprocessing.set_start_method('fork')
     torch.set_num_threads(1)
     torch.set_num_interop_threads(1)
-    stanza.download('en')
+
+    if not options.offline:
+        stanza.download('en')
     run_processor(StanzaSelectiveParser(),
                   mp=True,
                   mp_context=torch.multiprocessing,
-                  args=args)
+                  options=options)
 
 
 if __name__ == '__main__':
