@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from biomedicus import version
-
-__version__ = version.version
+from biomedicus.pipeline import default_pipeline
+from biomedicus.version import version as __version__
 
 
 def biomedicus_jar():
-    from pathlib import Path
-    return str(Path(__file__).parent / 'biomedicus-all.jar')
+    from pathlib import Path as _Path
+    return str(_Path(__file__).parent / 'biomedicus-all.jar')
+
