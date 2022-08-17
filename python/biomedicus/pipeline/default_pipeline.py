@@ -126,6 +126,8 @@ def run_parser():
     parser.add_argument('input_directory', help="The input directory of text files to process.")
     parser.add_argument('--extension-glob', default=None,
                         help="The extension glob used to find files to process.")
+    parser.add_argument('--watch', default=False, action='store_true',
+                        help="Watches the directory for new files to process.")
     return parser
 
 
