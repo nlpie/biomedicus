@@ -15,86 +15,81 @@ from argparse import ArgumentParser, Namespace
 from pathlib import Path
 from typing import Optional, Union
 
-from mtap import Pipeline, Event, LocalProcessor, RemoteProcessor
+from mtap import Pipeline, LocalProcessor, RemoteProcessor
 from mtap.io.serialization import get_serializer, SerializationProcessor
-from mtap.processing import ProcessingResult, FilesInDirectoryProcessingSource
+from mtap.processing import FilesInDirectoryProcessingSource
 
 from biomedicus.pipeline.sources import rtf_source, WatcherSource, RtfHandler, TxtHandler
 
 default_pipeline_config = str(Path(__file__).parent / 'biomedicus_default_pipeline.yml')
 
 
-class DefaultPipeline:
+def create(config: Optional[Union[str, Path]] = None,
+           *,
+           events_addresses: Optional[str] = None,
+           rtf: bool = False,
+           rtf_address: str = "localhost:50200",
+           serializer: Optional[str] = None,
+           output_directory: Union[str, Path] = None,
+           include_label_text: bool = False, **_) -> Pipeline:
     """The biomedicus default pipeline for processing clinical documents.
 
-    Attributes
-        events_client (mtap.EventsClient): An MTAP events client used by the pipeline.
-        pipeline (mtap.Pipeline): An MTAP pipeline to use to process documents.
+    Args
+        config (Optional[Union[str, Path]]): A path to an MTAP pipeline configuration YAML file to
+            use instead of the default.
+
+    Keyword Args
+        events_addresses (Optional[str]): The address (or addresses, comma separated) for the
+            events service.
+        rtf (bool): Whether to include the rtf processor at the start of the pipeline. The rtf
+            processor will convert RTF data stored in the "rtf" Binary on the event to the
+            "plaintext" Document.
+        rtf_address (str): The address of the remote rtf processor.
+        serializer (Optional[str]): An optional serializer (examples: 'json', 'yml', 'pickle').
+        output_directory (Optional[Path]): Where the serializer should output the serialized files.
+
+    Returns
+        Pipeline
 
     """
+    if config is None:
+        config = default_pipeline_config
+    pipeline = Pipeline.from_yaml_file(config)
 
-    def __init__(self, conf_path: Union[str, Path],
-                 output_directory: Union[str, Path],
-                 *,
-                 events_addresses: Optional[str] = None,
-                 serializer: Optional[str] = None,
-                 include_label_text: bool = False):
-        self.pipeline = Pipeline.from_yaml_file(conf_path)
-        if events_addresses is not None:
-            self.pipeline.events_address = events_addresses
+    if events_addresses is not None:
+        pipeline.events_address = events_addresses
 
-        if serializer == 'None':
-            serializer = None
-        if serializer is not None:
-            serialization_proc = SerializationProcessor(get_serializer(serializer),
-                                                        output_directory,
-                                                        include_label_text=include_label_text)
-            ser_comp = LocalProcessor(serialization_proc, component_id='serializer')
-            self.pipeline.append(ser_comp)
-
-    def process_text(self, text: str, *, event_id: str = None) -> ProcessingResult:
-        with Event(event_id=event_id, client=self.pipeline.events_client) as event:
-            document = event.create_document('plaintext', text=text)
-            f = self.pipeline.run(document)
-        return f
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.pipeline.close()
+    if serializer == 'None':
+        serializer = None
+    if serializer is not None:
+        serialization_proc = SerializationProcessor(get_serializer(serializer),
+                                                    output_directory,
+                                                    include_label_text=include_label_text)
+        ser_comp = LocalProcessor(serialization_proc, component_id='serializer')
+        pipeline.append(ser_comp)
+    if rtf:
+        rtf_processor = RemoteProcessor(processor_id='biomedicus-rtf',
+                                        address=rtf_address,
+                                        params={'output_document_name': 'plaintext'})
+        pipeline.insert(0, rtf_processor)
+    return pipeline
 
 
-def _add_address(parser: ArgumentParser, service: str, default_port: str,
-                 service_id: Optional[str] = None):
-    mutex = parser.add_mutually_exclusive_group()
-    mutex.add_argument('--' + service + '-port', default=default_port,
-                       help='The port for the ' + service + ' service to use in conjunction with '
-                                                            'the default host.')
-    mutex.add_argument('--' + service + '-address', default=None,
-                       help='A full address (host and port) to use instead of the default host '
-                            'and --' + service + '-port.')
-    if service_id is not None:
-        parser.add_argument('--' + service + '-id', default=service_id,
-                            help='A service ID to use instead of the default service ID.')
+def argument_parser():
+    """The arguments for the default_pipeline from_args function.
 
-
-def default_pipeline_parser():
-    """The argument parser for the biomedicus default pipeline.
-
-    Returns: ArgumentParser object.
+    Returns: ArgumentParser
 
     """
     parser = ArgumentParser(add_help=False, allow_abbrev=True)
-    parser.add_argument('input_directory', help="The input directory of text files to process.")
-    parser.add_argument('output_directory', help="The output directory to write json out.")
-    parser.add_argument('--config', default=default_pipeline_config,
+    parser.add_argument('--config', default=None,
                         help='Path to the pipeline configuration file.')
     parser.add_argument('--events-addresses', default=None,
                         help="The address (or addresses, comma separated) for the events service.")
-    parser.add_argument('--extension-glob', default=None,
-                        help="The extension glob used to find files to process.")
-    parser.add_argument('--serializer', default='json', choices=['json', 'yml', 'pickle', 'None'],
+    parser.add_argument('--output_directory', '-o', default='output',
+                        help="The output directory to write serializer output to.")
+    parser.add_argument('--serializer', default='json',
+                        choices=['json', 'yml', 'pickle', 'None'],
                         help="The identifier for the serializer to use, see MTAP serializers.")
     parser.add_argument('--include-label-text', action='store_true',
                         help="Flag to include the covered text for every label")
@@ -103,39 +98,58 @@ def default_pipeline_parser():
     parser.add_argument('--rtf-address', default="localhost:50200",
                         help="The address (or addresses, comma separated) for the"
                              "rtf to text converter processor.")
-    parser.add_argument('--watch', action='store_true',
-                        help="Watch the input directory for added files and process the files.")
     return parser
 
 
-def run_default_pipeline(config: Namespace):
-    with DefaultPipeline(conf_path=config.config,
-                         output_directory=config.output_directory,
-                         events_addresses=config.events_addresses,
-                         serializer=config.serializer,
-                         include_label_text=config.include_label_text) as default_pipeline:
-        if config.rtf:
-            rtf_processor = RemoteProcessor(processor_id='biomedicus-rtf',
-                                            address=config.rtf_address,
-                                            params={'output_document_name': 'plaintext'})
-            default_pipeline.pipeline.insert(0, rtf_processor)
-            extension_glob = config.extension_glob or "**/*.rtf"
-            if config.watch:
-                source = WatcherSource(RtfHandler(config.input_directory, extension_glob,
-                                                  default_pipeline.pipeline.events_client))
+def from_args(args: Namespace):
+    """Creates a default biomedicus pipeline from arguments.
+
+    Args:
+        args (Namespace): The parsed arguments from the argument_parser function or a child of it.
+
+    Returns: Pipeline
+
+    """
+    if not isinstance(args, Namespace):
+        raise ValueError('"args" parameter should be the parsed arguments from '
+                         '"default_pipeline.argument_parser()"')
+    return create(**vars(args))
+
+
+def run_parser():
+    """The argument parser for running the default biomedicus pipeline.
+
+    Returns: ArgumentParser object.
+
+    """
+    parser = ArgumentParser(add_help=False, parents=[argument_parser()])
+    parser.add_argument('input_directory', help="The input directory of text files to process.")
+    parser.add_argument('--extension-glob', default=None,
+                        help="The extension glob used to find files to process.")
+    parser.add_argument('--watch', default=False, action='store_true',
+                        help="Watches the directory for new files to process.")
+    return parser
+
+
+def run(args: Namespace):
+    with from_args(args) as pipeline:
+        input_directory = args.input_directory
+        client = pipeline.events_client
+        if args.rtf:
+            extension_glob = args.extension_glob or "**/*.rtf"
+            if args.watch:
+                source = WatcherSource(RtfHandler(input_directory, extension_glob, client))
             else:
-                source = rtf_source(config.input_directory, extension_glob,
-                                    default_pipeline.pipeline.events_client)
+                source = rtf_source(input_directory, extension_glob, client)
             params = {'document_name': 'plaintext'}
         else:
-            extension_glob = config.extension_glob or "**/*.txt"
-            if config.watch:
-                source = WatcherSource(TxtHandler(config.input_directory, extension_glob,
-                                                  default_pipeline.pipeline.events_client))
+            extension_glob = args.extension_glob or "**/*.txt"
+            if args.watch:
+                source = WatcherSource(TxtHandler(input_directory, extension_glob, client))
             else:
-                source = FilesInDirectoryProcessingSource(default_pipeline.pipeline.events_client,
-                                                          config.input_directory,
+                source = FilesInDirectoryProcessingSource(client,
+                                                          input_directory,
                                                           extension_glob=extension_glob)
             params = None
-        default_pipeline.pipeline.run_multithread(source, params=params)
-        default_pipeline.pipeline.print_times()
+        pipeline.run_multithread(source, params=params)
+        pipeline.print_times()

@@ -113,7 +113,7 @@ setup(
         ]
     },
     install_requires=[
-        'mtap>=1.0rc1',
+        'mtap>=1.0rc2',
         'numpy',
         'pyyaml',
         'regex',

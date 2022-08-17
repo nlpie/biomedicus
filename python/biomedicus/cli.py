@@ -42,12 +42,12 @@ def deployment_subparser(subparsers):
 
 
 def run_subparser(subparsers):
-    from biomedicus.pipeline.default_pipeline import default_pipeline_parser, run_default_pipeline
+    from biomedicus.pipeline.default_pipeline import run_parser, run
 
-    subparser = subparsers.add_parser('run', parents=[default_pipeline_parser()],
+    subparser = subparsers.add_parser('run', parents=[run_parser()],
                                       help="Runs the default biomedicus pipeline on files "
                                            "in a directory.")
-    subparser.set_defaults(f=run_default_pipeline)
+    subparser.set_defaults(f=run)
 
 
 def run_java_subparser(subparsers):
@@ -84,6 +84,7 @@ def download_data_subparser(subparsers):
     from biomedicus.deployment.deploy_biomedicus import download_data
     sp = subparsers.add_parser('download-data', help="Just downloads the biomedicus data.")
     sp.set_defaults(f=download_data)
+
 
 class ProcessListener(Thread):
     def __init__(self, p: Popen, **kwargs):
