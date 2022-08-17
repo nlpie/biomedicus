@@ -28,6 +28,8 @@ import edu.umn.nlpie.mtap.processing.*;
 import org.jetbrains.annotations.NotNull;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -53,6 +55,8 @@ import java.io.IOException;
             description = "Rtf underlined formatting."),
     })
 public class RtfProcessor extends EventProcessor {
+  private static final Logger LOGGER = LoggerFactory.getLogger(RtfProcessor.class);
+
   private final RtfParserFactory factory;
 
   public RtfProcessor() throws IOException {

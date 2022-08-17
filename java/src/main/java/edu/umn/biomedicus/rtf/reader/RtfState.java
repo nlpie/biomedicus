@@ -36,7 +36,7 @@ public class RtfState {
 
   private boolean skippingDestination = false;
 
-  private String destination = null;
+  private String destination = "Rtf";
 
   public RtfState(Map<String, Map<String, Integer>> properties) {
     this.properties = properties;

@@ -24,4 +24,6 @@ public interface RtfSink {
   void writeCharacter(String destinationName, char c, int startIndex, int endIndex);
 
   void propertyChanged(String destinationName, String propertyGroup, String propertyName, int oldValue, int newValue);
+
+  default void fatalError(Exception e) {}
 }

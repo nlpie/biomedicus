@@ -20,6 +20,8 @@ import edu.umn.biomedicus.rtf.reader.RtfSink;
 import edu.umn.nlpie.mtap.model.Document;
 import edu.umn.nlpie.mtap.model.Event;
 import edu.umn.nlpie.mtap.model.GenericLabel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -27,9 +29,11 @@ import java.util.List;
 
 public class MTAPDocumentsSink implements RtfSink {
 
-  private final StringBuilder sb = new StringBuilder();
-  private final List<PropertyWatcher> propertyWatchers = new ArrayList<>();
+  private static final Logger LOGGER = LoggerFactory.getLogger(MTAPDocumentsSink.class);
 
+  private final StringBuilder sb = new StringBuilder();
+
+  private final List<PropertyWatcher> propertyWatchers = new ArrayList<>();
   public MTAPDocumentsSink() {
     propertyWatchers.add(
         new PropertyWatcher("bold", "CharacterFormatting", "Bold", 1, false, false)
@@ -40,6 +44,10 @@ public class MTAPDocumentsSink implements RtfSink {
     propertyWatchers.add(
         new PropertyWatcher("underlined", "CharacterFormatting", "Underline", 1, false, false)
     );
+  }
+
+  public StringBuilder getSb() {
+    return sb;
   }
 
   @Override
@@ -60,6 +68,12 @@ public class MTAPDocumentsSink implements RtfSink {
                               String propertyName,
                               int oldValue,
                               int newValue) {
+    if (destinationName == null) {
+      LOGGER.error("Attempted to change property {}:{} from {} to {} with null destination at {}",
+          propertyGroup, propertyName, oldValue, newValue, sb.length());
+      LOGGER.error(sb.toString());
+      throw new IllegalStateException();
+    }
     if (destinationName.equals("Rtf")) {
       for (PropertyWatcher propertyWatcher : propertyWatchers) {
         propertyWatcher.propertyChanged(sb.length(), propertyGroup, propertyName, oldValue, newValue);
@@ -73,6 +87,12 @@ public class MTAPDocumentsSink implements RtfSink {
       propertyWatcher.done(document);
     }
     return document;
+  }
+
+  @Override
+  public void fatalError(Exception e) {
+    LOGGER.error("Document at fatal error:");
+    LOGGER.error(sb.toString());
   }
 
   private static class PropertyWatcher {

@@ -88,6 +88,6 @@ class HexKeywordActionTest {
     action.setBegin(0);
     action.setEnd(2);
     action.executeAction(state, source, sink);
-    verify(sink).writeCharacter(null, (char) 8226, 0, 4);  // bullet point
+    verify(sink).writeCharacter("Rtf", (char) 8226, 0, 4);  // bullet point
   }
 }

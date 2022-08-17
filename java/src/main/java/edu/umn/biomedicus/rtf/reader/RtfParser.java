@@ -53,64 +53,70 @@ public class RtfParser {
   }
 
   public void parseRtf(RtfSource source, RtfSink sink) throws IOException {
-    RtfState state = initialState.copy();
-    while (true) {
-      int index = source.getIndex();
-      int b = source.read();
-      if (b == -1) {
-        break;
-      }
-      switch (b) {
-        case '{':
-          if (state.getCharactersToSkip() > 0) {
-            state.setCharactersToSkip(0);
-          }
-          stateStack.addFirst(state);
-          state = state.copy();
+    try {
+      RtfState state = initialState.copy();
+      while (true) {
+        int index = source.getIndex();
+        int b = source.read();
+        if (b == -1) {
           break;
-        case '}':
-          if (stateStack.size() == 0) {
-            throw new RtfReaderException("Extra closing brace.");
-          }
-          if (state.getCharactersToSkip() > 0) {
-            state.setCharactersToSkip(0);
-          }
-          state = stateStack.removeFirst();
-          break;
-        case '\\':
-          if (!state.isSkippingDestination()) {
-            KeywordAction keywordAction = parseKeyword(index, source);
-            if (state.isSkipDestinationIfUnknown()) {
-              state.setSkipDestinationIfUnknown(false);
-              if (!keywordAction.isKnown()) {
-                state.setSkippingDestination(true);
-              }
+        }
+        switch (b) {
+          case '{':
+            if (state.getCharactersToSkip() > 0) {
+              state.setCharactersToSkip(0);
             }
-            keywordAction.executeAction(state, source, sink);
-          }
-          break;
-        case '\n':
-        case '\r':
-        case 0:
-          break;
-        default:
-          int charactersToSkip = state.getCharactersToSkip();
-          if (charactersToSkip > 0) {
-            state.setCharactersToSkip(charactersToSkip - 1);
+            stateStack.addFirst(state);
+            state = state.copy();
             break;
-          }
-          if (!state.isSkippingDestination()) {
-            cb.clear();
-            bb.clear();
-            bb.put((byte) b);
-            bb.rewind();
-            CharsetDecoder decoder = state.getDecoder();
-            decoder.reset();
-            CharBuffer cb = decoder.decode(bb);
-            sink.writeCharacter(state.getDestination(), cb.get(), index, source.getIndex());
+          case '}':
+            if (state.getCharactersToSkip() > 0) {
+              state.setCharactersToSkip(0);
+            }
+            state = stateStack.removeFirst();
+            if (stateStack.size() == 0) {
+              stateStack.addFirst(state);
+              state = state.copy();
+            }
             break;
-          }
+          case '\\':
+            if (!state.isSkippingDestination()) {
+              KeywordAction keywordAction = parseKeyword(index, source);
+              if (state.isSkipDestinationIfUnknown()) {
+                state.setSkipDestinationIfUnknown(false);
+                if (!keywordAction.isKnown()) {
+                  state.setSkippingDestination(true);
+                }
+              }
+              keywordAction.executeAction(state, source, sink);
+            }
+            break;
+          case '\n':
+          case '\r':
+          case 0:
+            break;
+          default:
+            int charactersToSkip = state.getCharactersToSkip();
+            if (charactersToSkip > 0) {
+              state.setCharactersToSkip(charactersToSkip - 1);
+              break;
+            }
+            if (!state.isSkippingDestination()) {
+              cb.clear();
+              bb.clear();
+              bb.put((byte) b);
+              bb.rewind();
+              CharsetDecoder decoder = state.getDecoder();
+              decoder.reset();
+              CharBuffer cb = decoder.decode(bb);
+              sink.writeCharacter(state.getDestination(), cb.get(), index, source.getIndex());
+              break;
+            }
+        }
       }
+    } catch (Exception e) {
+      sink.fatalError(e);
+      throw e;
     }
   }
 
