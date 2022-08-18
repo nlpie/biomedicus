@@ -94,7 +94,7 @@ public class Config {
     }
     for (Path path : searchPaths) {
       if (Files.exists(path)) {
-        LOGGER.info("Using configuration file: {}", path.toString());
+        LOGGER.info("Using configuration file: {}", path);
         return loadConfig(path);
       }
     }
@@ -110,6 +110,7 @@ public class Config {
    */
   public static @NotNull Config loadConfig(Path configFile) {
     try (InputStream inputStream = Files.newInputStream(configFile)) {
+      LOGGER.info("Using default configuration.");
       return loadConfig(inputStream);
     } catch (IOException e) {
       throw new IllegalStateException("Failed to load configuration.", e);

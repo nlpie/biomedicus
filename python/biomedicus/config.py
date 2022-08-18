@@ -11,9 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import logging
 import os
 
 from pathlib import Path
+
+
+logger = logging.getLogger(__name__)
 
 
 def _collapse(d, path, v):
@@ -76,9 +80,12 @@ def load_config():
     for config_path in potential_paths:
         try:
             with config_path.open('rb') as f:
-                return _load_config(f)
+                config = _load_config(f)
+                logger.info("Using config loaded from: %s", str(config_path))
+                return config
         except FileNotFoundError:
             pass
 
+    logger.info("Using default config.")
     _load_default_config()
     return {k: v for k, v in _DEFAULT_CONFIG.items()}
