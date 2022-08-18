@@ -119,7 +119,11 @@ def write_config(conf):
     config_path = conf.files[conf.config]
     name = Path(config_path).name
     if conf.path is not None:
-        output_path = str(Path(conf.path) / name)
+        output_path = Path(conf.path)
+        if output_path.is_dir():
+            output_path = str(output_path / name)
+        else:
+            output_path = str(output_path)
     else:
         output_path = str(Path.cwd() / name)
 
