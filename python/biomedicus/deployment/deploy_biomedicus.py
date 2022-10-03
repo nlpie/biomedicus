@@ -38,12 +38,16 @@ def _listen(process: Popen) -> int:
     return process.wait()
 
 
-def check_data(download=False):
+def check_data(download=False, with_stanza=False):
     try:
         data = Path(os.environ['BIOMEDICUS_DATA'])
     except KeyError:
         data = Path.home() / '.biomedicus' / 'data'
         os.environ['BIOMEDICUS_DATA'] = str(data)
+
+    if with_stanza:
+        import stanza
+        stanza.download('en')
 
     config = load_config()
     download_url = config['data.data_url']
@@ -105,7 +109,7 @@ def attach_biomedicus_jar(deployment: Deployment, append_to: Optional[str] = Non
 
 def deploy(conf):
     try:
-        check_data(conf.download_data)
+        check_data(conf.download_data, with_stanza=True)
     except ValueError:
         return
     deployment = Deployment.from_yaml_file(conf.config)
@@ -118,9 +122,9 @@ def deploy(conf):
     deployment.run_servers()
 
 
-def download_data(_):
+def download_data(conf):
     try:
-        check_data(True)
+        check_data(True, conf.with_stanza)
     except ValueError:
         return
 
