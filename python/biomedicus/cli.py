@@ -83,6 +83,7 @@ def write_config_subparser(subparsers):
 def download_data_subparser(subparsers):
     from biomedicus.deployment.deploy_biomedicus import download_data
     sp = subparsers.add_parser('download-data', help="Just downloads the biomedicus data.")
+    sp.add_argument('--with-stanza', action='store_true', help="Also downloads stanza models.")
     sp.set_defaults(f=download_data)
 
 
