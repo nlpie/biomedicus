@@ -1,0 +1,10 @@
+.eggs
+.github
+.idea
+.pytest_cache
+build
+dist
+java/.gradle
+java/build
+python/biomedicus/biomedicus-all.jar
+python/biomedicus.egg-info

@@ -12,28 +12,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
-import multiprocessing
 import re
 from argparse import ArgumentParser
 from datetime import datetime
 from pathlib import Path
+from time import time
 from typing import Dict, Any
 
 import numpy as np
 import torch
 import yaml
-from mtap.processing.base import Processor
-
-from biomedicus.deployment.deploy_biomedicus import check_data
 from mtap import processor_parser, Document, DocumentProcessor, processor, run_processor
+from mtap.processing import Processor
 from mtap.processing.descriptions import labels
-from time import time
 from torch import nn, optim
 from torch.nn import functional as F
 from torch.nn.utils.rnn import pad_packed_sequence, pack_padded_sequence, \
     PackedSequence
 
 from biomedicus.config import load_config
+from biomedicus.deployment.deploy_biomedicus import check_data
 from biomedicus.sentences.input import InputMapping
 from biomedicus.sentences.vocabulary import load_char_mapping, n_chars
 from biomedicus.utilities.embeddings import load_vectors
