@@ -1,18 +1,8 @@
-FROM ubuntu:20.04
+FROM mtap:latest
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update
-
-RUN apt-get -qy install git
-RUN apt-get -qy install openjdk-11-jdk-headless
-RUN apt-get -qy install build-essential
-RUN apt-get -qy install python3 python3-pip
-
 WORKDIR /home/biomedicus3
-
-RUN pip3 install --upgrade pip
-RUN python3 -m pip install --upgrade setuptools
 
 COPY . biomedicus3
 
@@ -24,5 +14,16 @@ COPY ./python/biomedicus/pipeline/biomedicus_default_pipeline.yml .
 COPY ./tools/docker/biomedicus.sh .
 
 RUN chmod +x biomedicus.sh
+
+EXPOSE 50100/tcp
+EXPOSE 50200/tcp
+EXPOSE 50300/tcp
+EXPOSE 50400/tcp
+EXPOSE 50500/tcp
+EXPOSE 50600/tcp
+EXPOSE 50700/tcp
+EXPOSE 50800/tcp
+EXPOSE 50900/tcp
+EXPOSE 51000/tcp
 
 ENTRYPOINT ./biomedicus.sh

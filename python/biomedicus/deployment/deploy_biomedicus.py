@@ -109,7 +109,8 @@ def attach_biomedicus_jar(deployment: Deployment, append_to: Optional[str] = Non
 
 def deploy(conf):
     try:
-        check_data(conf.download_data, with_stanza=True)
+        if not conf.offline:
+            check_data(conf.download_data, with_stanza=True)
     except ValueError:
         return
     deployment = Deployment.from_yaml_file(conf.config)
@@ -149,5 +150,9 @@ def deployment_parser():
         '--download-data', action='store_true',
         help="If this flag is specified, automatically download the biomedicus "
              "data if it is missing."
+    )
+    parser.add_argument(
+        '--offline', action='store_true',
+        help="Does not perform the data check before launching processors."
     )
     return parser
