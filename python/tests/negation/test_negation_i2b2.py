@@ -215,9 +215,9 @@ def test_deepen_performance(events_service, negex_triggers_service, dependencies
     metrics_processor = metrics.Metrics(confusion, tested='negated', target='i2b2concepts',
                                         target_filter=is_negated)
     with EventsClient(address=events_service) as client, Pipeline(
-            RemoteProcessor(processor_id='biomedicus-negex-triggers',
+            RemoteProcessor(name='biomedicus-negex-triggers',
                             address=negex_triggers_service),
-            RemoteProcessor(processor_id='biomedicus-selective-dependencies',
+            RemoteProcessor(name='biomedicus-selective-dependencies',
                             address=dependencies_service,
                             params={'terms_index': 'i2b2concepts'}),
             RemoteProcessor('biomedicus-deepen', address=deepen_negation_service,

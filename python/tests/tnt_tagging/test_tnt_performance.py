@@ -41,7 +41,7 @@ def test_tnt_performance(events_service, pos_tags_service, test_results):
     input_dir = Path(os.environ['BIOMEDICUS_TEST_DATA']) / 'pos_tags'
     accuracy = Accuracy()
     with EventsClient(address=events_service) as client, Pipeline(
-            RemoteProcessor(processor_id='biomedicus-tnt-tagger', address=pos_tags_service,
+            RemoteProcessor(name='biomedicus-tnt-tagger', address=pos_tags_service,
                             params={'token_index': 'gold_tags'}),
             LocalProcessor(Metrics(accuracy, tested='pos_tags', target='gold_tags'),
                            component_id='metrics'),

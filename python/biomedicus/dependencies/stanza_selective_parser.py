@@ -79,7 +79,7 @@ from biomedicus.dependencies.stanza_parser import stanza_deps_and_upos_tags
 class StanzaSelectiveParser(DocumentProcessor):
     def __init__(self):
         self.nlp = stanza.Pipeline('en', processors='tokenize,pos,lemma,depparse',
-                                   tokenize_no_ssplit=True)
+                                   tokenize_no_ssplit=True, verbose=False)
 
     def __reduce__(self):
         return StanzaSelectiveParser, ()
@@ -116,10 +116,6 @@ def main(args=None):
     parser.add_argument('--offline', action='store_true')
 
     options = parser.parse_args(args)
-
-    torch.multiprocessing.set_start_method('fork')
-    torch.set_num_threads(1)
-    torch.set_num_interop_threads(1)
 
     if not options.offline:
         stanza.download('en')

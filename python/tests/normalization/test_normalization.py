@@ -37,7 +37,7 @@ def fixture_normalization_processor(events_service, processor_watcher, processor
 @pytest.mark.integration
 def test_normalization(events_service, normalization_processor):
     with EventsClient(address=events_service) as client, \
-            Pipeline(RemoteProcessor(processor_id='biomedicus_normalizer',
+            Pipeline(RemoteProcessor(name='biomedicus_normalizer',
                                      address=normalization_processor)) as pipeline, \
             PickleSerializer.file_to_event(Path(__file__).parent / '97_95.pickle',
                                          client=client) as event:

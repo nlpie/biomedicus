@@ -68,7 +68,7 @@ def create(config: Optional[Union[str, Path]] = None,
         ser_comp = LocalProcessor(serialization_proc, component_id='serializer')
         pipeline.append(ser_comp)
     if rtf:
-        rtf_processor = RemoteProcessor(processor_id='biomedicus-rtf',
+        rtf_processor = RemoteProcessor(name='biomedicus-rtf',
                                         address=rtf_address,
                                         params={'output_document_name': 'plaintext'})
         pipeline.insert(0, rtf_processor)

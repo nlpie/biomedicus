@@ -42,7 +42,7 @@ def test_concepts_performance(events_service, concepts_service, test_results):
     precision = Accuracy(name='precision', mode='any', fields=['cui'])
     with EventsClient(address=events_service) as client, \
             Pipeline(
-                RemoteProcessor(processor_id='biomedicus-concepts', address=concepts_service),
+                RemoteProcessor(name='biomedicus-concepts', address=concepts_service),
                 LocalProcessor(Metrics(recall, tested='umls_concepts', target='gold_concepts'),
                                component_id='metrics'),
                 LocalProcessor(Metrics(precision, tested='gold_concepts', target='umls_concepts'),

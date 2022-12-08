@@ -98,7 +98,7 @@ def download_data_to(download_url, data):
 
 
 def attach_biomedicus_jar(deployment: Deployment, append_to: Optional[str] = None):
-    jar_path = str(Path(__file__).parent.parent / 'biomedicus-all.jar')
+    jar_path = str(Path(__file__).parents[1] / 'biomedicus-all.jar')
     classpath = deployment.shared_processor_config.java_classpath
     classpath = classpath + ':' if classpath is not None else ''
     if append_to is not None:

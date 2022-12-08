@@ -22,6 +22,8 @@ import edu.umn.biomedicus.common.tuples.PosCap;
 import edu.umn.biomedicus.concepts.CUI;
 import edu.umn.biomedicus.concepts.SUI;
 import edu.umn.biomedicus.concepts.TUI;
+import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.AbstractConstruct;
 import org.yaml.snakeyaml.constructor.Constructor;
@@ -34,17 +36,22 @@ import org.yaml.snakeyaml.representer.Representer;
  *
  */
 public final class YamlSerialization {
-
   private YamlSerialization() {
     throw new UnsupportedOperationException();
   }
 
   public static Yaml createYaml() {
-    return new Yaml(constructor(), representer());
+    LoaderOptions loaderOptions = new LoaderOptions();
+    loaderOptions.setCodePointLimit(15 * 1024 * 1024);
+    return createYaml(loaderOptions, new DumperOptions());
   }
 
-  private static Constructor constructor() {
-    return new Constructor() {
+  public static Yaml createYaml(LoaderOptions loaderOptions, DumperOptions dumperOptions) {
+    return new Yaml(constructor(loaderOptions), representer(dumperOptions), dumperOptions, loaderOptions);
+  }
+
+  private static Constructor constructor(LoaderOptions loaderOptions) {
+    return new Constructor(loaderOptions) {
       {
         yamlConstructors.put(new Tag("!pc"), new AbstractConstruct() {
           @Override
@@ -87,8 +94,8 @@ public final class YamlSerialization {
     };
   }
 
-  private static Representer representer() {
-    return new Representer() {
+  private static Representer representer(DumperOptions dumperOptions) {
+    return new Representer(dumperOptions) {
       {
         representers.put(PosCap.class, o -> {
           PosCap posCap = (PosCap) o;

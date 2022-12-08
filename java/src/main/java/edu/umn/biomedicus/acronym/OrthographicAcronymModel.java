@@ -16,6 +16,7 @@
 
 package edu.umn.biomedicus.acronym;
 
+import edu.umn.biomedicus.serialization.YamlSerialization;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.BufferedReader;
@@ -174,7 +175,7 @@ public class OrthographicAcronymModel {
   }
 
   public static OrthographicAcronymModel load(Path path) throws IOException {
-    Yaml yaml = new Yaml();
+    Yaml yaml = YamlSerialization.createYaml();
     try (BufferedReader reader = Files.newBufferedReader(path)) {
       Map<String, Object> serObj = yaml.load(reader);
       boolean caseSensitive = (Boolean) serObj.get("caseSensitive");

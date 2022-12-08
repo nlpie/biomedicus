@@ -44,7 +44,7 @@ def test_acronyms_performance(events_service, acronyms_service, test_results):
     detection_precision = Accuracy(name='detection_precision', mode='location',
                                    fields=['expansion'])
     with EventsClient(address=events_service) as client, Pipeline(
-        RemoteProcessor(processor_id='biomedicus-acronyms', address=acronyms_service),
+        RemoteProcessor(name='biomedicus-acronyms', address=acronyms_service),
         LocalProcessor(Metrics(top_score_accuracy, detection_recall, tested='acronyms',
                                target='gold_acronyms'),
                        component_id='top_score_metrics', client=client),

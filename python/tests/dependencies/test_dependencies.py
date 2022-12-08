@@ -59,7 +59,7 @@ def test_dependencies(events_service, dependencies_service, test_results):
     las = Accuracy('LAS', equivalence_test=las_equal)
     with EventsClient(address=events_service) as client, \
             Pipeline(
-                RemoteProcessor(processor_id='biomedicus-dependencies',
+                RemoteProcessor(name='biomedicus-dependencies',
                                 address=dependencies_service),
                 LocalProcessor(Metrics(uas, las, tested='dependencies', target='gold_dependencies'),
                                component_id='accuracy'),

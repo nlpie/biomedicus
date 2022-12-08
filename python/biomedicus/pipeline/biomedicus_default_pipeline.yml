@@ -8,19 +8,19 @@ mp_config:
   close_events: True
   mp_start_method: spawn
 components:
-  - processor_id: biomedicus-sentences
+  - name: biomedicus-sentences
     address: localhost:50300
-  - processor_id: biomedicus-tnt-tagger
+  - name: biomedicus-tnt-tagger
     address: localhost:50400
-  - processor_id: biomedicus-acronyms
+  - name: biomedicus-acronyms
     address: localhost:50500
-  - processor_id: biomedicus-concepts
+  - name: biomedicus-concepts
     address: localhost:50600
-  - processor_id: biomedicus-negex-triggers
+  - name: biomedicus-negex-triggers
     address: localhost:50700
-  - processor_id: biomedicus-selective-dependencies
+  - name: biomedicus-selective-dependencies
     address: localhost:50800
-  - processor_id: biomedicus-deepen
+  - name: biomedicus-deepen
     address: localhost:50900
-  - processor_id: biomedicus-section-headers
+  - name: biomedicus-section-headers
     address: localhost:51000
