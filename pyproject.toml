@@ -1,0 +1,72 @@
+[build-system]
+requires = ["setuptools>=45", "setuptools-scm[toml]>=6.2", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "biomedicus"
+description = "A biomedical and clinical natural language processing engine."
+readme = "README.md"
+requires-python = ">=3.7"
+license = {file = "LICENSE.txt"}
+authors = [
+    {name = "University of Minnesota NLP/IE Group", email = "nlp-ie@umn.edu"},
+    {name = "Ben Knoll", email = "benknoll@umn.edu"}
+]
+classifiers = [
+    'Development Status :: 4 - Beta',
+    'Environment :: Console',
+    'Intended Audience :: Healthcare Industry',
+    'Intended Audience :: Information Technology',
+    'Intended Audience :: Science/Research',
+    'License :: OSI Approved :: Apache Software License',
+    'Natural Language :: English',
+    'Operating System :: MacOS :: MacOS X',
+    'Operating System :: POSIX :: Linux',
+    'Programming Language :: Java',
+    'Programming Language :: Python :: 3 :: Only',
+    'Programming Language :: Python :: 3.7',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: Implementation :: CPython',
+    'Topic :: Scientific/Engineering :: Information Analysis',
+    'Topic :: Scientific/Engineering :: Medical Science Apps.',
+    'Topic :: Text Processing :: General',
+    'Topic :: Text Processing :: Linguistic'
+]
+dependencies = [
+    "mtap>=1.0rc2",
+    "numpy",
+    "pyyaml",
+    "regex",
+    "tqdm",
+    "torch",
+    "stanza",
+    "requests",
+    "watchdog"
+]
+dynamic = ["version"]
+
+[project.optional-dependencies]
+test = [
+    "pytest-runner",
+    "pytest"
+]
+docs = [
+    "sphinx",
+]
+
+[project.scripts]
+biomedicus = "biomedicus.cli:main"
+
+[project.urls]
+homepage = "https://nlpie.github.io/biomedicus"
+documentation = "https://nlpie.github.io/biomedicus/guides"
+repository = "https://github.com/nlpie/biomedicus3.git"
+
+[tool.setuptools.packages.find]
+where = ["python"]
+include = ["biomedicus"]
+
+[tool.setuptools_scm]
+write_to = "python/biomedicus/version.py"

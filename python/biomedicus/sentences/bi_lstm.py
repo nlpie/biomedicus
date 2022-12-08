@@ -401,8 +401,6 @@ def train(conf):
 
 
 def create_processor(conf):
-    torch.set_num_threads(1)
-    torch.set_num_interop_threads(1)
     logging.basicConfig(level=logging.INFO)
     check_data(conf.download_data)
     config = load_config()
@@ -443,7 +441,6 @@ def create_processor(conf):
     with conf.model_file.open('rb') as f:
         state_dict = torch.load(f)
         model.load_state_dict(state_dict)
-    torch.multiprocessing.set_start_method('fork')
     processor = SentenceProcessor(input_mapping, model, device)
     return processor
 

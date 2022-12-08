@@ -8,5 +8,5 @@ mp_config:
   close_events: True
   mp_start_method: spawn
 components:
-  - processor_id: biomedicus-rtf
+  - name: biomedicus-rtf
     address: localhost:50200

@@ -40,7 +40,7 @@ def test_sentence_performance(events_service, sentences_service, test_results):
 
     confusion = metrics.FirstTokenConfusion()
     with EventsClient(address=events_service) as client, Pipeline(
-            RemoteProcessor(processor_id='biomedicus-sentences', address=sentences_service),
+            RemoteProcessor(name='biomedicus-sentences', address=sentences_service),
             LocalProcessor(metrics.Metrics(confusion, tested='sentences', target='Sentence'),
                            component_id='metrics', client=client)
     ) as pipeline:
