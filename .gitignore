@@ -14,6 +14,7 @@ __pycache__/
 
 # Distribution / packaging
 python/biomedicus/version.py
+biomedicus_client/src/biomedicus_client/version.py
 .Python
 build/
 develop-eggs/
