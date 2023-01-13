@@ -14,8 +14,8 @@
 from argparse import ArgumentParser
 from pathlib import Path
 
-from mtap import EventsClient, Pipeline, RemoteProcessor, LocalProcessor
-from mtap.io.serialization import get_serializer, SerializationProcessor
+from mtap import Pipeline, RemoteProcessor, LocalProcessor
+from mtap.serialization import get_serializer, SerializationProcessor
 
 
 def main(args=None):
@@ -30,17 +30,17 @@ def main(args=None):
     json_serializer = get_serializer('json')
 
     input_dir = Path(args.input_directory)
-    with EventsClient(address=args.events) as client, Pipeline(
+    with Pipeline(
             RemoteProcessor('biomedicus-sentences', address=args.sentences),
             RemoteProcessor('biomedicus-tnt-tagger', address=args.tagger),
             LocalProcessor(SerializationProcessor(get_serializer('json'),
                                                   output_dir=args.output_directory),
-                           component_id='serialize',
-                           client=client)
+                           component_id='serialize'),
+            events_address=args.events
     ) as pipeline:
         for path in input_dir.glob("**/*.json"):
             print("READING FILE:", str(path))
-            with json_serializer.file_to_event(path, client=client) as event:
+            with json_serializer.file_to_event(path, client=pipeline.events_client) as event:
                 document = event['plaintext']
                 pipeline.run(document)
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Regents of the University of Minnesota.
+ * Copyright 2022 Regents of the University of Minnesota.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package edu.umn.biomedicus.rtf.reader;
 import edu.umn.biomedicus.rtf.exc.EndOfFileException;
 import edu.umn.biomedicus.rtf.exc.InvalidKeywordException;
 import edu.umn.biomedicus.rtf.exc.InvalidParameterException;
-import edu.umn.biomedicus.rtf.exc.RtfReaderException;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;

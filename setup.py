@@ -35,5 +35,7 @@ class build_py(_build_py):
 setup(
     cmdclass={
         "build_py": build_py
-    }
+    },
+    include_package_data=True,
+    package_data={'biomedicus': ['biomedicus-all.jar']}
 )

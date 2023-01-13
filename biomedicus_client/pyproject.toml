@@ -3,7 +3,7 @@ requires = ["setuptools>=45", "setuptools-scm[toml]>=6.2", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "biomedicus"
+name = "biomedicus_client"
 description = "A biomedical and clinical natural language processing engine."
 readme = "README.md"
 requires-python = ">=3.7"
@@ -36,15 +36,7 @@ classifiers = [
 ]
 dependencies = [
     "mtap>=1.0rc3",
-    "biomedicus_client",
-    "numpy",
-    "pyyaml",
-    "regex",
     "tqdm",
-    "torch",
-    "stanza",
-    "requests",
-    "watchdog"
 ]
 dynamic = ["version"]
 
@@ -58,7 +50,7 @@ docs = [
 ]
 
 [project.scripts]
-b9 = "biomedicus.cli:main"
+b9client = "biomedicus_client.cli:main"
 
 [project.urls]
 homepage = "https://nlpie.github.io/biomedicus"
@@ -66,8 +58,9 @@ documentation = "https://nlpie.github.io/biomedicus/guides"
 repository = "https://github.com/nlpie/biomedicus3.git"
 
 [tool.setuptools.packages.find]
-where = ["python"]
-include = ["biomedicus*"]
+where = ["src"]
+include = ["biomedicus_client*"]
 
 [tool.setuptools_scm]
-write_to = "python/biomedicus/version.py"
+write_to = "biomedicus_client/src/biomedicus_client/version.py"
+root = ".."

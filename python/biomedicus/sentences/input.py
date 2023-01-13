@@ -17,7 +17,6 @@ from pathlib import Path
 import math
 import numpy as np
 import torch
-from mtap.io.brat import read_brat_document
 from torch.nn.utils.rnn import pad_sequence
 
 from biomedicus.sentences.vocabulary import Vocabulary, get_char
@@ -118,6 +117,7 @@ class InputMapping:
         )
 
     def examples_generator(self, docs, sequence_length, training, class_counts):
+        from mtap.serialization.brat import read_brat_document
         for doc in docs:
             char_ids = []
             word_ids = []

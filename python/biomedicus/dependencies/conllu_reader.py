@@ -15,7 +15,7 @@ from argparse import ArgumentParser
 from typing import NamedTuple, Optional, Tuple
 
 from mtap import GenericLabel, Event, EventsClient
-from mtap.io.serialization import PickleSerializer
+from mtap.serialization import PickleSerializer
 
 
 class ConllUEntry(NamedTuple('ConllUEntry', [

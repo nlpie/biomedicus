@@ -101,7 +101,8 @@ class StanzaSelectiveParser(DocumentProcessor):
             sentences.append(sentence)
             sentence_texts.append(sentence.text)
 
-        stanza_doc = self.nlp(sentence_texts)
+        with torch.no_grad():
+            stanza_doc = self.nlp(sentence_texts)
         for (sentence, stanza_sentence) in zip(sentences, stanza_doc.sentences):
             sentence_deps, sentence_upos_tags = stanza_deps_and_upos_tags(sentence, stanza_sentence)
             all_deps.extend(sentence_deps)

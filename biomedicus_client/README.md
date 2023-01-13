@@ -1,4 +1,4 @@
-# BioMedICUS
+# BioMedICUS Client
 
 The BioMedical Information Collection and Understanding System (BioMedICUS) is a system for large-scale text analysis and processing of biomedical and clinical reports. The system is being developed by the Natural Language Processing and Information Extraction Program at the University of Minnesota Institute for Health Informatics.
 
@@ -6,9 +6,11 @@ This is a collaborative project that aims to serve biomedical and clinical resea
 
 More information about BioMedICUS can be found on our [website](https://nlpie.github.io/biomedicus).
 
+This package contains the client code for processing documents using deployed BioMedICUS services. The package containing the services themselves is ``biomedicus``.
+
 ## Prerequisites
 
-- [Python >=3.7,<3.11](https://www.python.org/). Python 3.11 is not supported because PyTorch doesn't support it yet.
+- [Python 3.7+](https://www.python.org/)
 - [Java JDK 8+](https://adoptium.net). Note, you will need to have the ["java" command on the your "$PATH"](https://www.java.com/en/download/help/path.xml).
 
 ## Installation

@@ -14,8 +14,8 @@
 from argparse import ArgumentParser
 from pathlib import Path
 
-from mtap import Event, EventsClient, Document, Pipeline, RemoteProcessor, LocalProcessor
-from mtap.io.serialization import SerializationProcessor, PickleSerializer
+from mtap import Event, Document, Pipeline, RemoteProcessor, LocalProcessor
+from mtap.serialization import SerializationProcessor, PickleSerializer
 
 
 def main(args=None):
@@ -30,19 +30,20 @@ def main(args=None):
     parser.add_argument('--ptb-reader', metavar='READER', default=None,
                         help='The address of the PTB Reader.')
     args = parser.parse_args(args)
-    with EventsClient(address=args.events) as client, Pipeline(
+    with Pipeline(
             RemoteProcessor('ptb-reader', address=args.ptb_reader,
                             params={'source_document_name': 'source',
                                     'target_document_name': 'gold',
                                     'pos_tags_index': 'gold_tags'}),
             LocalProcessor(SerializationProcessor(PickleSerializer, output_dir=args.output),
-                           component_id='serializer', client=client)
+                           component_id='serializer'),
+            events_address=args.events
     ) as pipeline:
         for f in Path(args.input).rglob(args.glob):
             print('Reading:', f)
             with f.open('r') as r:
                 text = r.read()
-            with Event(event_id=f.name, client=client) as event:
+            with Event(event_id=f.name, client=pipeline.events_client) as event:
                 d = Document('source', text=text)
                 event.add_document(d)
                 pipeline.run(event)

@@ -380,3 +380,4 @@ gradle-app.setting
 .classpath
 Pipfile
 Pipfile.lock
+test_results.yml

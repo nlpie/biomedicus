@@ -16,21 +16,20 @@ from pathlib import Path
 from subprocess import Popen, PIPE
 
 import pytest
-from mtap import EventsClient, Pipeline, RemoteProcessor, LocalProcessor
-from mtap.io.serialization import JsonSerializer
+from mtap import Pipeline, RemoteProcessor, LocalProcessor
 from mtap.metrics import Accuracy, Metrics
+from mtap.serialization import JsonSerializer
 from mtap.utilities import find_free_port
 
-import biomedicus
+from biomedicus.java_support import create_call
 
 
 @pytest.fixture(name='acronyms_service')
 def fixture_acronyms_service(events_service, processor_watcher, processor_timeout):
     port = str(find_free_port())
     address = '127.0.0.1:' + port
-    biomedicus_jar = biomedicus.biomedicus_jar()
-    p = Popen(['java', '-cp', biomedicus_jar, 'edu.umn.biomedicus.acronym.AcronymDetectorProcessor',
-               '-p', port, '--events', events_service],
+    p = Popen(create_call('edu.umn.biomedicus.acronym.AcronymDetectorProcessor',
+                          '-p', port, '--events', events_service),
               start_new_session=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
     yield from processor_watcher(address, p, timeout=processor_timeout)
 
@@ -43,18 +42,19 @@ def test_acronyms_performance(events_service, acronyms_service, test_results):
     detection_recall = Accuracy(name='detection_recall', mode='location', fields=['expansion'])
     detection_precision = Accuracy(name='detection_precision', mode='location',
                                    fields=['expansion'])
-    with EventsClient(address=events_service) as client, Pipeline(
-        RemoteProcessor(name='biomedicus-acronyms', address=acronyms_service),
-        LocalProcessor(Metrics(top_score_accuracy, detection_recall, tested='acronyms',
-                               target='gold_acronyms'),
-                       component_id='top_score_metrics', client=client),
-        LocalProcessor(Metrics(detection_precision, tested='gold_acronyms', target='acronyms'),
-                       component_id='top_score_reverse', client=client),
-        LocalProcessor(Metrics(any_accuracy, tested='all_acronym_senses', target='gold_acronyms'),
-                       component_id='all_senses_metrics', client=client)
+    with Pipeline(
+            RemoteProcessor(processor_name='biomedicus-acronyms', address=acronyms_service),
+            LocalProcessor(Metrics(top_score_accuracy, detection_recall, tested='acronyms',
+                                   target='gold_acronyms'),
+                           component_id='top_score_metrics'),
+            LocalProcessor(Metrics(detection_precision, tested='gold_acronyms', target='acronyms'),
+                           component_id='top_score_reverse'),
+            LocalProcessor(Metrics(any_accuracy, tested='all_acronym_senses', target='gold_acronyms'),
+                           component_id='all_senses_metrics'),
+            events_address=events_service
     ) as pipeline:
         for test_file in input_dir.glob('**/*.json'):
-            with JsonSerializer.file_to_event(test_file, client=client) as event:
+            with JsonSerializer.file_to_event(test_file, client=pipeline.events_client) as event:
                 document = event.documents['plaintext']
                 pipeline.run(document)
 

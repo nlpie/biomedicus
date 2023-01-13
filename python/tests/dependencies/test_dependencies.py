@@ -13,12 +13,13 @@
 #  limitations under the License.
 import os
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
-from mtap import EventsClient, Pipeline, RemoteProcessor, LocalProcessor
-from mtap.io.serialization import PickleSerializer
+from mtap import Pipeline, RemoteProcessor, LocalProcessor
 from mtap.metrics import Accuracy, Metrics
+from mtap.serialization import PickleSerializer
 from mtap.utilities import find_free_port
 
 
@@ -32,7 +33,7 @@ def fixture_dependencies_service(events_service, processor_watcher, processor_ti
         pass
     port = str(find_free_port())
     address = '127.0.0.1:' + port
-    p = subprocess.Popen(['python', '-m', 'biomedicus.dependencies.stanza_parser',
+    p = subprocess.Popen([sys.executable, '-m', 'biomedicus.dependencies.stanza_parser',
                           '-p', port,
                           '--events', events_service],
                          start_new_session=True, stdin=subprocess.PIPE,
@@ -57,16 +58,15 @@ def test_dependencies(events_service, dependencies_service, test_results):
     test_dir = Path(os.environ['BIOMEDICUS_TEST_DATA']) / 'dependencies'
     uas = Accuracy('UAS', equivalence_test=uas_equal)
     las = Accuracy('LAS', equivalence_test=las_equal)
-    with EventsClient(address=events_service) as client, \
-            Pipeline(
-                RemoteProcessor(name='biomedicus-dependencies',
-                                address=dependencies_service),
-                LocalProcessor(Metrics(uas, las, tested='dependencies', target='gold_dependencies'),
-                               component_id='accuracy'),
-                events_client=client
-            ) as pipeline:
+    with Pipeline(
+            RemoteProcessor(processor_name='biomedicus-dependencies',
+                            address=dependencies_service),
+            LocalProcessor(Metrics(uas, las, tested='dependencies', target='gold_dependencies'),
+                           component_id='accuracy'),
+            events_address=events_service
+    ) as pipeline:
         for test_file in test_dir.glob('**/*.pickle'):
-            with PickleSerializer.file_to_event(test_file, client=client) as event:
+            with PickleSerializer.file_to_event(test_file, client=pipeline.events_client) as event:
                 document = event.documents['plaintext']
                 results = pipeline.run(document)
                 accuracy_dict = results.component_result('accuracy').result_dict

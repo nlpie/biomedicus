@@ -16,23 +16,21 @@ from pathlib import Path
 from subprocess import PIPE, STDOUT, Popen
 
 import pytest
-from mtap import Pipeline, RemoteProcessor, EventsClient, LocalProcessor
-from mtap.io.serialization import PickleSerializer
+from mtap import Pipeline, RemoteProcessor, LocalProcessor
 from mtap.metrics import Metrics, Accuracy
+from mtap.serialization import PickleSerializer
 from mtap.utilities import find_free_port
 
-import biomedicus
+from biomedicus.java_support import create_call
 
 
 @pytest.fixture(name='pos_tags_service')
 def fixture_pos_tags_service(events_service, processor_watcher, processor_timeout):
     port = str(find_free_port())
     address = '127.0.0.1:' + port
-    biomedicus_jar = biomedicus.biomedicus_jar()
-    p = Popen(['java', '-cp', biomedicus_jar,
-               'edu.umn.biomedicus.tagging.tnt.TntPosTaggerProcessor', '-p', port,
-               '--events', events_service],
-              start_new_session=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
+    p = Popen(create_call(
+        'edu.umn.biomedicus.tagging.tnt.TntPosTaggerProcessor', '-p', port, '--events', events_service
+    ), start_new_session=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
     yield from processor_watcher(address, p, timeout=processor_timeout)
 
 
@@ -40,15 +38,14 @@ def fixture_pos_tags_service(events_service, processor_watcher, processor_timeou
 def test_tnt_performance(events_service, pos_tags_service, test_results):
     input_dir = Path(os.environ['BIOMEDICUS_TEST_DATA']) / 'pos_tags'
     accuracy = Accuracy()
-    with EventsClient(address=events_service) as client, Pipeline(
-            RemoteProcessor(name='biomedicus-tnt-tagger', address=pos_tags_service,
+    with Pipeline(
+            RemoteProcessor(processor_name='biomedicus-tnt-tagger', address=pos_tags_service,
                             params={'token_index': 'gold_tags'}),
-            LocalProcessor(Metrics(accuracy, tested='pos_tags', target='gold_tags'),
-                           component_id='metrics'),
-            events_client=client
+            LocalProcessor(Metrics(accuracy, tested='pos_tags', target='gold_tags'), component_id='metrics'),
+            events_address=events_service
     ) as pipeline:
         for test_file in input_dir.glob('**/*.pickle'):
-            event = PickleSerializer.file_to_event(test_file, client=client)
+            event = PickleSerializer.file_to_event(test_file, client=pipeline.events_client)
             with event:
                 document = event.documents['gold']
                 results = pipeline.run(document)

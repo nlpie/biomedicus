@@ -1,4 +1,4 @@
-#  Copyright 2019 Regents of the University of Minnesota.
+#  Copyright 2022 Regents of the University of Minnesota.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -13,24 +13,26 @@
 #  limitations under the License.
 import os
 import signal
+import sys
 import threading
 from pathlib import Path
 from subprocess import Popen, PIPE, STDOUT, call
-from tempfile import NamedTemporaryFile, mkdtemp, TemporaryDirectory
+from tempfile import TemporaryDirectory
 
 import pytest
-from mtap.io.serialization import YamlSerializer
+from mtap.serialization import YamlSerializer
 
 
 @pytest.fixture(name='deploy_all')
 def fixture_deploy_all():
-
+    p = None
+    listener = None
     try:
-        p = Popen(['python', '-m', 'biomedicus', 'deploy'], start_new_session=True, stdout=PIPE, stderr=STDOUT)
-
+        p = Popen([sys.executable, '-m', 'biomedicus', 'deploy'],
+                  start_new_session=True, stdout=PIPE, stderr=STDOUT)
         e = threading.Event()
 
-        def listen(p, e):
+        def listen():
             print("Starting listener")
             for line in p.stdout:
                 line = line.decode()
@@ -38,24 +40,22 @@ def fixture_deploy_all():
                 if 'Done deploying all servers.' in line:
                     e.set()
 
-        listener = threading.Thread(target=listen, args=(p, e))
+        listener = threading.Thread(target=listen)
         listener.start()
         e.wait()
         yield p
     finally:
-        try:
+        if p is not None:
             os.killpg(p.pid, signal.SIGINT)
+        if listener is not None:
             listener.join()
-        except AttributeError:
-            pass
 
 
 @pytest.mark.integration
 def test_deploy_run(deploy_all):
     print("testing deployment")
     with TemporaryDirectory() as tmpdir:
-        code = call(['python', '-m', 'biomedicus', 'run', str(Path(__file__).parent / 'in'),
-                     tmpdir],)
+        code = call([sys.executable, '-m', 'biomedicus_client', 'run', str(Path(__file__).parent / 'in'), '-o', tmpdir])
         assert code == 0
         with YamlSerializer.file_to_event(Path(tmpdir) / '97_204.txt.json') as event:
             document = event.documents['plaintext']

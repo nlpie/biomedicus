@@ -11,4 +11,8 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-from biomedicus.version import *
+"""Tools for creating the biomedicus command line interface."""
+
+from biomedicus_client.cli_tools.command import Command
+from biomedicus_client.cli_tools.config_writing import WriteConfigsCommand
+from biomedicus_client.cli_tools.parser import create_parser
