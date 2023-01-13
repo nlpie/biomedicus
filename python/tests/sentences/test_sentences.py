@@ -1,4 +1,4 @@
-#  Copyright 2020 Regents of the University of Minnesota.
+#  Copyright 2022 Regents of the University of Minnesota.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@ from argparse import Namespace
 import pytest
 from mtap import Document, GenericLabel
 
-from biomedicus.deployment.deploy_biomedicus import check_data
+from biomedicus.deployment import check_data
 # BiLSTM import required for pickle
 from biomedicus.sentences import bi_lstm
 

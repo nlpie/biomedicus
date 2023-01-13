@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Regents of the University of Minnesota.
+ * Copyright 2022 Regents of the University of Minnesota.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,13 +22,13 @@ import edu.umn.nlpie.mtap.common.JsonObjectBuilder;
 import edu.umn.nlpie.mtap.model.Document;
 import edu.umn.nlpie.mtap.model.GenericLabel;
 import edu.umn.nlpie.mtap.model.LabelIndex;
-import edu.umn.nlpie.mtap.processing.*;
+import edu.umn.nlpie.mtap.processing.DocumentProcessor;
+import edu.umn.nlpie.mtap.processing.Processor;
+import edu.umn.nlpie.mtap.processing.ProcessorServer;
 import org.jetbrains.annotations.NotNull;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Path;

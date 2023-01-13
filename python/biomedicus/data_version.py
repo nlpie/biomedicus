@@ -11,4 +11,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-from biomedicus.version import *
+"""The expected data version and url to download data."""
+
+DATA_VERSION = "3.0b9"
+DATA_URL = "https://athena.ahc.umn.edu/downloads/open/biomedicus-3.0b9-standard-data.zip"

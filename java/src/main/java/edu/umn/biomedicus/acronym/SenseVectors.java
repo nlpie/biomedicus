@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Regents of the University of Minnesota.
+ * Copyright 2022 Regents of the University of Minnesota.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.Closeable;
 import java.util.Collection;
-import java.util.Set;
 
 /**
  * Interface for the mapping of strings expansions to the sparse vector of their contexts.

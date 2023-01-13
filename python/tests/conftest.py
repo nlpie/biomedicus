@@ -119,5 +119,5 @@ def fixture_test_results():
         from yaml import CDumper as Dumper
     except ImportError:
         from yaml import Dumper
-    with open('3.0b10-x-data.yml', 'w') as f:
+    with open('test_results.yml', 'w') as f:
         yaml.dump(results, f, Dumper=Dumper)

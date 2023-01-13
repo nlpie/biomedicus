@@ -17,8 +17,8 @@ from pathlib import Path
 
 import pytest
 from mtap import Pipeline, RemoteProcessor, EventsClient, LocalProcessor
-from mtap.io.serialization import JsonSerializer
 from mtap import metrics
+from mtap.serialization import JsonSerializer
 from mtap.utilities import find_free_port
 
 
@@ -39,13 +39,13 @@ def test_sentence_performance(events_service, sentences_service, test_results):
     input_dir = Path(os.environ['BIOMEDICUS_PHI_TEST_DATA']) / 'sentences'
 
     confusion = metrics.FirstTokenConfusion()
-    with EventsClient(address=events_service) as client, Pipeline(
-            RemoteProcessor(name='biomedicus-sentences', address=sentences_service),
-            LocalProcessor(metrics.Metrics(confusion, tested='sentences', target='Sentence'),
-                           component_id='metrics', client=client)
+    with Pipeline(
+            RemoteProcessor(processor_name='biomedicus-sentences', address=sentences_service),
+            LocalProcessor(metrics.Metrics(confusion, tested='sentences', target='Sentence'), component_id='metrics'),
+            events_address=events_service
     ) as pipeline:
         for test_file in input_dir.glob('**/*.json'):
-            with JsonSerializer.file_to_event(test_file, client=client) as event:
+            with JsonSerializer.file_to_event(test_file, client=pipeline.events_client) as event:
                 document = event.documents['plaintext']
                 results = pipeline.run(document)
                 print('F1 for event - "{}": {:0.3f} - elapsed: {}'.format(

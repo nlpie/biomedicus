@@ -11,4 +11,19 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-from biomedicus.version import *
+"""Creation of ArgumentParser from Command classes."""
+
+from biomedicus_client.cli_tools import Command
+
+
+def create_parser(*subcommands: Command):
+    from argparse import ArgumentParser
+    parser = ArgumentParser()
+    parser.set_defaults(f=lambda _: parser.print_help())
+    parser.add_argument('--log-level', default='INFO')
+    subparsers = parser.add_subparsers()
+
+    for command in subcommands:
+        command.add_subparser(subparsers)
+
+    return parser

@@ -1,16 +1,16 @@
-# Copyright 2019 Regents of the University of Minnesota.
+#  Copyright 2022 Regents of the University of Minnesota.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+#      http://www.apache.org/licenses/LICENSE-2.0
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
 import logging
 import re
 from argparse import ArgumentParser
@@ -31,7 +31,7 @@ from torch.nn.utils.rnn import pad_packed_sequence, pack_padded_sequence, \
     PackedSequence
 
 from biomedicus.config import load_config
-from biomedicus.deployment.deploy_biomedicus import check_data
+from biomedicus.deployment._default import check_data
 from biomedicus.sentences.input import InputMapping
 from biomedicus.sentences.vocabulary import load_char_mapping, n_chars
 from biomedicus.utilities.embeddings import load_vectors
@@ -436,11 +436,11 @@ def create_processor(conf):
     model = BiLSTM(hparams, n_chars(char_mapping), vectors)
     model.eval()
     model.to(device=device)
-    model.share_memory()
     logger.info('Loading model weights from: {}'.format(conf.model_file))
     with conf.model_file.open('rb') as f:
         state_dict = torch.load(f)
         model.load_state_dict(state_dict)
+    model.share_memory()
     processor = SentenceProcessor(input_mapping, model, device)
     return processor
 

@@ -75,7 +75,7 @@ dependencies {
     implementation group: 'org.jetbrains', name: 'annotations', version: '23.+'
 
     implementation group: 'org.slf4j', name: 'slf4j-api', version: slf4jVersion
-    implementation group: 'edu.umn.nlpie', name: 'mtap', version: '[1.0.0-rc.2, )'
+    implementation group: 'edu.umn.nlpie', name: 'mtap', version: '[1.0.0-rc3, )'
     implementation group: 'edu.umn.biomedicus', name: 'biomedicus-tokenizer', version: '0.0.3'
     implementation group: 'args4j', name: 'args4j', version: '2.+'
     implementation group: 'org.rocksdb', name: 'rocksdbjni', version: '6.+'

@@ -16,9 +16,10 @@ import re
 from argparse import ArgumentParser
 from pathlib import Path
 
+from mtap import Event, Pipeline, LocalProcessor, RemoteProcessor
+from mtap.serialization import standard_serializers, SerializationProcessor
+
 from biomedicus.sentences.one_per_line_sentences import OnePerLineSentencesProcessor
-from mtap import Event, Pipeline, LocalProcessor, RemoteProcessor, EventsClient
-from mtap.io.serialization import standard_serializers, SerializationProcessor
 
 _whitespace_tokenize = re.compile(r'\S+')
 _ast_pattern = re.compile(r'^c="(.+?)" (\d+):(\d+) (\d+):(\d+)\|\|t="(.+?)"\|\|a="(.+?)"\n$')
@@ -83,13 +84,16 @@ def main(args=None):
 
     serializer = standard_serializers[conf.serializer]
 
-    with EventsClient(address=conf.events) as client, Pipeline(
-        LocalProcessor(OnePerLineSentencesProcessor(), component_id='sentences', client=client),
-        RemoteProcessor('biomedicus-tnt-tagger', address=conf.tagger),
-        LocalProcessor(SerializationProcessor(serializer, output_dir=conf.output_directory),
-                       component_id='serializer', client=client)
+    with Pipeline(
+            LocalProcessor(OnePerLineSentencesProcessor(), component_id='sentences'),
+            RemoteProcessor('biomedicus-tnt-tagger', address=conf.tagger),
+            LocalProcessor(SerializationProcessor(serializer, output_dir=conf.output_directory),
+                           component_id='serializer'),
+            events_address=conf.events
     ) as pipeline:
-        results = pipeline.run_multithread(events(conf.input_directory, conf.target_document, client=client))
+        results = pipeline.run_multithread(
+            events(conf.input_directory, conf.target_document, client=pipeline.events_client)
+        )
         pipeline.print_times()
 
 

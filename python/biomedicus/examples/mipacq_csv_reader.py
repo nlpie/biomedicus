@@ -16,7 +16,7 @@ from argparse import ArgumentParser
 from pathlib import Path
 
 from mtap import EventsClient, Pipeline, LocalProcessor, Event, RemoteProcessor
-from mtap.io.serialization import SerializationProcessor, PickleSerializer
+from mtap.serialization import SerializationProcessor, PickleSerializer
 
 
 def main(args=None):
