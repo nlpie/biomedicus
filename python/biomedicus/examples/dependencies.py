@@ -14,7 +14,7 @@
 from argparse import ArgumentParser
 from pathlib import Path
 
-from mtap import EventsClient, Pipeline, RemoteProcessor, Event
+from mtap import Pipeline, RemoteProcessor, Event
 
 
 def main(args=None):
@@ -25,21 +25,22 @@ def main(args=None):
     parser.add_argument('input_file')
     conf = parser.parse_args(args)
 
-    with EventsClient(address=conf.events_service) as client, \
-            Pipeline(
-                RemoteProcessor('biomedicus-sentences', address=conf.sentences_service),
-                RemoteProcessor('biomedicus-dependencies', address=conf.dependencies_service)
-            ) as pipeline:
+    with Pipeline(
+            RemoteProcessor('biomedicus-sentences', address=conf.sentences_service),
+            RemoteProcessor('biomedicus-dependencies', address=conf.dependencies_service),
+            events_address=conf.events_service
+    ) as pipeline:
         with open(conf.input_file, 'r') as in_f:
             txt = in_f.read()
-        with Event(event_id=Path(conf.input_file).name, client=client) as event:
+        with Event(event_id=Path(conf.input_file).name, client=pipeline.events_client) as event:
             document = event.create_document('plaintext', txt)
             pipeline.run(document)
             for sentence in document.labels['sentences']:
                 print(sentence.text)
                 print('\n')
                 for dependency in document.labels['dependencies'].inside(sentence):
-                    print((dependency.text, dependency.deprel, dependency.head.text if dependency.head is not None else 'ROOT'))
+                    print((dependency.text, dependency.deprel,
+                           dependency.head.text if dependency.head is not None else 'ROOT'))
                 print('\n')
 
 

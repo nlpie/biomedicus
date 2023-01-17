@@ -23,10 +23,11 @@ def main(args=None):
     parser.add_argument('--sentences-service', default='localhost:10102')
     conf = parser.parse_args(args)
     with Pipeline(
-        RemoteProcessor('biomedicus-sentences', address=conf.sentences_service)
-    ) as pipeline, EventsClient(address=conf.events_service) as events_client:
+        RemoteProcessor('biomedicus-sentences', address=conf.sentences_service),
+        events_address=conf.events_service
+    ) as pipeline:
         text = sys.stdin.read()
-        with Event(client=events_client) as event:
+        with Event(client=pipeline.events_client) as event:
             doc = event.create_document('plaintext', text)
             result = pipeline.run(doc)
             for sentence in doc.get_label_index('sentences'):

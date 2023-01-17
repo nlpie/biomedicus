@@ -15,14 +15,14 @@
 from argparse import ArgumentParser
 import sqlite3
 
-from biomedicus import default_pipeline
+from biomedicus import deployment
 from mtap import Event
 
 if __name__ == '__main__':
-    parser = ArgumentParser(add_help=True, parents=[default_pipeline.argument_parser()])
+    parser = ArgumentParser(add_help=True, parents=[deployment.deployment_parser()])
     parser.add_argument('input_file')
     args = parser.parse_args()
-    with default_pipeline.from_args(args) as pipeline:
+    with deployment.deploy(args) as pipeline:
         client = pipeline.events_client
         con = sqlite3.connect(args.input_file)
         cur = con.cursor()
