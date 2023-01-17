@@ -39,7 +39,7 @@ def _listen(process: Popen) -> int:
 def deploy(conf):
     try:
         if not conf.offline:
-            check_data(conf.download_data, with_stanza=True)
+            check_data(conf.download_data, with_stanza=True, noninteractive=conf.noninteractive)
     except ValueError:
         return
     deployment = Deployment.from_yaml_file(conf.config)
@@ -75,6 +75,11 @@ def deployment_parser():
         '--download-data', action='store_true',
         help="If this flag is specified, automatically download the biomedicus "
              "data if it is missing."
+    )
+    parser.add_argument(
+        '--noninteractive', action='store_true',
+        help="If this flag is specified the process will exit with a non-zero exit code if"
+             "the data is not provided or an incorrect version instead of querying the terminal."
     )
     parser.add_argument(
         '--offline', action='store_true',

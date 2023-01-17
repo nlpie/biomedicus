@@ -68,7 +68,7 @@ def run_java(*args, cp=None):
 class RunJavaCommand(Command):
     @property
     def command(self) -> str:
-        return "java "
+        return "java"
 
     @property
     def help(self) -> str:
@@ -78,5 +78,5 @@ class RunJavaCommand(Command):
         run_java(cp=conf.cp, *conf.args)
 
     def add_arguments(self, parser):
-        parser.add_argument('cp', help="The classpath option for Java.")
+        parser.add_argument('--cp', help="The classpath option for Java.")
         parser.add_argument('args', nargs='+', help="Any additional args passed to the java executable.")

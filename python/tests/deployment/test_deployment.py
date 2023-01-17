@@ -11,8 +11,6 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-import os
-import signal
 import sys
 import threading
 from pathlib import Path
@@ -28,7 +26,7 @@ def fixture_deploy_all():
     p = None
     listener = None
     try:
-        p = Popen([sys.executable, '-m', 'biomedicus', 'deploy'],
+        p = Popen([sys.executable, '-m', 'biomedicus', 'deploy', '--noninteractive'],
                   start_new_session=True, stdout=PIPE, stderr=STDOUT)
         e = threading.Event()
 
@@ -39,6 +37,7 @@ def fixture_deploy_all():
                 print(line, end='', flush=True)
                 if 'Done deploying all servers.' in line:
                     e.set()
+            p.wait()
 
         listener = threading.Thread(target=listen)
         listener.start()
@@ -46,9 +45,11 @@ def fixture_deploy_all():
         yield p
     finally:
         if p is not None:
-            os.killpg(p.pid, signal.SIGINT)
-        if listener is not None:
-            listener.join()
+            try:
+                p.terminate()
+                listener.join()
+            except Exception:
+                pass
 
 
 @pytest.mark.integration
