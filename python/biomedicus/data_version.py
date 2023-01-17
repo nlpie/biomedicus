@@ -13,5 +13,5 @@
 #  limitations under the License.
 """The expected data version and url to download data."""
 
-DATA_VERSION = "3.0b9"
-DATA_URL = "https://athena.ahc.umn.edu/downloads/open/biomedicus-3.0b9-standard-data.zip"
+DATA_VERSION = "3.0"
+DATA_URL = "https://athena.ahc.umn.edu/downloads/open/biomedicus-3.0-standard-data.zip"

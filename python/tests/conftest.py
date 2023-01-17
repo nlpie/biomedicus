@@ -99,14 +99,20 @@ def fixture_processor_watcher():
         try:
             if process.returncode is not None:
                 raise ValueError('subprocess terminated')
-            with grpc.insecure_channel(address) as channel:
+            with grpc.insecure_channel(address, [('grpc.enable_http_proxy', False)]) as channel:
                 future = grpc.channel_ready_future(channel)
                 future.result(timeout=timeout)
             yield address
         finally:
-            process.send_signal(signal.SIGINT)
-            listener.join()
-            print("processor exited with code: ", process.returncode)
+            try:
+                process.terminate()
+                listener.join(timeout=5.0)
+                if listener.is_alive():
+                    process.kill()
+                    listener.join()
+                print("processor exited with code: ", process.returncode)
+            except Exception:
+                pass
     return func
 
 

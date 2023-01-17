@@ -33,7 +33,7 @@ def create(config: Optional[Union[str, Path]] = None,
            serializer: Optional[str] = None,
            output_directory: Union[str, Path] = None,
            include_label_text: bool = False,
-           address_override: Optional[str] = None,
+           address: Optional[str] = None,
            **_) -> Pipeline:
     """The biomedicus default pipeline for processing clinical documents.
 
@@ -50,7 +50,7 @@ def create(config: Optional[Union[str, Path]] = None,
         rtf_address (str): The address of the remote rtf processor.
         serializer (Optional[str]): An optional serializer (examples: 'json', 'yml', 'pickle').
         output_directory (Optional[Path]): Where the serializer should output the serialized files.
-        address_override (Optional[str]): An optional address to use for all processors.
+        address (Optional[str]): An optional address to use for all processors.
 
     Returns
         Pipeline
@@ -77,11 +77,11 @@ def create(config: Optional[Union[str, Path]] = None,
                                         params={'output_document_name': 'plaintext'})
         pipeline.insert(0, rtf_processor)
 
-    if address_override is not None:
-        pipeline.events_address = address_override
+    if address is not None:
+        pipeline.events_address = address
         for proc in pipeline:
             if isinstance(proc, RemoteProcessor):
-                proc.address = address_override
+                proc.address = address
 
     return pipeline
 
@@ -109,7 +109,7 @@ def argument_parser() -> ArgumentParser:
                         help="The address (or addresses, comma separated) for the"
                              "rtf to text converter processor.")
     parser.add_argument('--address', '-a',
-                        help="An address override, ")
+                        help="An address override, used for the dockerized BioMedICUS.")
     return parser
 
 

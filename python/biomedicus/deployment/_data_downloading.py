@@ -23,10 +23,9 @@ from tqdm import tqdm
 
 from biomedicus.data_version import DATA_VERSION, DATA_URL
 from biomedicus_client.cli_tools import Command
-from biomedicus.config import logger
 
 
-def check_data(download=False, with_stanza=False):
+def check_data(download=False, with_stanza=False, noninteractive=False):
     try:
         data = pathlib.Path(os.environ['BIOMEDICUS_DATA'])
     except KeyError:
@@ -47,18 +46,20 @@ def check_data(download=False, with_stanza=False):
     else:
         existing_version = version_file.read_text().strip()
         if existing_version != data_version:
-            print(f'Data folder ({existing_version}) is not expected version ({data_version})')
+            print(f'Data folder at "{data}" ({existing_version}) is not expected version ({data_version})')
         else:
-            logger.info(f'Data folder is expected version {data_version}')
+            print(f'Data folder at "{data}" is expected version ({data_version})')
             return
     if not download:
+        if noninteractive:
+            exit(1)
         print(
             'It looks like you do not have the set of models distributed for BioMedICUS.\n'
-            'The models are available from our website (https://nlpie.umn.edu/downloads)\n'
+            'The models are available from (https://nlpie.github.io/downloads)\n'
             'and can be installed by specifying the environment variable BIOMEDICUS_DATA\n'
             'or by placing the extracted models in ~/.biomedicus/data'
         )
-        prompt = 'Would you like to download the model files to {} (Y/N)? '.format(str(data))
+        prompt = f'Would you like to download the model files to "{data}" (Y/N)? '
         download = input(prompt) in ['Y', 'y', 'Yes', 'yes']
     if download:
         download_data_to(download_url, data)

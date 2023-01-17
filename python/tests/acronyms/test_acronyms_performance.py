@@ -13,7 +13,7 @@
 # limitations under the License.
 import os
 from pathlib import Path
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, STDOUT
 
 import pytest
 from mtap import Pipeline, RemoteProcessor, LocalProcessor
@@ -30,7 +30,7 @@ def fixture_acronyms_service(events_service, processor_watcher, processor_timeou
     address = '127.0.0.1:' + port
     p = Popen(create_call('edu.umn.biomedicus.acronym.AcronymDetectorProcessor',
                           '-p', port, '--events', events_service),
-              start_new_session=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+              start_new_session=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
     yield from processor_watcher(address, p, timeout=processor_timeout)
 
 
