@@ -35,7 +35,7 @@ classifiers = [
     'Topic :: Text Processing :: Linguistic'
 ]
 dependencies = [
-    "mtap>=1.0rc3",
+    "mtap>=1.0.0rc4",
     "biomedicus_client",
     "numpy",
     "pyyaml",
