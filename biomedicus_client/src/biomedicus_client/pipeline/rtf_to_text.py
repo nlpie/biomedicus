@@ -14,7 +14,7 @@
 """Support for creating and running the rtf-to-text pipeline."""
 
 from argparse import ArgumentParser, Namespace
-from importlib.resources import files
+from importlib_resources import files
 from pathlib import Path
 from typing import Union, Optional, List
 

@@ -14,7 +14,7 @@
 
 import logging
 from argparse import ArgumentParser
-from importlib.resources import files
+from importlib_resources import files
 from subprocess import Popen
 from typing import List
 

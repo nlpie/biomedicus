@@ -12,7 +12,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 from argparse import ArgumentParser
-from importlib.resources import files
+from importlib_resources import files
 from typing import Optional
 
 from mtap.deployment import Deployment
