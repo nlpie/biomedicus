@@ -14,7 +14,7 @@
 
 import logging
 from argparse import ArgumentParser
-from pathlib import Path
+from importlib.resources import files
 from subprocess import Popen
 from typing import List
 
@@ -26,8 +26,8 @@ from biomedicus_client.cli_tools import Command
 
 logger = logging.getLogger(__name__)
 
-default_deployment_config = Path(__file__).parent / 'biomedicus_deploy_config.yml'
-scaleout_deploy_config = Path(__file__).parent / 'scaleout_deploy_config.yml'
+default_deployment_config = files('biomedicus.deployment').joinpath('biomedicus_deploy_config.yml')
+scaleout_deploy_config = files('biomedicus.deployment').joinpath('scaleout_deploy_config.yml')
 
 
 def _listen(process: Popen) -> int:

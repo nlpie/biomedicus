@@ -1,4 +1,4 @@
-#  Copyright 2022 Regents of the University of Minnesota.
+#  Copyright 2023 Regents of the University of Minnesota.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -21,12 +21,12 @@ import pytest
 from mtap.serialization import YamlSerializer
 
 
-@pytest.fixture(name='deploy_all', scope='module')
-def fixture_deploy_all():
+@pytest.fixture(name='deploy_rtf_to_text')
+def fixture_deploy_rtf_to_text():
     p = None
     listener = None
     try:
-        p = Popen([sys.executable, '-m', 'biomedicus', 'deploy', '--rtf', '--noninteractive'],
+        p = Popen([sys.executable, '-m', 'biomedicus', 'deploy-rtf-to-text'],
                   start_new_session=True, stdout=PIPE, stderr=STDOUT)
         e = threading.Event()
 
@@ -56,28 +56,9 @@ def fixture_deploy_all():
 
 
 @pytest.mark.integration
-def test_deploy_run(deploy_all):
+def test_deploy_run_rtf_to_text(deploy_rtf_to_text):
     print("testing deployment")
     with TemporaryDirectory() as tmpdir:
-        code = call([sys.executable, '-m', 'biomedicus_client', 'run', str(Path(__file__).parent / 'in'), '-o', tmpdir])
+        code = call([sys.executable, '-m', 'biomedicus_client', 'run-rtf-to-text', str(Path(__file__).parent / 'rtf_in'), '-o', tmpdir])
         assert code == 0
-        with YamlSerializer.file_to_event(Path(tmpdir) / '97_204.txt.json') as event:
-            document = event.documents['plaintext']
-            assert len(document.get_label_index('sentences')) > 0
-            assert len(document.get_label_index('pos_tags')) > 0
-            assert len(document.get_label_index('acronyms')) > 0
-            assert len(document.get_label_index('umls_concepts')) > 0
-
-
-@pytest.mark.integration
-def test_deploy_run_rtf(deploy_all):
-    with TemporaryDirectory() as tmpdir:
-        code = call([sys.executable, '-m', 'biomedicus_client', 'run', str(Path(__file__).parent / 'rtf_in'),
-                     '--rtf', '-o', tmpdir])
-        assert code == 0
-        with YamlSerializer.file_to_event(Path(tmpdir) / '97_204.rtf.json') as event:
-            document = event.documents['plaintext']
-            assert len(document.get_label_index('sentences')) > 0
-            assert len(document.get_label_index('pos_tags')) > 0
-            assert len(document.get_label_index('acronyms')) > 0
-            assert len(document.get_label_index('umls_concepts')) > 0
+        assert (Path(tmpdir) / '97_204.rtf.txt').exists()

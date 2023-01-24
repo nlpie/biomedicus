@@ -12,7 +12,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 from argparse import ArgumentParser
-from pathlib import Path
+from importlib.resources import files
 from typing import Optional
 
 from mtap.deployment import Deployment
@@ -20,7 +20,7 @@ from mtap.deployment import Deployment
 from biomedicus.java_support import attach_biomedicus_jar
 from biomedicus_client.cli_tools import Command
 
-default_rtf_to_text_deployment_config = str(Path(__file__).parent / 'rtf_to_text_deploy_config.yml')
+default_rtf_to_text_deployment_config = files('biomedicus.deployment').joinpath('rtf_to_text_deploy_config.yml')
 
 
 def create_rtf_to_text_deployment(config_file: Optional[str] = None, jvm_classpath: Optional[str] = None) -> Deployment:

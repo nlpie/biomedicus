@@ -14,6 +14,7 @@
 """Support for creating and running the biomedicus default pipeline."""
 
 from argparse import ArgumentParser, Namespace
+from importlib.resources import files
 from pathlib import Path
 from typing import Optional, Union
 
@@ -22,8 +23,8 @@ from mtap.serialization import get_serializer, SerializationProcessor
 
 __all__ = ['default_pipeline_config', 'scaleout_pipeline_config', 'create', 'from_args', 'argument_parser']
 
-default_pipeline_config = Path(__file__).parent / 'biomedicus_default_pipeline.yml'
-scaleout_pipeline_config = Path(__file__).parent / 'scaleout_pipeline_config.yml'
+default_pipeline_config = files('biomedicus_client.pipeline').joinpath('biomedicus_default_pipeline.yml')
+scaleout_pipeline_config = files('biomedicus_client.pipeline').joinpath('scaleout_pipeline_config.yml')
 
 
 def create(config: Optional[Union[str, Path]] = None,
