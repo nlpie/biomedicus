@@ -14,6 +14,7 @@
 """Support for creating and running the rtf-to-text pipeline."""
 
 from argparse import ArgumentParser, Namespace
+from importlib_resources import files
 from pathlib import Path
 from typing import Union, Optional, List
 
@@ -24,7 +25,7 @@ from biomedicus_client.pipeline.sources import rtf_source
 
 __all__ = ['default_rtf_to_text_pipeline_config', 'create', 'from_args', 'argument_parser', 'RunRtfToTextCommand']
 
-default_rtf_to_text_pipeline_config = Path()
+default_rtf_to_text_pipeline_config = files('biomedicus_client.pipeline').joinpath('rtf_to_text_pipeline.yml')
 
 
 @processor('write-plaintext')
@@ -39,14 +40,15 @@ class WritePlaintext(EventProcessor):
 
 def create(config: Optional[Union[str, Path]] = None,
            *,
-           event_addresses: Optional[str] = None,
-           output_directory: Union[str, Path] = None) -> Pipeline:
+           events_addresses: Optional[str] = None,
+           output_directory: Union[str, Path] = None,
+           **_) -> Pipeline:
     if config is None:
         config = default_rtf_to_text_pipeline_config
     pipeline = Pipeline.from_yaml_file(config)
 
-    if event_addresses is not None:
-        pipeline.events_address = event_addresses
+    if events_addresses is not None:
+        pipeline.events_address = events_addresses
 
     pipeline += [LocalProcessor(
         WritePlaintext(Path(output_directory)),
@@ -95,14 +97,16 @@ class RunRtfToTextCommand(Command):
         parser.add_argument('input_directory', help="The input directory of text files to process.")
         parser.add_argument('--extension-glob', default="*.rtf",
                             help="The extension glob used to find files to process.")
+        parser.add_argument('--log-level', default='INFO',
+                            help="The log level for the pipeline runners.")
 
     def command_fn(self, conf):
         with from_args(conf) as pipeline:
             input_directory = Path(conf.input_directory)
 
             source = rtf_source(input_directory, conf.extension_glob,
-                                conf.events_client)
+                                pipeline.events_client)
             total = sum(1 for _ in input_directory.rglob(conf.extension_glob))
 
-            pipeline.run_multithread(source, total=total)
+            pipeline.run_multithread(source, total=total, log_level=conf.log_level)
             pipeline.print_times()

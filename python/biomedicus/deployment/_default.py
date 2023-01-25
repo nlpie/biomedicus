@@ -14,7 +14,7 @@
 
 import logging
 from argparse import ArgumentParser
-from pathlib import Path
+from importlib_resources import files
 from subprocess import Popen
 from typing import List
 
@@ -26,8 +26,8 @@ from biomedicus_client.cli_tools import Command
 
 logger = logging.getLogger(__name__)
 
-default_deployment_config = Path(__file__).parent / 'biomedicus_deploy_config.yml'
-scaleout_deploy_config = Path(__file__).parent / 'scaleout_deploy_config.yml'
+default_deployment_config = files('biomedicus.deployment').joinpath('biomedicus_deploy_config.yml')
+scaleout_deploy_config = files('biomedicus.deployment').joinpath('scaleout_deploy_config.yml')
 
 
 def _listen(process: Popen) -> int:
@@ -43,6 +43,7 @@ def deploy(conf):
     except ValueError:
         return
     deployment = Deployment.from_yaml_file(conf.config)
+    deployment.global_settings.log_level = conf.log_level
     deployment.shared_processor_config.java_classpath = attach_biomedicus_jar(
         deployment.shared_processor_config.java_classpath,
         conf.jvm_classpath
@@ -84,6 +85,10 @@ def deployment_parser():
     parser.add_argument(
         '--offline', action='store_true',
         help="Does not perform the data check before launching processors."
+    )
+    parser.add_argument(
+        '--log-level', default='INFO',
+        help="The log level for all processors."
     )
     return parser
 
