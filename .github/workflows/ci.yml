@@ -34,6 +34,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip setuptools wheel
         pip install flake8 pytest
+        pip install https://github.com/nlpie/mtap/archive/main.zip
         pip install ./biomedicus_client
         pip install .[test] --extra-index-url https://download.pytorch.org/whl/cpu
     - name: Download models
