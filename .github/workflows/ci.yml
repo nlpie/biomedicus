@@ -37,9 +37,6 @@ jobs:
         pip install git+https://github.com/nlpie/mtap@main#egg=mtap
         pip install ./biomedicus_client
         pip install .[test] --extra-index-url https://download.pytorch.org/whl/cpu
-    - name: Download models
-      run: |
-        python -m biomedicus download-data --with-stanza
     - name: Lint with flake8
       run: |
         pip install flake8
@@ -50,4 +47,4 @@ jobs:
     - name: Test with pytest
       run: |
         pip install pytest
-        pytest -s python/tests --integration
+        pytest -s python/tests

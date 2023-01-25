@@ -97,6 +97,8 @@ class RunRtfToTextCommand(Command):
         parser.add_argument('input_directory', help="The input directory of text files to process.")
         parser.add_argument('--extension-glob', default="*.rtf",
                             help="The extension glob used to find files to process.")
+        parser.add_argument('--log-level', default='INFO',
+                            help="The log level for the pipeline runners.")
 
     def command_fn(self, conf):
         with from_args(conf) as pipeline:
@@ -106,5 +108,5 @@ class RunRtfToTextCommand(Command):
                                 pipeline.events_client)
             total = sum(1 for _ in input_directory.rglob(conf.extension_glob))
 
-            pipeline.run_multithread(source, total=total)
+            pipeline.run_multithread(source, total=total, log_level=conf.log_level)
             pipeline.print_times()

@@ -23,10 +23,15 @@ from biomedicus_client.cli_tools import Command
 default_rtf_to_text_deployment_config = files('biomedicus.deployment').joinpath('rtf_to_text_deploy_config.yml')
 
 
-def create_rtf_to_text_deployment(config_file: Optional[str] = None, jvm_classpath: Optional[str] = None) -> Deployment:
+def create_rtf_to_text_deployment(config_file: Optional[str] = None,
+                                  jvm_classpath: Optional[str] = None,
+                                  log_level: Optional[str] = None) -> Deployment:
     if config_file is None:
         config_file = default_rtf_to_text_deployment_config
+    if log_level is None:
+        log_level = 'INFO'
     deployment = Deployment.from_yaml_file(config_file)
+    deployment.global_settings.log_level = log_level
     deployment.shared_processor_config.java_classpath = attach_biomedicus_jar(
         deployment.shared_processor_config.java_classpath,
         jvm_classpath
@@ -54,7 +59,11 @@ class DeployRtfToTextCommand(Command):
             '--jvm-classpath',
             help="A java -classpath string that will be used in addition to the biomedicus jar."
         )
+        parser.add_argument(
+            '--log-level',
+            help="The log level for pipeline runners."
+        )
 
     def command_fn(self, conf):
-        deployment = create_rtf_to_text_deployment(conf.config, conf.jvm_classpath)
+        deployment = create_rtf_to_text_deployment(conf.config, conf.jvm_classpath, log_level=conf.log_level)
         deployment.run_servers()

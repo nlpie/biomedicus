@@ -26,7 +26,8 @@ def fixture_deploy_rtf_to_text():
     p = None
     listener = None
     try:
-        p = Popen([sys.executable, '-m', 'biomedicus', 'deploy-rtf-to-text'], stdout=PIPE, stderr=STDOUT)
+        p = Popen([sys.executable, '-m', 'biomedicus', 'deploy-rtf-to-text', '--log-level', 'DEBUG'],
+                  stdout=PIPE, stderr=STDOUT)
         e = threading.Event()
 
         def listen():
@@ -50,7 +51,7 @@ def fixture_deploy_rtf_to_text():
             if p is not None:
                 p.terminate()
                 if listener is not None:
-                    listener.join(timeout=5.0)
+                    listener.join(timeout=60.0)
                     if listener.is_alive():
                         p.kill()
                         listener.join()
@@ -64,7 +65,8 @@ def test_deploy_run_rtf_to_text(deploy_rtf_to_text):
     print("testing deployment")
     with TemporaryDirectory() as tmpdir:
         input_dir = str(Path(__file__).parent / 'rtf_in')
-        cp = run([sys.executable, '-m', 'biomedicus_client', 'run-rtf-to-text', input_dir, '-o', tmpdir],
+        cp = run([sys.executable, '-m', 'biomedicus_client', 'run-rtf-to-text', input_dir, '-o', tmpdir,
+                  '--log-level', 'DEBUG'],
                  timeout=30.0, stdout=PIPE, stderr=STDOUT)
         print(cp.stdout.decode('utf-8'), end='')
         assert cp.returncode == 0

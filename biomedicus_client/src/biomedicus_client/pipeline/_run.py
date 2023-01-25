@@ -44,6 +44,8 @@ class RunCommand(Command):
                             help="Watches the directory for new files to process.")
         parser.add_argument('--no-times', default=False, action='store_true',
                             help="Suppress printing pipeline run times after completion.")
+        parser.add_argument('--log-level', default='INFO',
+                            help="The log level to use.")
 
     def command_fn(self, conf):
         with default_pipeline.from_args(conf) as pipeline:
@@ -65,6 +67,6 @@ class RunCommand(Command):
                                                               input_directory,
                                                               extension_glob=extension_glob)
                 params = None
-            pipeline.run_multithread(source, params=params)
+            pipeline.run_multithread(source, params=params, log_level=conf.log_level)
             if not conf.no_times:
                 pipeline.print_times()

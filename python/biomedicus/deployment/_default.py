@@ -43,6 +43,7 @@ def deploy(conf):
     except ValueError:
         return
     deployment = Deployment.from_yaml_file(conf.config)
+    deployment.global_settings.log_level = conf.log_level
     deployment.shared_processor_config.java_classpath = attach_biomedicus_jar(
         deployment.shared_processor_config.java_classpath,
         conf.jvm_classpath
@@ -84,6 +85,10 @@ def deployment_parser():
     parser.add_argument(
         '--offline', action='store_true',
         help="Does not perform the data check before launching processors."
+    )
+    parser.add_argument(
+        '--log-level', default='INFO',
+        help="The log level for all processors."
     )
     return parser
 
