@@ -15,7 +15,7 @@ import sys
 import threading
 import traceback
 from pathlib import Path
-from subprocess import Popen, PIPE, STDOUT, call
+from subprocess import Popen, PIPE, STDOUT, run
 from tempfile import TemporaryDirectory
 
 import pytest
@@ -67,9 +67,10 @@ def test_deploy_run(deploy_all):
     print("testing deployment run", flush=True)
     with TemporaryDirectory() as tmpdir:
         input_folder = str(Path(__file__).parent / 'in')
-        code = call([sys.executable, '-m', 'biomedicus_client', 'run', input_folder, '-o', tmpdir],
-                    timeout=30.0, stdout=STDOUT, stderr=STDOUT)
-        assert code == 0
+        cp = run([sys.executable, '-m', 'biomedicus_client', 'run', input_folder, '-o', tmpdir],
+                 timeout=30.0, stdout=PIPE, stderr=STDOUT)
+        print(cp.stdout.decode('utf-8'), end='')
+        assert cp.returncode == 0
         with YamlSerializer.file_to_event(Path(tmpdir) / '97_204.txt.json') as event:
             document = event.documents['plaintext']
             assert len(document.get_label_index('sentences')) > 0
@@ -83,9 +84,10 @@ def test_deploy_run_rtf(deploy_all):
     print("testing rtf deployment run", flush=True)
     with TemporaryDirectory() as tmpdir:
         input_folder = str(Path(__file__).parent / 'rtf_in')
-        code = call([sys.executable, '-m', 'biomedicus_client', 'run', input_folder, '--rtf', '-o', tmpdir],
-                    timeout=30.0, stdout=STDOUT, stderr=STDOUT)
-        assert code == 0
+        cp = run([sys.executable, '-m', 'biomedicus_client', 'run', input_folder, '--rtf', '-o', tmpdir],
+                 timeout=30.0, stdout=PIPE, stderr=STDOUT)
+        print(cp.stdout.decode('utf-8'), end='')
+        assert cp.returncode == 0
         with YamlSerializer.file_to_event(Path(tmpdir) / '97_204.rtf.json') as event:
             document = event.documents['plaintext']
             assert len(document.get_label_index('sentences')) > 0

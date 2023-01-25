@@ -15,7 +15,7 @@ import sys
 import threading
 import traceback
 from pathlib import Path
-from subprocess import Popen, PIPE, STDOUT, call
+from subprocess import Popen, PIPE, STDOUT, run
 from tempfile import TemporaryDirectory
 
 import pytest
@@ -64,7 +64,8 @@ def test_deploy_run_rtf_to_text(deploy_rtf_to_text):
     print("testing deployment")
     with TemporaryDirectory() as tmpdir:
         input_dir = str(Path(__file__).parent / 'rtf_in')
-        code = call([sys.executable, '-m', 'biomedicus_client', 'run-rtf-to-text', input_dir, '-o', tmpdir],
-                    timeout=30.0, stdout=STDOUT, stderr=STDOUT)
-        assert code == 0
+        cp = run([sys.executable, '-m', 'biomedicus_client', 'run-rtf-to-text', input_dir, '-o', tmpdir],
+                 timeout=30.0, stdout=PIPE, stderr=STDOUT)
+        print(cp.stdout.decode('utf-8'), end='')
+        assert cp.returncode == 0
         assert (Path(tmpdir) / '97_204.rtf.txt').exists()
