@@ -32,7 +32,7 @@ def fixture_deploy_all():
         e = threading.Event()
 
         def listen():
-            print("Starting listener")
+            print("Starting listener", flush=True)
             for line in p.stdout:
                 line = line.decode()
                 print(line, end='', flush=True)
@@ -46,6 +46,7 @@ def fixture_deploy_all():
         e.wait()
         if p.returncode is not None:
             raise ValueError("Failed to deploy.")
+        print("Done starting deployment for tests, yielding to test functions.", flush=True)
         yield p
     finally:
         try:
@@ -63,7 +64,7 @@ def fixture_deploy_all():
 
 @pytest.mark.integration
 def test_deploy_run(deploy_all):
-    print("testing deployment")
+    print("testing deployment run", flush=True)
     with TemporaryDirectory() as tmpdir:
         code = call([sys.executable, '-m', 'biomedicus_client', 'run', str(Path(__file__).parent / 'in'), '-o', tmpdir])
         assert code == 0
@@ -77,6 +78,7 @@ def test_deploy_run(deploy_all):
 
 @pytest.mark.integration
 def test_deploy_run_rtf(deploy_all):
+    print("testing rtf deployment run", flush=True)
     with TemporaryDirectory() as tmpdir:
         code = call([sys.executable, '-m', 'biomedicus_client', 'run', str(Path(__file__).parent / 'rtf_in'),
                      '--rtf', '-o', tmpdir])
