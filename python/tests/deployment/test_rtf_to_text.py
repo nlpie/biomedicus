@@ -63,6 +63,8 @@ def fixture_deploy_rtf_to_text():
 def test_deploy_run_rtf_to_text(deploy_rtf_to_text):
     print("testing deployment")
     with TemporaryDirectory() as tmpdir:
-        code = call([sys.executable, '-m', 'biomedicus_client', 'run-rtf-to-text', str(Path(__file__).parent / 'rtf_in'), '-o', tmpdir])
+        input_dir = str(Path(__file__).parent / 'rtf_in')
+        code = call([sys.executable, '-m', 'biomedicus_client', 'run-rtf-to-text', input_dir, '-o', tmpdir],
+                    timeout=30.0, stdout=STDOUT, stderr=STDOUT)
         assert code == 0
         assert (Path(tmpdir) / '97_204.rtf.txt').exists()

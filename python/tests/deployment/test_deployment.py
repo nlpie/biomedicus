@@ -66,7 +66,9 @@ def fixture_deploy_all():
 def test_deploy_run(deploy_all):
     print("testing deployment run", flush=True)
     with TemporaryDirectory() as tmpdir:
-        code = call([sys.executable, '-m', 'biomedicus_client', 'run', str(Path(__file__).parent / 'in'), '-o', tmpdir])
+        input_folder = str(Path(__file__).parent / 'in')
+        code = call([sys.executable, '-m', 'biomedicus_client', 'run', input_folder, '-o', tmpdir],
+                    timeout=30.0, stdout=STDOUT, stderr=STDOUT)
         assert code == 0
         with YamlSerializer.file_to_event(Path(tmpdir) / '97_204.txt.json') as event:
             document = event.documents['plaintext']
@@ -80,8 +82,9 @@ def test_deploy_run(deploy_all):
 def test_deploy_run_rtf(deploy_all):
     print("testing rtf deployment run", flush=True)
     with TemporaryDirectory() as tmpdir:
-        code = call([sys.executable, '-m', 'biomedicus_client', 'run', str(Path(__file__).parent / 'rtf_in'),
-                     '--rtf', '-o', tmpdir])
+        input_folder = str(Path(__file__).parent / 'rtf_in')
+        code = call([sys.executable, '-m', 'biomedicus_client', 'run', input_folder, '--rtf', '-o', tmpdir],
+                    timeout=30.0, stdout=STDOUT, stderr=STDOUT)
         assert code == 0
         with YamlSerializer.file_to_event(Path(tmpdir) / '97_204.rtf.json') as event:
             document = event.documents['plaintext']
