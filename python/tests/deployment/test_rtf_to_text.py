@@ -13,12 +13,12 @@
 #  limitations under the License.
 import sys
 import threading
+import traceback
 from pathlib import Path
 from subprocess import Popen, PIPE, STDOUT, call
 from tempfile import TemporaryDirectory
 
 import pytest
-from mtap.serialization import YamlSerializer
 
 
 @pytest.fixture(name='deploy_rtf_to_text')
@@ -26,8 +26,7 @@ def fixture_deploy_rtf_to_text():
     p = None
     listener = None
     try:
-        p = Popen([sys.executable, '-m', 'biomedicus', 'deploy-rtf-to-text'],
-                  start_new_session=True, stdout=PIPE, stderr=STDOUT)
+        p = Popen([sys.executable, '-m', 'biomedicus', 'deploy-rtf-to-text'], stdout=PIPE, stderr=STDOUT)
         e = threading.Event()
 
         def listen():
@@ -47,12 +46,17 @@ def fixture_deploy_rtf_to_text():
             raise ValueError("Failed to deploy.")
         yield p
     finally:
-        if p is not None:
-            try:
+        try:
+            if p is not None:
                 p.terminate()
-                listener.join()
-            except Exception:
-                pass
+                if listener is not None:
+                    listener.join(timeout=5.0)
+                    if listener.is_alive():
+                        p.kill()
+                        listener.join()
+        except:
+            print("Error cleaning up deployment")
+            traceback.print_exc()
 
 
 @pytest.mark.integration
