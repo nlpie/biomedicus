@@ -68,13 +68,14 @@ def main(args=None):
     etree = ElementTree.parse(args.input)
     set = etree.getroot()
     with EventsClient(address=args.events) as client, Pipeline(
-        RemoteProcessor('biomedicus-tnt-trainer', address=args.tnt_trainer)
+            RemoteProcessor('biomedicus-tnt-trainer', address=args.tnt_trainer)
     ) as pipeline:
         for article in set.findall('article'):
             id = list(article.find('articleinfo'))[0].text
             with Event(event_id=id, client=client) as event:
                 db = DocumentBuilder()
-                for sentence in article.find('title').findall('sentence') + article.find('abstract').findall('sentence'):
+                for sentence in (article.find('title').findall('sentence')
+                                 + article.find('abstract').findall('sentence')):
                     db.add_sentence(sentence)
                 d = db.build_doc(event)
                 pipeline.run(d)

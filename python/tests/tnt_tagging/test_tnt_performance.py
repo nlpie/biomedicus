@@ -39,7 +39,10 @@ def fixture_pos_tags_service(events_service, processor_watcher, processor_timeou
 
 @pytest.mark.performance
 def test_tnt_performance(events_service, pos_tags_service, test_results):
-    input_dir = Path(os.environ['BIOMEDICUS_TEST_DATA']) / 'pos_tags'
+    try:
+        input_dir = Path(os.environ['BIOMEDICUS_TEST_DATA']) / 'pos_tags'
+    except KeyError:
+        pytest.fail("Missing required environment variable BIOMEDICUS_TEST_DATA")
     accuracy = Accuracy()
     with Pipeline(
             RemoteProcessor(processor_name='biomedicus-tnt-tagger', address=pos_tags_service,

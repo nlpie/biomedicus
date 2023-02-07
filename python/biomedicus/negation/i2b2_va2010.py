@@ -91,7 +91,7 @@ def main(args=None):
                            component_id='serializer'),
             events_address=conf.events
     ) as pipeline:
-        results = pipeline.run_multithread(
+        pipeline.run_multithread(
             events(conf.input_directory, conf.target_document, client=pipeline.events_client)
         )
         pipeline.print_times()

@@ -55,7 +55,7 @@ def fixture_deploy_rtf_to_text():
                     if listener.is_alive():
                         p.kill()
                         listener.join()
-        except:
+        except Exception:
             print("Error cleaning up deployment")
             traceback.print_exc()
 

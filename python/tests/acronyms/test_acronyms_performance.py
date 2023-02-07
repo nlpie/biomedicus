@@ -37,7 +37,10 @@ def fixture_acronyms_service(events_service, processor_watcher, processor_timeou
 
 @pytest.mark.phi_performance
 def test_acronyms_performance(events_service, acronyms_service, test_results):
-    input_dir = Path(os.environ['BIOMEDICUS_PHI_TEST_DATA']) / 'acronyms'
+    try:
+        input_dir = Path(os.environ['BIOMEDICUS_PHI_TEST_DATA']) / 'acronyms'
+    except KeyError:
+        pytest.fail("Missing required environment variable BIOMEDICUS_PHI_TEST_DATA")
     top_score_accuracy = Accuracy(name='top_score_accuracy', fields=['expansion'])
     any_accuracy = Accuracy(name='any_accuracy', mode='any', fields=['expansion'])
     detection_recall = Accuracy(name='detection_recall', mode='location', fields=['expansion'])
