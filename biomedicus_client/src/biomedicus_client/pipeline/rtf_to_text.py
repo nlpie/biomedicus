@@ -14,6 +14,8 @@
 """Support for creating and running the rtf-to-text pipeline."""
 
 from argparse import ArgumentParser, Namespace
+from os import PathLike
+
 from importlib_resources import files
 from pathlib import Path
 from typing import Union, Optional, List
@@ -38,11 +40,22 @@ class WritePlaintext(EventProcessor):
             f.write(event.documents['plaintext'].text)
 
 
-def create(config: Optional[Union[str, Path]] = None,
+def create(config: Optional[Union[str, PathLike]] = None,
            *,
            events_addresses: Optional[str] = None,
            output_directory: Union[str, Path] = None,
            **_) -> Pipeline:
+    """
+
+    Args:
+        config (PathLike):
+        events_addresses:
+        output_directory:
+        **_:
+
+    Returns:
+
+    """
     if config is None:
         config = default_rtf_to_text_pipeline_config
     pipeline = Pipeline.from_yaml_file(config)
@@ -50,10 +63,11 @@ def create(config: Optional[Union[str, Path]] = None,
     if events_addresses is not None:
         pipeline.events_address = events_addresses
 
-    pipeline += [LocalProcessor(
-        WritePlaintext(Path(output_directory)),
-        component_id='write_text'
-    )]
+    if output_directory is not None:
+        pipeline += [LocalProcessor(
+            WritePlaintext(Path(output_directory)),
+            component_id='write_text'
+        )]
     return pipeline
 
 

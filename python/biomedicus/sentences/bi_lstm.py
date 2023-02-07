@@ -447,10 +447,10 @@ def create_processor(conf):
 
 def processor(conf):
     processor = create_processor(conf)
-    run_processor(processor,
-                  options=conf,
-                  mp=True,
-                  mp_context=torch.multiprocessing)
+    mp_context = None
+    if conf.mp:
+        mp_context = torch.multiprocessing.get_context(conf.mp_start_method)
+    run_processor(processor, options=conf, mp=conf.mp, mp_context=mp_context)
 
 
 def main(args=None):
@@ -493,6 +493,14 @@ def main(args=None):
     processor_subparser.add_argument(
         '--torch-device', default=None,
         help="Optional override to manually set the torch device identifier."
+    )
+    processor_subparser.add_argument(
+        '--mp', action='store_true',
+        help="Whether to use the multiprocessing pool based processor server."
+    )
+    processor_subparser.add_argument(
+        '--mp-start-method', default='forkserver', choices=['forkserver', 'spawn'],
+        help="The multiprocessing start method to use"
     )
     processor_subparser.set_defaults(f=processor)
 

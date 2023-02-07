@@ -28,10 +28,11 @@ from biomedicus.java_support import create_call
 def fixture_acronyms_service(events_service, processor_watcher, processor_timeout):
     port = str(find_free_port())
     address = '127.0.0.1:' + port
-    p = Popen(create_call('edu.umn.biomedicus.acronym.AcronymDetectorProcessor',
-                          '-p', port, '--events', events_service),
-              start_new_session=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
-    yield from processor_watcher(address, p, timeout=processor_timeout)
+    with create_call('edu.umn.biomedicus.acronym.AcronymDetectorProcessor',
+                     '-p', port,
+                     '--events', events_service) as call:
+        p = Popen(call, start_new_session=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
+        yield from processor_watcher(address, p, timeout=processor_timeout)
 
 
 @pytest.mark.phi_performance

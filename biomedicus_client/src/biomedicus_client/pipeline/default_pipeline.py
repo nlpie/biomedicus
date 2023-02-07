@@ -14,10 +14,10 @@
 """Support for creating and running the biomedicus default pipeline."""
 
 from argparse import ArgumentParser, Namespace
-from importlib_resources import files
 from pathlib import Path
 from typing import Optional, Union
 
+from importlib_resources import files
 from mtap import Pipeline, LocalProcessor, RemoteProcessor
 from mtap.serialization import get_serializer, SerializationProcessor
 
@@ -93,24 +93,46 @@ def argument_parser() -> ArgumentParser:
     Returns: ArgumentParser
     """
     parser = ArgumentParser(add_help=False, allow_abbrev=True)
-    parser.add_argument('--config', default=None,
-                        help='Path to the pipeline configuration file.')
-    parser.add_argument('--events-addresses', default=None,
-                        help="The address (or addresses, comma separated) for the events service.")
-    parser.add_argument('--serializer', default='json',
-                        choices=['json', 'yml', 'pickle', 'None'],
-                        help="The identifier for the serializer to use, see MTAP serializers.")
-    parser.add_argument('--output_directory', '-o', default='output',
-                        help="The output directory to write serializer output to.")
-    parser.add_argument('--include-label-text', action='store_true',
-                        help="Flag to include the covered text for every label")
-    parser.add_argument('--rtf', action='store_true',
-                        help="Flag to use a source for the rtf reader instead of plain text.")
-    parser.add_argument('--rtf-address', default="localhost:50200",
-                        help="The address (or addresses, comma separated) for the"
-                             "rtf to text converter processor.")
-    parser.add_argument('--address', '-a',
-                        help="An address override, used for the dockerized BioMedICUS.")
+    parser.add_argument(
+        '--config',
+        default=None,
+        help='Path to the pipeline configuration file.'
+    )
+    parser.add_argument(
+        '--events-addresses',
+        default=None,
+        help="The address (or addresses, comma separated) for the events service."
+    )
+    parser.add_argument(
+        '--serializer',
+        default='json',
+        choices=['json', 'yml', 'pickle', 'None'],
+        help="The identifier for the serializer to use, see MTAP serializers."
+    )
+    parser.add_argument(
+        '--output_directory', '-o',
+        default='output',
+        help="The output directory to write serializer output to."
+    )
+    parser.add_argument(
+        '--include-label-text',
+        action='store_true',
+        help="Flag to include the covered text for every label"
+    )
+    parser.add_argument(
+        '--rtf',
+        action='store_true',
+        help="Flag to use a source for the rtf reader instead of plain text."
+    )
+    parser.add_argument(
+        '--rtf-address',
+        default="localhost:50200",
+        help="The address (or addresses, comma separated) for the rtf to text converter processor."
+    )
+    parser.add_argument(
+        '--address', '-a',
+        help="An address override, used for the dockerized BioMedICUS."
+    )
     return parser
 
 

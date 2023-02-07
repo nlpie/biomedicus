@@ -13,12 +13,16 @@
 #  limitations under the License.
 
 import os
-from pathlib import Path
+from contextlib import contextmanager
 from subprocess import Popen, PIPE, STDOUT
 from threading import Thread
-from typing import Optional
+from typing import Optional, ContextManager, List
+
+import importlib_resources
 
 from biomedicus_client.cli_tools import Command
+
+JAR_RESOURCE = importlib_resources.files('biomedicus').joinpath('biomedicus-all.jar')
 
 
 class ProcessListener(Thread):
@@ -41,28 +45,32 @@ def get_java():
     return os.path.join(java_home, 'bin', 'java')
 
 
+@contextmanager
 def attach_biomedicus_jar(*jar_strings: Optional[str]) -> str:
-    jar_path = str(Path(__file__).parent / 'biomedicus-all.jar')
-    all_jars = [jar_path]
-    for jar_string in jar_strings:
-        if jar_string is not None:
-            jars = jar_string.split(':')
-            all_jars.extend(jars)
-    return ':'.join(all_jars)
+    with importlib_resources.as_file(JAR_RESOURCE) as jar_path:
+        all_jars = [os.fspath(jar_path)]
+        for jar_string in jar_strings:
+            if jar_string is not None:
+                jars = jar_string.split(':')
+                all_jars.extend(jars)
+        yield ':'.join(all_jars)
 
 
-def create_call(*args, cp=None):
-    return [get_java(), '-cp', attach_biomedicus_jar(cp)] + list(args)
+@contextmanager
+def create_call(*args, cp=None) -> ContextManager[List[str]]:
+    with attach_biomedicus_jar(cp) as java_cp:
+        yield [get_java(), '-cp', java_cp] + list(args)
 
 
 def run_java(*args, cp=None):
-    p = Popen(create_call(cp=cp, *args), stdout=PIPE, stderr=STDOUT)
-    listener = ProcessListener(p)
-    listener.start()
-    try:
-        listener.join()
-    except KeyboardInterrupt:
-        pass
+    with create_call(cp=cp, *args) as call:
+        p = Popen(call, stdout=PIPE, stderr=STDOUT)
+        listener = ProcessListener(p)
+        listener.start()
+        try:
+            listener.join()
+        except KeyboardInterrupt:
+            pass
 
 
 class RunJavaCommand(Command):

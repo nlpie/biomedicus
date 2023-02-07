@@ -115,15 +115,24 @@ class StanzaSelectiveParser(DocumentProcessor):
 def main(args=None):
     parser = ArgumentParser(parents=[processor_parser()])
     parser.add_argument('--offline', action='store_true')
+    parser.add_argument(
+        '--mp', action='store_true',
+        help="Whether to use the multiprocessing pool based processor server."
+    )
+    parser.add_argument(
+        '--mp-start-method', default='forkserver', choices=['forkserver', 'spawn'],
+        help="The multiprocessing start method to use"
+    )
 
     options = parser.parse_args(args)
 
     if not options.offline:
         stanza.download('en')
-    run_processor(StanzaSelectiveParser(),
-                  mp=True,
-                  mp_context=torch.multiprocessing,
-                  options=options)
+    processor = StanzaSelectiveParser()
+    mp_context = None
+    if options.mp:
+        mp_context = torch.multiprocessing.get_context(options.mp_start_method)
+    run_processor(processor, options=options, mp=options.mp, mp_context=mp_context)
 
 
 if __name__ == '__main__':
