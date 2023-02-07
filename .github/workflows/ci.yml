@@ -30,8 +30,7 @@ jobs:
     - uses: actions/cache@v3
       id: cache
       with:
-        path: |
-          ${{ HOME }}/.biomedicus/data
+        path: ${{ env.HOME }}/.biomedicus/data
         key: ${{ hashFiles('python/biomedicus/data_version.py') }}
     - name: Set up JDK
       uses: actions/setup-java@v3
