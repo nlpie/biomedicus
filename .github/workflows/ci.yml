@@ -30,7 +30,7 @@ jobs:
     - uses: actions/cache@v3
       id: cache
       with:
-        path: ${{ env.HOME }}/.biomedicus/data
+        path: /home/runner/.biomedicus/data
         key: ${{ hashFiles('python/biomedicus/data_version.py') }}
     - name: Set up JDK
       uses: actions/setup-java@v3
@@ -43,7 +43,7 @@ jobs:
         pip install flake8 pytest
         pip install git+https://github.com/nlpie/mtap@main#egg=mtap
         pip install ./biomedicus_client
-        pip install .[test] --no-deps emoji --extra-index-url https://download.pytorch.org/whl/cpu
+        pip install .[test] --extra-index-url https://download.pytorch.org/whl/cpu
     - name: Lint with flake8
       run: |
         pip install flake8
