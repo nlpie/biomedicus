@@ -16,7 +16,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
-from mtap import Pipeline, RemoteProcessor, EventsClient, LocalProcessor
+from mtap import Pipeline, RemoteProcessor, LocalProcessor
 from mtap import metrics
 from mtap.serialization import JsonSerializer
 from mtap.utilities import find_free_port
@@ -36,7 +36,10 @@ def fixture_sentences_service(events_service, processor_watcher, processor_timeo
 
 @pytest.mark.phi_performance
 def test_sentence_performance(events_service, sentences_service, test_results):
-    input_dir = Path(os.environ['BIOMEDICUS_PHI_TEST_DATA']) / 'sentences'
+    try:
+        input_dir = Path(os.environ['BIOMEDICUS_PHI_TEST_DATA']) / 'sentences'
+    except KeyError:
+        pytest.fail('Missing required environment variable BIOMEDICUS_PHI_TEST_DATA')
 
     confusion = metrics.FirstTokenConfusion()
     with Pipeline(

@@ -27,11 +27,13 @@ def fixture_normalization_processor(events_service, processor_watcher, processor
     port = str(find_free_port())
     address = '127.0.0.1:' + port
 
-    call = java_support.create_call('edu.umn.biomedicus.normalization.NormalizationProcessor',
-                                    '-p', port,
-                                    '--events', events_service)
-    p = Popen(call, start_new_session=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
-    yield from processor_watcher(address, p, timeout=processor_timeout)
+    with java_support.create_call(
+            'edu.umn.biomedicus.normalization.NormalizationProcessor',
+            '-p', port,
+            '--events', events_service
+    ) as call:
+        p = Popen(call, start_new_session=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+        yield from processor_watcher(address, p, timeout=processor_timeout)
 
 
 @pytest.mark.integration

@@ -11,6 +11,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+import os
 import sys
 import threading
 import traceback
@@ -66,7 +67,7 @@ def fixture_deploy_all():
 def test_deploy_run(deploy_all):
     print("testing deployment run", flush=True)
     with TemporaryDirectory() as tmpdir:
-        input_folder = str(Path(__file__).parent / 'in')
+        input_folder = os.fspath((Path(__file__).parent / 'in').absolute())
         cp = run([sys.executable, '-m', 'biomedicus_client', 'run', input_folder, '-o', tmpdir, '--log-level', 'DEBUG'],
                  timeout=30.0, stdout=PIPE, stderr=STDOUT)
         print(cp.stdout.decode('utf-8'), end='')
@@ -83,7 +84,7 @@ def test_deploy_run(deploy_all):
 def test_deploy_run_rtf(deploy_all):
     print("testing rtf deployment run", flush=True)
     with TemporaryDirectory() as tmpdir:
-        input_folder = str(Path(__file__).parent / 'rtf_in')
+        input_folder = os.fspath((Path(__file__).parent / 'rtf_in').absolute())
         cp = run([sys.executable, '-m', 'biomedicus_client', 'run', input_folder, '--rtf', '-o', tmpdir,
                   '--log-level', 'DEBUG'],
                  timeout=30.0, stdout=PIPE, stderr=STDOUT)

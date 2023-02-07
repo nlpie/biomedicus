@@ -21,7 +21,6 @@ from mtap.metrics import Accuracy, Metrics
 from mtap.serialization import PickleSerializer
 from mtap.utilities import find_free_port
 
-import biomedicus
 from biomedicus.java_support import create_call
 
 
@@ -29,15 +28,21 @@ from biomedicus.java_support import create_call
 def fixture_concepts_service(events_service, processor_watcher, processor_timeout):
     port = str(find_free_port())
     address = '127.0.0.1:' + port
-    p = Popen(create_call(
-        'edu.umn.biomedicus.concepts.DictionaryConceptDetector', '-p', port, '--events', events_service
-    ), stdin=PIPE, stdout=PIPE, stderr=PIPE)
-    yield from processor_watcher(address, p, timeout=processor_timeout)
+    with create_call(
+            'edu.umn.biomedicus.concepts.DictionaryConceptDetector',
+            '-p', port,
+            '--events', events_service
+    ) as call:
+        p = Popen(call, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+        yield from processor_watcher(address, p, timeout=processor_timeout)
 
 
 @pytest.mark.performance
 def test_concepts_performance(events_service, concepts_service, test_results):
-    input_dir = Path(os.environ['BIOMEDICUS_TEST_DATA']) / 'concepts'
+    try:
+        input_dir = Path(os.environ['BIOMEDICUS_TEST_DATA']) / 'concepts'
+    except KeyError:
+        pytest.fail("Missing required environment variable BIOMEDICUS_TEST_DATA")
     recall = Accuracy(name='recall', mode='any', fields=['cui'])
     precision = Accuracy(name='precision', mode='any', fields=['cui'])
     with Pipeline(

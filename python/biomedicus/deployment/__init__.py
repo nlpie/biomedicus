@@ -14,16 +14,3 @@
 """Utilities around deploying the BioMedICUS pipeline."""
 
 from biomedicus.deployment._data_downloading import check_data, download_data_to, DownloadDataCommand
-from biomedicus.deployment._default import (
-    check_data,
-    default_deployment_config,
-    scaleout_deploy_config,
-    deploy,
-    deployment_parser,
-    DeployCommand
-)
-from biomedicus.deployment._rtf_to_text import (
-    default_rtf_to_text_deployment_config,
-    create_rtf_to_text_deployment,
-    DeployRtfToTextCommand,
-)

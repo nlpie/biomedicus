@@ -28,15 +28,21 @@ from biomedicus.java_support import create_call
 def fixture_pos_tags_service(events_service, processor_watcher, processor_timeout):
     port = str(find_free_port())
     address = '127.0.0.1:' + port
-    p = Popen(create_call(
-        'edu.umn.biomedicus.tagging.tnt.TntPosTaggerProcessor', '-p', port, '--events', events_service
-    ), start_new_session=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
-    yield from processor_watcher(address, p, timeout=processor_timeout)
+    with create_call(
+            'edu.umn.biomedicus.tagging.tnt.TntPosTaggerProcessor',
+            '-p', port,
+            '--events', events_service
+    ) as call:
+        p = Popen(call, start_new_session=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
+        yield from processor_watcher(address, p, timeout=processor_timeout)
 
 
 @pytest.mark.performance
 def test_tnt_performance(events_service, pos_tags_service, test_results):
-    input_dir = Path(os.environ['BIOMEDICUS_TEST_DATA']) / 'pos_tags'
+    try:
+        input_dir = Path(os.environ['BIOMEDICUS_TEST_DATA']) / 'pos_tags'
+    except KeyError:
+        pytest.fail("Missing required environment variable BIOMEDICUS_TEST_DATA")
     accuracy = Accuracy()
     with Pipeline(
             RemoteProcessor(processor_name='biomedicus-tnt-tagger', address=pos_tags_service,

@@ -56,7 +56,11 @@ class RtfHandler(FileSystemEventHandler):
 
 
 class TxtHandler(FileSystemEventHandler):
-    def __init__(self, input_directory: Path, extension_glob: str, events_client: EventsClient, document_name='plaintext'):
+    def __init__(self,
+                 input_directory: Path,
+                 extension_glob: str,
+                 events_client: EventsClient,
+                 document_name='plaintext'):
         self.input_directory = Path(input_directory)
         self.extension_glob = extension_glob
         self.events_client = events_client

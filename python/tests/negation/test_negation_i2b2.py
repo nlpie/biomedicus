@@ -18,7 +18,7 @@ from pathlib import Path
 from subprocess import Popen, PIPE, STDOUT
 
 import pytest
-from mtap import metrics, EventsClient, Pipeline, RemoteProcessor, LocalProcessor, GenericLabel
+from mtap import metrics, Pipeline, RemoteProcessor, LocalProcessor, GenericLabel
 from mtap.serialization import PickleSerializer
 from mtap.utilities import find_free_port
 
@@ -90,10 +90,13 @@ def fixture_negex_triggers_service(events_service, processor_watcher, processor_
 def fixture_modification_detector_service(events_service, processor_watcher, processor_timeout):
     port = str(find_free_port())
     address = '127.0.0.1:' + port
-    p = Popen(create_call(
-        'edu.umn.biomedicus.modification.ModificationDetector', '-p', port, '--events', events_service
-    ), stdin=PIPE, stdout=PIPE, stderr=STDOUT)
-    yield from processor_watcher(address, p, timeout=processor_timeout)
+    with create_call(
+            'edu.umn.biomedicus.modification.ModificationDetector',
+            '-p', port,
+            '--events', events_service
+    ) as call:
+        p = Popen(call, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
+        yield from processor_watcher(address, p, timeout=processor_timeout)
 
 
 @pytest.fixture(name='dependencies_service')
@@ -134,7 +137,10 @@ def is_negated(term: GenericLabel) -> bool:
 
 @pytest.mark.performance
 def test_negex_performance(events_service, negex_service, test_results):
-    input_dir = Path(os.environ['BIOMEDICUS_TEST_DATA']) / 'negation' / 'i2b2_2010'
+    try:
+        input_dir = Path(os.environ['BIOMEDICUS_TEST_DATA']) / 'negation' / 'i2b2_2010'
+    except KeyError:
+        pytest.fail("Missing required environment variable BIOMEDICUS_TEST_DATA")
     confusion = metrics.FirstTokenConfusion(print_debug='fn', debug_range=120)
     metrics_processor = metrics.Metrics(confusion, tested='negated', target='i2b2concepts',
                                         target_filter=is_negated)

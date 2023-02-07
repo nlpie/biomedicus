@@ -31,15 +31,15 @@ from torch.nn.utils.rnn import pad_packed_sequence, pack_padded_sequence, \
     PackedSequence
 
 from biomedicus.config import load_config
-from biomedicus.deployment._default import check_data
+from biomedicus.deployment import check_data
 from biomedicus.sentences.input import InputMapping
 from biomedicus.sentences.vocabulary import load_char_mapping, n_chars
 from biomedicus.utilities.embeddings import load_vectors
 
 try:
-    from yaml import CLoader as Loader, CDumper as Dumper
+    from yaml import CLoader as Loader
 except ImportError:
-    from yaml import Loader as Loader, Dumper as Dumper
+    from yaml import Loader as Loader
 
 logger = logging.getLogger("biomedicus.sentences.bi_lstm")
 
@@ -187,17 +187,17 @@ class Training:
         last_report = datetime.min
         metrics = torch.tensor([0., 0., 0., 0.], dtype=torch.float64)
 
-        for i, ((char_ids, word_ids), labels, lengths) in enumerate(self.train.batches(), start=1):
+        for i, ((char_ids, word_ids), truths, lengths) in enumerate(self.train.batches(), start=1):
             self.model.zero_grad()
 
-            maxlen = labels.shape[1]
+            maxlen = truths.shape[1]
             mask = torch.arange(maxlen).view(1, -1) < lengths.view(-1, 1)
             mask = mask.view(-1)
 
-            loss, flat_logits = self._step(char_ids, word_ids, labels, lengths, mask)
+            loss, flat_logits = self._step(char_ids, word_ids, truths, lengths, mask)
             flat_predictions = torch.round(torch.sigmoid(flat_logits))
 
-            tp, fp, fn = confusion_matrix(flat_predictions, labels.view(-1).float(), mask)
+            tp, fp, fn = confusion_matrix(flat_predictions, truths.view(-1).float(), mask)
             f1, precision, recall = f1_precision_recall(tp, fp, fn)
 
             metrics = torch.tensor([loss, f1, precision, recall]) + (1 - 0.01) * metrics
@@ -237,11 +237,11 @@ class Training:
             val_tp = torch.tensor(0, dtype=torch.int64)
             val_fn = torch.tensor(0, dtype=torch.int64)
             val_fp = torch.tensor(0, dtype=torch.int64)
-            for (char_ids, word_ids), labels, lengths in self.validation.batches():
+            for (char_ids, word_ids), truths, lengths in self.validation.batches():
                 # validation batches are shape = [1, sequence_length] with no padding
                 predictions = predict(self.model, char_ids, word_ids, device=self.device)
                 flat_predictions = predictions.view(-1)
-                flat_labels = labels.view(-1)
+                flat_labels = truths.view(-1)
                 # there is no padding in the validation batch
                 mask = torch.ones_like(flat_labels, dtype=torch.bool)
                 tp, fp, fn = confusion_matrix(flat_predictions, flat_labels, mask)
@@ -447,10 +447,10 @@ def create_processor(conf):
 
 def processor(conf):
     processor = create_processor(conf)
-    run_processor(processor,
-                  options=conf,
-                  mp=True,
-                  mp_context=torch.multiprocessing)
+    mp_context = None
+    if conf.mp:
+        mp_context = torch.multiprocessing.get_context(conf.mp_start_method)
+    run_processor(processor, options=conf, mp=conf.mp, mp_context=mp_context)
 
 
 def main(args=None):
@@ -493,6 +493,14 @@ def main(args=None):
     processor_subparser.add_argument(
         '--torch-device', default=None,
         help="Optional override to manually set the torch device identifier."
+    )
+    processor_subparser.add_argument(
+        '--mp', action='store_true',
+        help="Whether to use the multiprocessing pool based processor server."
+    )
+    processor_subparser.add_argument(
+        '--mp-start-method', default='forkserver', choices=['forkserver', 'spawn'],
+        help="The multiprocessing start method to use"
     )
     processor_subparser.set_defaults(f=processor)
 

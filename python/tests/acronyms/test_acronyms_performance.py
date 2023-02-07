@@ -28,15 +28,19 @@ from biomedicus.java_support import create_call
 def fixture_acronyms_service(events_service, processor_watcher, processor_timeout):
     port = str(find_free_port())
     address = '127.0.0.1:' + port
-    p = Popen(create_call('edu.umn.biomedicus.acronym.AcronymDetectorProcessor',
-                          '-p', port, '--events', events_service),
-              start_new_session=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
-    yield from processor_watcher(address, p, timeout=processor_timeout)
+    with create_call('edu.umn.biomedicus.acronym.AcronymDetectorProcessor',
+                     '-p', port,
+                     '--events', events_service) as call:
+        p = Popen(call, start_new_session=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
+        yield from processor_watcher(address, p, timeout=processor_timeout)
 
 
 @pytest.mark.phi_performance
 def test_acronyms_performance(events_service, acronyms_service, test_results):
-    input_dir = Path(os.environ['BIOMEDICUS_PHI_TEST_DATA']) / 'acronyms'
+    try:
+        input_dir = Path(os.environ['BIOMEDICUS_PHI_TEST_DATA']) / 'acronyms'
+    except KeyError:
+        pytest.fail("Missing required environment variable BIOMEDICUS_PHI_TEST_DATA")
     top_score_accuracy = Accuracy(name='top_score_accuracy', fields=['expansion'])
     any_accuracy = Accuracy(name='any_accuracy', mode='any', fields=['expansion'])
     detection_recall = Accuracy(name='detection_recall', mode='location', fields=['expansion'])

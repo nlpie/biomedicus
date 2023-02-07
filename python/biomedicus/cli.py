@@ -16,12 +16,9 @@
 import logging
 
 from biomedicus.deployment import (
+    default_deployment,
     DownloadDataCommand,
-    DeployCommand,
-    default_deployment_config,
-    scaleout_deploy_config,
-    default_rtf_to_text_deployment_config,
-    DeployRtfToTextCommand
+    rtf_to_text
 )
 from biomedicus.java_support import RunJavaCommand
 from biomedicus.utilities.print_all_processors_metadata import PrintProcessorMetaCommand
@@ -29,20 +26,20 @@ from biomedicus_client import cli_tools
 from biomedicus_client.cli_tools import WriteConfigsCommand
 
 SERVER_CONFIGS = {
-    'deploy': default_deployment_config,
-    'scaleout_deploy': scaleout_deploy_config,
-    'rtf_to_text': default_rtf_to_text_deployment_config
+    'deploy': default_deployment.deployment_config,
+    'scaleout_deploy': default_deployment.scaleout_deploy_config,
+    'rtf_to_text': rtf_to_text.deployment_config
 }
 
 
 def main(args=None):
     parser = cli_tools.create_parser(
         WriteConfigsCommand(SERVER_CONFIGS),
-        DeployCommand(),
+        default_deployment.DeployCommand(),
         RunJavaCommand(),
         DownloadDataCommand(),
         PrintProcessorMetaCommand(),
-        DeployRtfToTextCommand(),
+        rtf_to_text.DeployRtfToTextCommand(),
     )
 
     conf = parser.parse_args(args)

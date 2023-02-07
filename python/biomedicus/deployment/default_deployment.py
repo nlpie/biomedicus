@@ -14,10 +14,10 @@
 
 import logging
 from argparse import ArgumentParser
-from importlib_resources import files
-from subprocess import Popen
-from typing import List
+from contextlib import contextmanager
+from typing import List, Optional, ContextManager
 
+from importlib_resources import files
 from mtap.deployment import Deployment
 
 from biomedicus.deployment._data_downloading import check_data
@@ -26,41 +26,47 @@ from biomedicus_client.cli_tools import Command
 
 logger = logging.getLogger(__name__)
 
-default_deployment_config = files('biomedicus.deployment').joinpath('biomedicus_deploy_config.yml')
+deployment_config = files('biomedicus.deployment').joinpath('biomedicus_deploy_config.yml')
 scaleout_deploy_config = files('biomedicus.deployment').joinpath('scaleout_deploy_config.yml')
 
 
-def _listen(process: Popen) -> int:
-    for line in process.stdout:
-        print(line.decode(), end='', flush=True)
-    return process.wait()
-
-
-def deploy(conf):
-    try:
-        if not conf.offline:
-            check_data(conf.download_data, with_stanza=True, noninteractive=conf.noninteractive)
-    except ValueError:
-        return
-    deployment = Deployment.from_yaml_file(conf.config)
-    deployment.global_settings.log_level = conf.log_level
-    deployment.shared_processor_config.java_classpath = attach_biomedicus_jar(
+@contextmanager
+def create_deployment(offline: bool = False,
+                      download_data: bool = False,
+                      noninteractive: bool = False,
+                      config: Optional[str] = None,
+                      log_level: Optional[str] = None,
+                      jvm_classpath: Optional[str] = None,
+                      rtf: bool = False,
+                      **_) -> ContextManager[Deployment]:
+    config = config if config is not None else deployment_config
+    log_level = log_level if log_level is not None else 'INFO'
+    if not offline:
+        check_data(download_data, with_stanza=True, noninteractive=noninteractive)
+    deployment = Deployment.from_yaml_file(config)
+    deployment.global_settings.log_level = log_level
+    with attach_biomedicus_jar(
         deployment.shared_processor_config.java_classpath,
-        conf.jvm_classpath
-    )
-    if conf.rtf:
-        for processor in deployment.processors:
-            if processor.entry_point == 'edu.umn.biomedicus.rtf.RtfProcessor':
-                processor.enabled = True
-                break
-    deployment.run_servers()
+        jvm_classpath
+    ) as java_cp:
+        deployment.shared_processor_config.java_classpath = java_cp
+        if rtf:
+            for processor in deployment.processors:
+                if processor.entry_point == 'edu.umn.biomedicus.rtf.RtfProcessor':
+                    processor.enabled = True
+                    break
+        yield deployment
 
 
-def deployment_parser():
+def from_args(args) -> ContextManager[Deployment]:
+    return create_deployment(**vars(args))
+
+
+def argument_parser():
     parser = ArgumentParser(add_help=False)
     parser.add_argument(
         '--config',
-        default=default_deployment_config,
+        default=deployment_config,
         help='A path to a deployment configuration file to use instead of the'
              'default deployment configuration.'
     )
@@ -104,10 +110,11 @@ class DeployCommand(Command):
 
     @property
     def parents(self) -> List[ArgumentParser]:
-        return [deployment_parser()]
+        return [argument_parser()]
 
     def add_arguments(self, parser: ArgumentParser):
         pass  # No arguments to add
 
     def command_fn(self, conf):
-        deploy(conf)
+        with from_args(conf) as deployment:
+            deployment.run_servers_and_wait()

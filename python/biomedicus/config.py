@@ -17,7 +17,6 @@ import os
 
 from pathlib import Path
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -68,7 +67,7 @@ def load_config():
     except KeyError:
         data = Path.home() / '.biomedicus' / 'data'
         os.environ['BIOMEDICUS_DATA'] = str(data)
-    
+
     potential_paths = []
     try:
         cnf = os.getenv('BIOMEDICUS_CONFIG')

@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
-import signal
 import subprocess
-import sys
 from threading import Thread
 
 import grpc
@@ -113,6 +111,7 @@ def fixture_processor_watcher():
                 print("processor exited with code: ", process.returncode)
             except Exception:
                 pass
+
     return func
 
 
