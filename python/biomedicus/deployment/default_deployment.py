@@ -38,12 +38,15 @@ def create_deployment(offline: bool = False,
                       log_level: Optional[str] = None,
                       jvm_classpath: Optional[str] = None,
                       rtf: bool = False,
+                      host: Optional[str] = None,
                       **_) -> ContextManager[Deployment]:
     config = config if config is not None else deployment_config
     log_level = log_level if log_level is not None else 'INFO'
     if not offline:
         check_data(download_data, with_stanza=True, noninteractive=noninteractive)
     deployment = Deployment.from_yaml_file(config)
+    if host is not None:
+        deployment.global_settings.host = host
     deployment.global_settings.log_level = log_level
     with attach_biomedicus_jar(
         deployment.shared_processor_config.java_classpath,
@@ -95,6 +98,10 @@ def argument_parser():
     parser.add_argument(
         '--log-level', default='INFO',
         help="The log level for all processors."
+    )
+    parser.add_argument(
+        '--host', default='127.0.0.1',
+        help="The hostname/ip to deploy the services on."
     )
     return parser
 
