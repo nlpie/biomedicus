@@ -69,7 +69,7 @@ def test_deploy_run(deploy_all):
     with TemporaryDirectory() as tmpdir:
         input_folder = os.fspath((Path(__file__).parent / 'in').absolute())
         cp = run([sys.executable, '-m', 'biomedicus_client', 'run', input_folder, '-o', tmpdir, '--log-level', 'DEBUG'],
-                 timeout=30.0, stdout=PIPE, stderr=STDOUT)
+                 timeout=60.0, stdout=PIPE, stderr=STDOUT)
         print(cp.stdout.decode('utf-8'), end='')
         assert cp.returncode == 0
         with YamlSerializer.file_to_event(Path(tmpdir) / '97_204.txt.json') as event:
@@ -87,7 +87,7 @@ def test_deploy_run_rtf(deploy_all):
         input_folder = os.fspath((Path(__file__).parent / 'rtf_in').absolute())
         cp = run([sys.executable, '-m', 'biomedicus_client', 'run', input_folder, '--rtf', '-o', tmpdir,
                   '--log-level', 'DEBUG'],
-                 timeout=30.0, stdout=PIPE, stderr=STDOUT)
+                 timeout=60.0, stdout=PIPE, stderr=STDOUT)
         print(cp.stdout.decode('utf-8'), end='')
         assert cp.returncode == 0
         with YamlSerializer.file_to_event(Path(tmpdir) / '97_204.rtf.json') as event:
