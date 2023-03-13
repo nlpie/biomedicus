@@ -21,8 +21,8 @@ import edu.umn.biomedicus.rtf.reader.RtfSink;
 import edu.umn.biomedicus.rtf.reader.RtfSource;
 import edu.umn.biomedicus.rtf.reader.RtfState;
 
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlType;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlType;
 
 /**
  * Keyword action that handles the "\*" command which skips destinations that the reader does not

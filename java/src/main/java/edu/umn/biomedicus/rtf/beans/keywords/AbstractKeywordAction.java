@@ -20,8 +20,8 @@ import edu.umn.biomedicus.rtf.reader.KeywordAction;
 import org.jetbrains.annotations.Nullable;
 
 
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlTransient;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlTransient;
 import java.util.Objects;
 
 /**

@@ -36,19 +36,15 @@ classifiers = [
     'Topic :: Text Processing :: Linguistic'
 ]
 dependencies = [
-    "mtap>=1.0.0rc5",
-    "tqdm",
-    "importlib_resources>=1.3",
+    "mtap>=1.0.0",
+    "tqdm==4.65.0",
+    "importlib_resources==5.9",
 ]
 dynamic = ["version"]
 
 [project.optional-dependencies]
 test = [
-    "pytest-runner",
-    "pytest"
-]
-docs = [
-    "sphinx",
+    "pytest==7.2.2"
 ]
 
 [project.scripts]
@@ -65,4 +61,5 @@ include = ["biomedicus_client*"]
 
 [tool.setuptools_scm]
 write_to = "biomedicus_client/src/biomedicus_client/version.py"
+fallback_version = "3.0.0"
 root = ".."

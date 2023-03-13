@@ -21,8 +21,8 @@ import edu.umn.biomedicus.rtf.reader.RtfSink;
 import edu.umn.biomedicus.rtf.reader.RtfSource;
 import edu.umn.biomedicus.rtf.reader.RtfState;
 
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlType;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlType;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CodingErrorAction;

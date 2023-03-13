@@ -27,10 +27,14 @@ import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.AbstractConstruct;
 import org.yaml.snakeyaml.constructor.Constructor;
+import org.yaml.snakeyaml.inspector.TagInspector;
+import org.yaml.snakeyaml.inspector.TrustedPrefixesTagInspector;
 import org.yaml.snakeyaml.nodes.Node;
 import org.yaml.snakeyaml.nodes.ScalarNode;
 import org.yaml.snakeyaml.nodes.Tag;
 import org.yaml.snakeyaml.representer.Representer;
+
+import java.util.Collections;
 
 /**
  *
@@ -43,11 +47,15 @@ public final class YamlSerialization {
   public static Yaml createYaml() {
     LoaderOptions loaderOptions = new LoaderOptions();
     loaderOptions.setCodePointLimit(15 * 1024 * 1024);
+    TagInspector tagInspector = new TrustedPrefixesTagInspector(Collections.singletonList("edu.umn.biomedicus"));
+    loaderOptions.setTagInspector(tagInspector);
     return createYaml(loaderOptions, new DumperOptions());
   }
 
   public static Yaml createYaml(LoaderOptions loaderOptions, DumperOptions dumperOptions) {
-    return new Yaml(constructor(loaderOptions), representer(dumperOptions), dumperOptions, loaderOptions);
+    Representer representer = representer(dumperOptions);
+    Constructor constructor = constructor(loaderOptions);
+    return new Yaml(constructor, representer, dumperOptions, loaderOptions);
   }
 
   private static Constructor constructor(LoaderOptions loaderOptions) {

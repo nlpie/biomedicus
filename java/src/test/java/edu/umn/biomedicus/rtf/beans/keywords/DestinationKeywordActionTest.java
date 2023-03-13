@@ -46,7 +46,7 @@ class DestinationKeywordActionTest {
     destinationKeywordAction.setBegin(45);
     destinationKeywordAction.setEnd(50);
     destinationKeywordAction.executeAction(state, null, sink);
-    verifyZeroInteractions(sink);
+    verifyNoInteractions(sink);
   }
 
   @Test

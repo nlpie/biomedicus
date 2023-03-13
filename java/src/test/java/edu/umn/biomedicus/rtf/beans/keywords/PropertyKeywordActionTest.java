@@ -92,7 +92,7 @@ class PropertyKeywordActionTest {
     RtfSource source = new RtfSource(null);
     action.setParameter(4);
     action.executeAction(state, source, sink);
-    verifyZeroInteractions(sink);
+    verifyNoInteractions(sink);
     assertEquals(0, state.getPropertyValue("foo", "bar"));
   }
 

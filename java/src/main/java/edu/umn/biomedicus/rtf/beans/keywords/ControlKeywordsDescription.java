@@ -18,11 +18,11 @@ package edu.umn.biomedicus.rtf.beans.keywords;
 
 import edu.umn.biomedicus.rtf.reader.KeywordAction;
 
-import javax.xml.bind.JAXB;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElementWrapper;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlType;
+import jakarta.xml.bind.JAXB;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlElementWrapper;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlType;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
