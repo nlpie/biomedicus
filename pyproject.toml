@@ -35,27 +35,23 @@ classifiers = [
     'Topic :: Text Processing :: Linguistic'
 ]
 dependencies = [
-    "mtap>=1.0.0",
-    "biomedicus_client",
-    "numpy",
-    "pyyaml",
-    "regex",
-    "tqdm",
-    "torch",
-    "stanza",
-    "requests",
-    "watchdog",
-    "importlib_resources>=1.3",
+    "biomedicus_client>=3.0.0",  # We get mtap, tqdm, and importlib_resources transitively from the client
+    "numpy==1.24.2",
+    "pyyaml==6.0",
+    "regex==2022.10.31",
+    "torch==1.13.1",
+    "stanza==1.4.2",
+    "requests==2.28.2",
+    "watchdog==2.3.1",
 ]
 dynamic = ["version"]
 
 [project.optional-dependencies]
 test = [
-    "pytest-runner",
-    "pytest"
+    "pytest==7.2.2"
 ]
 docs = [
-    "sphinx",
+    "sphinx==6.1.3",
 ]
 
 [project.scripts]
@@ -72,3 +68,4 @@ include = ["biomedicus*"]
 
 [tool.setuptools_scm]
 write_to = "python/biomedicus/version.py"
+fallback_version = "3.0.0"

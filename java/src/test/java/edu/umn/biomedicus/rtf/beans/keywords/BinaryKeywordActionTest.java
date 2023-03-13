@@ -96,7 +96,7 @@ class BinaryKeywordActionTest {
     }
     state.setSkippingDestination(true);
     keywordAction.executeAction(state, source, sink);
-    verifyZeroInteractions(sink);
+    verifyNoInteractions(sink);
   }
 
   @Test
@@ -122,7 +122,7 @@ class BinaryKeywordActionTest {
     }
     state.setCharactersToSkip(4);
     keywordAction.executeAction(state, source, sink);
-    verifyZeroInteractions(sink);
+    verifyNoInteractions(sink);
     assertEquals(3, state.getCharactersToSkip());
   }
 }

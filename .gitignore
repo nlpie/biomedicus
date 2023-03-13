@@ -345,6 +345,9 @@ cmake-build-release/
 # IntelliJ
 out/
 
+# Fleet
+.fleet/
+
 # mpeltonen/sbt-idea plugin
 .idea_modules/
 

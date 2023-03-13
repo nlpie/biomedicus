@@ -46,7 +46,7 @@ class OutputKeywordActionTest {
     action.setOutputString("z");
     state.setSkippingDestination(true);
     action.executeAction(state, null, sink);
-    verifyZeroInteractions(sink);
+    verifyNoInteractions(sink);
   }
 
   @Test
@@ -59,7 +59,7 @@ class OutputKeywordActionTest {
     state.setCharactersToSkip(2);
     action.executeAction(state, null, sink);
     assertEquals(1, state.getCharactersToSkip());
-    verifyZeroInteractions(sink);
+    verifyNoInteractions(sink);
   }
 
   @Test

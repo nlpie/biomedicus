@@ -16,22 +16,23 @@
 
 package edu.umn.biomedicus.tagging.tnt;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import edu.umn.biomedicus.common.config.Config;
 import edu.umn.biomedicus.common.data.DataFiles;
 import edu.umn.biomedicus.common.grams.Ngram;
 import edu.umn.biomedicus.common.pos.PartOfSpeech;
+import edu.umn.biomedicus.common.tokenization.TokenResult;
+import edu.umn.biomedicus.common.tokenization.Tokenizer;
 import edu.umn.biomedicus.common.tuples.PosCap;
 import edu.umn.biomedicus.common.tuples.WordCap;
 import edu.umn.biomedicus.common.viterbi.Viterbi;
 import edu.umn.biomedicus.common.viterbi.ViterbiProcessor;
-import edu.umn.biomedicus.tokenization.TokenResult;
-import edu.umn.biomedicus.tokenization.Tokenizer;
 import edu.umn.nlpie.mtap.common.JsonObject;
 import edu.umn.nlpie.mtap.common.JsonObjectBuilder;
 import edu.umn.nlpie.mtap.model.*;
 import edu.umn.nlpie.mtap.processing.*;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;

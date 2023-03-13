@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 class SkipDestinationIfUnknownKeywordActionTest {
 
@@ -42,7 +42,7 @@ class SkipDestinationIfUnknownKeywordActionTest {
     RtfSource source = new RtfSource(null);
     SkipDestinationIfUnknownKeywordAction action = new SkipDestinationIfUnknownKeywordAction();
     action.executeAction(state, source, sink);
-    verifyZeroInteractions(sink);
+    verifyNoInteractions(sink);
     assertTrue(state.isSkipDestinationIfUnknown());
   }
 }

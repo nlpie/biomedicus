@@ -16,7 +16,12 @@
 
 package edu.umn.biomedicus.rtf.beans.keywords;
 
-import javax.xml.bind.annotation.*;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlElementRef;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlSeeAlso;
+import jakarta.xml.bind.annotation.XmlType;
+
 
 /**
  *
