@@ -23,6 +23,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -35,7 +38,11 @@ class UnicodeKeywordActionTest {
   @BeforeEach
   void setUp() {
     sink = mock(RtfSink.class);
-    state = mock(RtfState.class);
+    Map<String, Map<String, Integer>> groupsMap = new HashMap<>();
+    groupsMap.put("CharacterFormatting", new HashMap<>());
+    groupsMap.put("DocumentFormatting", Collections.singletonMap("UnicodeByteCount", 1));
+    state = new RtfState(groupsMap);
+    state.setPropertyValue("CharacterFormatting", "Hidden", 0);
   }
 
   @Test

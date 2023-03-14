@@ -44,6 +44,19 @@ class RTFTest {
   }
 
   @Test
+  void testUnicodeSkips() throws IOException {
+    RtfParser parser = RTF.getParser();
+    PlainTextSink sink = new PlainTextSink();
+    String tested = "{\\rtf1 a\\u8901\\'b7b}";
+    try (InputStream is = new ByteArrayInputStream(tested.getBytes(StandardCharsets.US_ASCII))) {
+      RtfSource source = new RtfSource(new BufferedInputStream(is));
+      parser.parseRtf(source, sink);
+    }
+    String text = sink.getText();
+    assertEquals("a⋅b", text);
+  }
+
+  @Test
   void testHex() throws IOException {
     RtfParser parser = RTF.getParser();
     PlainTextSink sink = new PlainTextSink();
