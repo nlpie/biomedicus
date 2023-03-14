@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashMap;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
@@ -33,7 +34,8 @@ class OutputKeywordActionTest {
 
   @BeforeEach
   void setUp() {
-    state = new RtfState(Collections.emptyMap());
+    state = new RtfState(Collections.singletonMap("CharacterFormatting", new HashMap<>()));
+    state.setPropertyValue("CharacterFormatting", "Hidden", 0);
     sink = mock(RtfSink.class);
   }
 

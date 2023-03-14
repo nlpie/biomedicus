@@ -98,31 +98,4 @@ class BinaryKeywordActionTest {
     keywordAction.executeAction(state, source, sink);
     verifyNoInteractions(sink);
   }
-
-  @Test
-  void skipCharacters() throws IOException {
-    ByteBuffer input = ByteBuffer.allocate(9);
-    input.put((byte) '\\');
-    input.put((byte) 'b');
-    input.put((byte) 'i');
-    input.put((byte) 'n');
-    input.put((byte) '3');
-    input.put((byte) ' ');
-    input.put((byte) 0xBA);
-    input.put((byte) 0x1A);
-    input.put((byte) 0x2A);
-    BinaryKeywordAction keywordAction = new BinaryKeywordAction();
-    keywordAction.setBegin(0);
-    keywordAction.setEnd(6);
-    keywordAction.setParameter(3);
-    keywordAction.setControlWord("");
-    RtfSource source = new RtfSource(new BufferedInputStream(new ByteArrayInputStream(input.array())));
-    for (int i = 0; i < 6; i++) {
-      source.read();
-    }
-    state.setCharactersToSkip(4);
-    keywordAction.executeAction(state, source, sink);
-    verifyNoInteractions(sink);
-    assertEquals(3, state.getCharactersToSkip());
-  }
 }

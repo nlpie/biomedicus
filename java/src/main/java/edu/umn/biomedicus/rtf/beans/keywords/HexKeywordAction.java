@@ -47,7 +47,7 @@ public class HexKeywordAction extends AbstractKeywordAction {
       state.setCharactersToSkip(charactersToSkip - 1);
       return;
     }
-    if (state.isSkippingDestination()) {
+    if (state.isSkippingDestination() || state.getPropertyValue("CharacterFormatting", "Hidden") > 0) {
       return;
     }
     byte code = (byte) Integer.parseInt(new String(chars).trim().toUpperCase(Locale.ROOT), 16);

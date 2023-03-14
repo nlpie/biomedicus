@@ -51,6 +51,9 @@ public class OutputKeywordAction extends AbstractKeywordAction {
       state.setCharactersToSkip(charactersToSkip - 1);
       return;
     }
+    if (state.getPropertyValue("CharacterFormatting", "Hidden") > 0) {
+      return;
+    }
     for (char c : outputString.toCharArray()) {
       sink.writeCharacter(state.getDestination(), c, getStartIndex(), getEnd());
     }
