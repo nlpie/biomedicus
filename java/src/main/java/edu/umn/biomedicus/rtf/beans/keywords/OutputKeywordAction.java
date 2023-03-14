@@ -51,8 +51,9 @@ public class OutputKeywordAction extends AbstractKeywordAction {
       state.setCharactersToSkip(charactersToSkip - 1);
       return;
     }
-    char c = outputString.charAt(0);
-    sink.writeCharacter(state.getDestination(), c, getStartIndex(), getEnd());
+    for (char c : outputString.toCharArray()) {
+      sink.writeCharacter(state.getDestination(), c, getStartIndex(), getEnd());
+    }
   }
 
   @Override

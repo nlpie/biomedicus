@@ -21,10 +21,8 @@ import edu.umn.biomedicus.rtf.reader.RtfParser;
 import edu.umn.biomedicus.rtf.reader.RtfSource;
 import org.junit.jupiter.api.Test;
 
-import java.io.BufferedInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -43,5 +41,278 @@ class RTFTest {
     }
     String text = sink.getText();
     assertEquals("The quick brown fox jumped over the lazy dog.\n", text);
+  }
+
+  @Test
+  void testSect() throws IOException {
+    RtfParser parser = RTF.getParser();
+    PlainTextSink sink = new PlainTextSink();
+    String tested = "{\\rtf1 a\\sect b}";
+    try (InputStream is = new ByteArrayInputStream(tested.getBytes(StandardCharsets.US_ASCII))) {
+      RtfSource source = new RtfSource(new BufferedInputStream(is));
+      parser.parseRtf(source, sink);
+    }
+    String text = sink.getText();
+    assertEquals("a\n\nb", text);
+  }
+
+  @Test
+  void testPage() throws IOException {
+    RtfParser parser = RTF.getParser();
+    PlainTextSink sink = new PlainTextSink();
+    String tested = "{\\rtf1 a\\page b}";
+    try (InputStream is = new ByteArrayInputStream(tested.getBytes(StandardCharsets.US_ASCII))) {
+      RtfSource source = new RtfSource(new BufferedInputStream(is));
+      parser.parseRtf(source, sink);
+    }
+    String text = sink.getText();
+    assertEquals("a\n\nb", text);
+  }
+
+  @Test
+  void testColumn() throws IOException {
+    RtfParser parser = RTF.getParser();
+    PlainTextSink sink = new PlainTextSink();
+    String tested = "{\\rtf1 a\\column b}";
+    try (InputStream is = new ByteArrayInputStream(tested.getBytes(StandardCharsets.US_ASCII))) {
+      RtfSource source = new RtfSource(new BufferedInputStream(is));
+      parser.parseRtf(source, sink);
+    }
+    String text = sink.getText();
+    assertEquals("a\n\nb", text);
+  }
+
+  @Test
+  void testLbr() throws IOException {
+    RtfParser parser = RTF.getParser();
+    PlainTextSink sink = new PlainTextSink();
+    String tested = "{\\rtf1 a\\lbr0 b}";
+    try (InputStream is = new ByteArrayInputStream(tested.getBytes(StandardCharsets.US_ASCII))) {
+      RtfSource source = new RtfSource(new BufferedInputStream(is));
+      parser.parseRtf(source, sink);
+    }
+    String text = sink.getText();
+    assertEquals("a\nb", text);
+  }
+
+  @Test
+  void testEmdash() throws IOException {
+    RtfParser parser = RTF.getParser();
+    PlainTextSink sink = new PlainTextSink();
+    String tested = "{\\rtf1 a\\emdash b}";
+    try (InputStream is = new ByteArrayInputStream(tested.getBytes(StandardCharsets.US_ASCII))) {
+      RtfSource source = new RtfSource(new BufferedInputStream(is));
+      parser.parseRtf(source, sink);
+    }
+    String text = sink.getText();
+    assertEquals("a—b", text);
+  }
+
+  @Test
+  void testEndash() throws IOException {
+    RtfParser parser = RTF.getParser();
+    PlainTextSink sink = new PlainTextSink();
+    String tested = "{\\rtf1 a\\endash b}";
+    try (InputStream is = new ByteArrayInputStream(tested.getBytes(StandardCharsets.US_ASCII))) {
+      RtfSource source = new RtfSource(new BufferedInputStream(is));
+      parser.parseRtf(source, sink);
+    }
+    String text = sink.getText();
+    assertEquals("a–b", text);
+  }
+
+  @Test
+  void testEmspace() throws IOException {
+    RtfParser parser = RTF.getParser();
+    PlainTextSink sink = new PlainTextSink();
+    String tested = "{\\rtf1 a\\emspace b}";
+    try (InputStream is = new ByteArrayInputStream(tested.getBytes(StandardCharsets.US_ASCII))) {
+      RtfSource source = new RtfSource(new BufferedInputStream(is));
+      parser.parseRtf(source, sink);
+    }
+    String text = sink.getText();
+    assertEquals("a b", text);
+  }
+
+  @Test
+  void testEnspace() throws IOException {
+    RtfParser parser = RTF.getParser();
+    PlainTextSink sink = new PlainTextSink();
+    String tested = "{\\rtf1 a\\enspace b}";
+    try (InputStream is = new ByteArrayInputStream(tested.getBytes(StandardCharsets.US_ASCII))) {
+      RtfSource source = new RtfSource(new BufferedInputStream(is));
+      parser.parseRtf(source, sink);
+    }
+    String text = sink.getText();
+    assertEquals("a b", text);
+  }
+
+  @Test
+  void testQmspace() throws IOException {
+    RtfParser parser = RTF.getParser();
+    PlainTextSink sink = new PlainTextSink();
+    String tested = "{\\rtf1 a\\qmspace b}";
+    try (InputStream is = new ByteArrayInputStream(tested.getBytes(StandardCharsets.US_ASCII))) {
+      RtfSource source = new RtfSource(new BufferedInputStream(is));
+      parser.parseRtf(source, sink);
+    }
+    String text = sink.getText();
+    assertEquals("a b", text);
+  }
+
+  @Test
+  void testBullet() throws IOException {
+    RtfParser parser = RTF.getParser();
+    PlainTextSink sink = new PlainTextSink();
+    String tested = "{\\rtf1 a\\bullet b}";
+    try (InputStream is = new ByteArrayInputStream(tested.getBytes(StandardCharsets.US_ASCII))) {
+      RtfSource source = new RtfSource(new BufferedInputStream(is));
+      parser.parseRtf(source, sink);
+    }
+    String text = sink.getText();
+    assertEquals("a•b", text);
+  }
+
+  @Test
+  void testLquote() throws IOException {
+    RtfParser parser = RTF.getParser();
+    PlainTextSink sink = new PlainTextSink();
+    String tested = "{\\rtf1 a\\lquote b}";
+    try (InputStream is = new ByteArrayInputStream(tested.getBytes(StandardCharsets.US_ASCII))) {
+      RtfSource source = new RtfSource(new BufferedInputStream(is));
+      parser.parseRtf(source, sink);
+    }
+    String text = sink.getText();
+    assertEquals("a‘b", text);
+  }
+
+  @Test
+  void testRquote() throws IOException {
+    RtfParser parser = RTF.getParser();
+    PlainTextSink sink = new PlainTextSink();
+    String tested = "{\\rtf1 a\\rquote b}";
+    try (InputStream is = new ByteArrayInputStream(tested.getBytes(StandardCharsets.US_ASCII))) {
+      RtfSource source = new RtfSource(new BufferedInputStream(is));
+      parser.parseRtf(source, sink);
+    }
+    String text = sink.getText();
+    assertEquals("a’b", text);
+  }
+
+  @Test
+  void testLdblquote() throws IOException {
+    RtfParser parser = RTF.getParser();
+    PlainTextSink sink = new PlainTextSink();
+    String tested = "{\\rtf1 a\\ldblquote b}";
+    try (InputStream is = new ByteArrayInputStream(tested.getBytes(StandardCharsets.US_ASCII))) {
+      RtfSource source = new RtfSource(new BufferedInputStream(is));
+      parser.parseRtf(source, sink);
+    }
+    String text = sink.getText();
+    assertEquals("a“b", text);
+  }
+
+  @Test
+  void testRdblquote() throws IOException {
+    RtfParser parser = RTF.getParser();
+    PlainTextSink sink = new PlainTextSink();
+    String tested = "{\\rtf1 a\\rdblquote b}";
+    try (InputStream is = new ByteArrayInputStream(tested.getBytes(StandardCharsets.US_ASCII))) {
+      RtfSource source = new RtfSource(new BufferedInputStream(is));
+      parser.parseRtf(source, sink);
+    }
+    String text = sink.getText();
+    assertEquals("a”b", text);
+  }
+
+  @Test
+  void testNbsp() throws IOException {
+    RtfParser parser = RTF.getParser();
+    PlainTextSink sink = new PlainTextSink();
+    String tested = "{\\rtf1 a\\~ b}";
+    try (InputStream is = new ByteArrayInputStream(tested.getBytes(StandardCharsets.US_ASCII))) {
+      RtfSource source = new RtfSource(new BufferedInputStream(is));
+      parser.parseRtf(source, sink);
+    }
+    String text = sink.getText();
+    assertEquals("a\u00a0b", text);
+  }
+
+  @Test
+  void testOptionalHyphen() throws IOException {
+    RtfParser parser = RTF.getParser();
+    PlainTextSink sink = new PlainTextSink();
+    String tested = "{\\rtf1 a\\- b}";
+    try (InputStream is = new ByteArrayInputStream(tested.getBytes(StandardCharsets.US_ASCII))) {
+      RtfSource source = new RtfSource(new BufferedInputStream(is));
+      parser.parseRtf(source, sink);
+    }
+    String text = sink.getText();
+    assertEquals("a\u00adb", text);
+  }
+
+  @Test
+  void testNbHyphen() throws IOException {
+    RtfParser parser = RTF.getParser();
+    PlainTextSink sink = new PlainTextSink();
+    String tested = "{\\rtf1 a\\_ b}";
+    try (InputStream is = new ByteArrayInputStream(tested.getBytes(StandardCharsets.US_ASCII))) {
+      RtfSource source = new RtfSource(new BufferedInputStream(is));
+      parser.parseRtf(source, sink);
+    }
+    String text = sink.getText();
+    assertEquals("a‑b", text);
+  }
+
+  @Test
+  void testZwbo() throws IOException {
+    RtfParser parser = RTF.getParser();
+    PlainTextSink sink = new PlainTextSink();
+    String tested = "{\\rtf1 a\\zwbo b}";
+    try (InputStream is = new ByteArrayInputStream(tested.getBytes(StandardCharsets.US_ASCII))) {
+      RtfSource source = new RtfSource(new BufferedInputStream(is));
+      parser.parseRtf(source, sink);
+    }
+    String text = sink.getText();
+    assertEquals("a\u200bb", text);
+  }
+
+  @Test
+  void testZwnbo() throws IOException {
+    RtfParser parser = RTF.getParser();
+    PlainTextSink sink = new PlainTextSink();
+    String tested = "{\\rtf1 a\\zwnbo b}";
+    try (InputStream is = new ByteArrayInputStream(tested.getBytes(StandardCharsets.US_ASCII))) {
+      RtfSource source = new RtfSource(new BufferedInputStream(is));
+      parser.parseRtf(source, sink);
+    }
+    String text = sink.getText();
+    assertEquals("a\ufeffb", text);
+  }
+
+  @Test
+  void testZwj() throws IOException {
+    RtfParser parser = RTF.getParser();
+    PlainTextSink sink = new PlainTextSink();
+    String tested = "{\\rtf1 a\\zwj b}";
+    try (InputStream is = new ByteArrayInputStream(tested.getBytes(StandardCharsets.US_ASCII))) {
+      RtfSource source = new RtfSource(new BufferedInputStream(is));
+      parser.parseRtf(source, sink);
+    }
+    String text = sink.getText();
+    assertEquals("a\u200db", text);
+  }
+  
+  @Test
+  void testZwnj() throws IOException {
+    RtfParser parser = RTF.getParser();
+    PlainTextSink sink = new PlainTextSink();
+    String tested = "{\\rtf1 a\\zwnj b}";
+    try (InputStream is = new ByteArrayInputStream(tested.getBytes(StandardCharsets.US_ASCII))) {
+      RtfSource source = new RtfSource(new BufferedInputStream(is));
+      parser.parseRtf(source, sink);
+    }
+    String text = sink.getText();
+    assertEquals("a\u200cb", text);
   }
 }
