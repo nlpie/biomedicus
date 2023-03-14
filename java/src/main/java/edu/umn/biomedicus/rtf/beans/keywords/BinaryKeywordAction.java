@@ -48,11 +48,6 @@ public class BinaryKeywordAction extends AbstractKeywordAction {
     if (state.isSkippingDestination()) {
       return;
     }
-    int charactersToSkip = state.getCharactersToSkip();
-    if (charactersToSkip > 0) {
-      state.setCharactersToSkip(charactersToSkip - 1);
-      return;
-    }
     bb.position(0);
     sink.handleBinary(bb, getStartIndex(), source.getIndex());
   }

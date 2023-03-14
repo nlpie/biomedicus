@@ -44,6 +44,19 @@ class RTFTest {
   }
 
   @Test
+  void testHex() throws IOException {
+    RtfParser parser = RTF.getParser();
+    PlainTextSink sink = new PlainTextSink();
+    String tested = "{\\rtf1 a\\'abb}";
+    try (InputStream is = new ByteArrayInputStream(tested.getBytes(StandardCharsets.US_ASCII))) {
+      RtfSource source = new RtfSource(new BufferedInputStream(is));
+      parser.parseRtf(source, sink);
+    }
+    String text = sink.getText();
+    assertEquals("a«b", text);
+  }
+
+  @Test
   void testSect() throws IOException {
     RtfParser parser = RTF.getParser();
     PlainTextSink sink = new PlainTextSink();
@@ -314,5 +327,57 @@ class RTFTest {
     }
     String text = sink.getText();
     assertEquals("a\u200cb", text);
+  }
+
+  @Test
+  void testHiddenFormatting() throws IOException {
+    RtfParser parser = RTF.getParser();
+    PlainTextSink sink = new PlainTextSink();
+    String tested = "{\\rtf1 a\\v bmk\\plain b}";
+    try (InputStream is = new ByteArrayInputStream(tested.getBytes(StandardCharsets.US_ASCII))) {
+      RtfSource source = new RtfSource(new BufferedInputStream(is));
+      parser.parseRtf(source, sink);
+    }
+    String text = sink.getText();
+    assertEquals("ab", text);
+  }
+
+  @Test
+  void testHiddenFormattingUnicode() throws IOException {
+    RtfParser parser = RTF.getParser();
+    PlainTextSink sink = new PlainTextSink();
+    String tested = "{\\rtf1 a\\v \\uc0\\u9786\\plain b}";
+    try (InputStream is = new ByteArrayInputStream(tested.getBytes(StandardCharsets.US_ASCII))) {
+      RtfSource source = new RtfSource(new BufferedInputStream(is));
+      parser.parseRtf(source, sink);
+    }
+    String text = sink.getText();
+    assertEquals("ab", text);
+  }
+
+  @Test
+  void testHiddenFormattingHex() throws IOException {
+    RtfParser parser = RTF.getParser();
+    PlainTextSink sink = new PlainTextSink();
+    String tested = "{\\rtf1 a\\v \\'AB\\plain b}";
+    try (InputStream is = new ByteArrayInputStream(tested.getBytes(StandardCharsets.US_ASCII))) {
+      RtfSource source = new RtfSource(new BufferedInputStream(is));
+      parser.parseRtf(source, sink);
+    }
+    String text = sink.getText();
+    assertEquals("ab", text);
+  }
+
+  @Test
+  void testHiddenOutputKeyword() throws IOException {
+    RtfParser parser = RTF.getParser();
+    PlainTextSink sink = new PlainTextSink();
+    String tested = "{\\rtf1 a\\v \\emdash\\plain b}";
+    try (InputStream is = new ByteArrayInputStream(tested.getBytes(StandardCharsets.US_ASCII))) {
+      RtfSource source = new RtfSource(new BufferedInputStream(is));
+      parser.parseRtf(source, sink);
+    }
+    String text = sink.getText();
+    assertEquals("ab", text);
   }
 }

@@ -100,7 +100,7 @@ public class RtfParser {
               state.setCharactersToSkip(charactersToSkip - 1);
               break;
             }
-            if (!state.isSkippingDestination()) {
+            if (!state.isSkippingDestination() && state.getPropertyValue("CharacterFormatting", "Hidden") == 0) {
               cb.clear();
               bb.clear();
               bb.put((byte) b);
@@ -127,7 +127,7 @@ public class RtfParser {
     }
     String controlWord;
     if (!Character.isAlphabetic(ch)) {
-      controlWord = "" + (char) ch;
+      controlWord = String.valueOf((char) ch);
       ch = rtfSource.read();
     } else {
       StringBuilder controlWordBuilder = new StringBuilder(KEYWORD_MAX);
