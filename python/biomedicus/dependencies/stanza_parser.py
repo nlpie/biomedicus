@@ -43,10 +43,7 @@ def stanza_deps_and_upos_tags(sentence, stanza_sentence):
         for dep_id in range(len(stanza_dependencies) + 1):
             if graph[head_id, dep_id] > 0:
                 dep, deprel = dep_map[dep_id]
-                token_begin = (sentence.start_index + dep.parent.start_char
-                               - stanza_sentence.tokens[0].start_char)
-                token_end = (sentence.start_index + dep.parent.end_char
-                             - stanza_sentence.tokens[0].start_char)
+                token_begin, token_end = sentence[dep_id - 1]
                 dep_label = GenericLabel(token_begin, token_end, head=head_dep_label,
                                          deprel=deprel)
                 dep_label.reference_cache['dependents'] = []
@@ -58,11 +55,7 @@ def stanza_deps_and_upos_tags(sentence, stanza_sentence):
     if len(dependencies) == len(stanza_dependencies) - 1:
         raise ValueError("Unexpected number of dependencies")
     for word in stanza_sentence.words:
-        token = word.parent
-        token_begin = (sentence.start_index + token.start_char
-                       - stanza_sentence.tokens[0].start_char)
-        token_end = (sentence.start_index + token.end_char
-                     - stanza_sentence.tokens[0].start_char)
+        token_begin, token_end = sentence[word.id - 1]
         sentence_upos_tags.append(GenericLabel(token_begin, token_end, tag=word.upos))
     return sentence_deps, sentence_upos_tags
 
@@ -72,7 +65,8 @@ def stanza_deps_and_upos_tags(sentence, stanza_sentence):
            entry_point=__name__,
            description="Calls out to the Stanford Stanza framework for dependency parsing.",
            inputs=[
-               labels(name='sentences', reference='biomedicus-sentences/sentences')
+               labels(name='sentences', reference='biomedicus-sentences/sentences'),
+               labels(name='pos_tags', reference='biomedicus-tnt-tagger/pos_tags'),
            ],
            outputs=[
                labels(name='dependencies',
@@ -110,22 +104,24 @@ class StanzaParser(DocumentProcessor):
     def __init__(self):
         stanza.download('en')
         self.nlp = stanza.Pipeline('en', processors='tokenize,pos,lemma,depparse',
-                                   tokenize_no_ssplit=True)
+                                   tokenize_pretokenized=True)
 
     def process_document(self,
                          document: Document,
                          params: Dict[str, Any]):
         sentences = document.labels['sentences']
+        pos_tags = document.labels['pos_tags']
 
-        sentences_text = []
+        sentence_tokens = []
         for sentence in sentences:
-            sentences_text.append(sentence.text)
+            tokens = [(pt.start_index, pt.end_index) for pt in pos_tags.inside(sentence)]
+            sentence_tokens.append(tokens)
 
-        stanza_doc = self.nlp(sentences_text)
+        stanza_doc = self.nlp([[document.text[a:b] for a, b in sentence] for sentence in sentence_tokens])
 
         all_deps = []
         all_upos_tags = []
-        for stanza_sentence, sentence in zip(stanza_doc.sentences, sentences):
+        for stanza_sentence, sentence in zip(stanza_doc.sentences, sentence_tokens):
             sentence_deps, sentence_upos_tags = stanza_deps_and_upos_tags(sentence, stanza_sentence)
             all_deps.extend(sentence_deps)
             all_upos_tags.extend(sentence_upos_tags)

@@ -30,6 +30,7 @@ from biomedicus.dependencies.stanza_parser import stanza_deps_and_upos_tags
                        "on a appropriate subset of sentences.",
            inputs=[
                labels(name='sentences', reference='biomedicus-sentences/sentences'),
+               labels(name='pos_tags', reference='biomedicus-tnt-tagger/pos_tags'),
                labels(
                    name='umls_terms',
                    reference='biomedicus-concepts/umls_terms',
@@ -78,7 +79,7 @@ from biomedicus.dependencies.stanza_parser import stanza_deps_and_upos_tags
 class StanzaSelectiveParser(DocumentProcessor):
     def __init__(self):
         self.nlp = stanza.Pipeline('en', processors='tokenize,pos,lemma,depparse',
-                                   tokenize_no_ssplit=True, verbose=False)
+                                   tokenize_pretokenized=True, verbose=False)
 
     def __reduce__(self):
         return StanzaSelectiveParser, ()
@@ -86,6 +87,7 @@ class StanzaSelectiveParser(DocumentProcessor):
     def process_document(self,
                          document: Document,
                          params: Dict[str, Any]):
+        pos_tags = document.labels['pos_tags']
         terms_index_name = params.get('terms_index', 'umls_terms')
         terms = document.labels[terms_index_name]
         negation_triggers = document.labels['negation_triggers']
@@ -95,13 +97,14 @@ class StanzaSelectiveParser(DocumentProcessor):
         sentences = []
         sentence_texts = []
         for sentence in document.labels['sentences']:
+            tokens = [(pt.start_index, pt.end_index) for pt in pos_tags.inside(sentence)]
             if len(terms.inside(sentence)) == 0 or len(negation_triggers.inside(sentence)) == 0:
                 continue
-            sentences.append(sentence)
+            sentences.append(tokens)
             sentence_texts.append(sentence.text)
 
         with torch.no_grad():
-            stanza_doc = self.nlp(sentence_texts)
+            stanza_doc = self.nlp([[document.text[a:b] for a, b in sentence] for sentence in sentences])
         for (sentence, stanza_sentence) in zip(sentences, stanza_doc.sentences):
             sentence_deps, sentence_upos_tags = stanza_deps_and_upos_tags(sentence, stanza_sentence)
             all_deps.extend(sentence_deps)

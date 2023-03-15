@@ -11,6 +11,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+import logging
 from typing import Sequence, Dict, Any, TYPE_CHECKING
 
 import mtap
@@ -20,6 +21,8 @@ from mtap.processing.descriptions import parameter, labels
 if TYPE_CHECKING:
     from mtap.data import LabelIndex
 
+
+logger = logging.getLogger(__name__)
 
 def check_cc_and(dep: GenericLabel, upos_tags: 'LabelIndex[GenericLabel]'):
     if dep.deprel == 'conj' and upos_tags.at(dep)[0].tag == 'VERB':
@@ -97,6 +100,14 @@ class DeepenTagger:
         affirmed_triggers = []
         for term in terms:
             for trigger in triggers:
+                if trigger.start_index <= term.start_index < trigger.end_index:
+                    # Trigger overlaps term on the left
+                    continue
+                if trigger.start_index < term.end_index <= trigger.end_index:
+                    # Trigger overlaps term on the right
+                    continue
+                if term.location.covers(trigger):
+                    continue
                 if trigger.start_index < term.start_index and 'PREN' not in trigger.tags:
                     continue
                 if trigger.start_index > term.end_index and 'POST' not in trigger.tags:
@@ -104,6 +115,9 @@ class DeepenTagger:
                 negation_location = term.location
                 trigger_location = trigger.location
                 trigger_deps = deps.inside(trigger_location)
+                if len(trigger_deps) == 0:
+                  logger.warning("Negation trigger without deps, should not happen.")
+                  continue
                 trigger_edge = None
                 for dep in trigger_deps:
                     if dep.head not in trigger_deps:
