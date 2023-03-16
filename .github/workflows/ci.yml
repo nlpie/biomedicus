@@ -36,7 +36,7 @@ jobs:
         distribution: 'temurin'
         java-version: ${{ matrix.java-version }}
     - name: Install dependencies (not release)
-      if: ${github.head_ref%/*} != 'release' && success()
+      if: !startsWith(github.head_ref, 'release') && success()
       run: |
         python -m pip install --upgrade pip setuptools wheel
         pip install flake8 pytest
@@ -44,14 +44,12 @@ jobs:
         pip install ./biomedicus_client
         pip install .[test] --extra-index-url https://download.pytorch.org/whl/cpu
     - name: Install dependencies (release)
-      if: ${github.head_ref%/*} == 'release' && success()
+      if: startsWith(github.head_ref, 'release') && success()
       run: |
         python -m pip install --upgrade pip setuptools wheel
         pip install flake8 pytest
-        pip install ./biomedicus_client
+        SETUPTOOLS_SCM_PRETEND_VERSION=${GITHUB_HEAD_REF##*/} pip install ./biomedicus_client
         pip install .[test] --extra-index-url https://download.pytorch.org/whl/cpu
-      env:
-        SETUPTOOLS_SCM_PRETEND_VERSION: "${{ ${github.head_ref##*/} }}"
     - name: Lint with flake8
       run: |
         pip install flake8
