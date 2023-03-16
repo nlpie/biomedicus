@@ -103,6 +103,7 @@ class BiLSTM(nn.Module):
         assert chars.shape[1] == words.shape[1]
         # flatten the batch and sequence dims into words (batch * sequence, word_len, 1)
         sequence_lengths, sorted_indices = torch.sort(sequence_lengths, descending=True)
+        sequence_lengths = sequence_lengths.cpu()
         chars = chars.index_select(0, sorted_indices)
         words = words.index_select(0, sorted_indices)
         word_chars = pack_padded_sequence(chars, sequence_lengths, batch_first=True)
@@ -432,7 +433,7 @@ def create_processor(conf):
     vectors = np.array(vectors)
     logger.info('Loading characters from: {}'.format(conf.chars_file))
     char_mapping = load_char_mapping(conf.chars_file)
-    input_mapping = InputMapping(char_mapping, words, hparams.word_length)
+    input_mapping = InputMapping(char_mapping, words, hparams.word_length, device=device)
     model = BiLSTM(hparams, n_chars(char_mapping), vectors)
     model.eval()
     model.to(device=device)

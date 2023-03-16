@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Dict, Any, List
 
 import mtap
+from importlib_resources import as_file, files
 from mtap import Document, DocumentProcessor
 from mtap.processing.descriptions import labels, parameter, processor, label_property
 
@@ -29,7 +30,7 @@ _not_word = re.compile(r'[^\w/\-]+')
 class NegexTriggerTagger:
     def __init__(self, rules: List[List[str]] = None, tokens_range: int = 40):
         if rules is None:
-            with (Path(__file__).parent / 'negex_triggers.txt').open('r') as f:
+            with files('biomedicus.negation').joinpath('negex_triggers.txt').open('r') as f:
                 rules = make_rules(f)
         self.dawg = DAWG()
         for rule, tag in rules:
@@ -108,7 +109,7 @@ class NegexTriggersProcessor(DocumentProcessor):
 
 
 def main(args=None):
-    mtap.run_processor(NegexTriggersProcessor(), mp=True, args=args)
+    mtap.run_processor(NegexTriggersProcessor(), args=args)
 
 
 if __name__ == '__main__':
