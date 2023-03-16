@@ -1,0 +1,36 @@
+Concepts:
+  Precision: 0.4493197311250345
+  Process Method Duration: '0:00:00.056146'
+  Recall: 0.6984197443181818
+  Remote Call Duration: '0:00:00.059279'
+TnT Pos Tagger:
+  Accuracy: 0.9349333907344957
+  Process Method Duration: '0:00:00.014999'
+  Remote Call Duration: '0:00:00.017518'
+biomedicus-deepen:
+  F1: 0.9135216734957947
+  Gold Standard: 2010 i2b2-VA
+  Per-Document Mean Process Method Duration: '0:00:00.563448'
+  Per-Document Mean Remote Call Duration: '0:00:00.567879'
+  Precision: 0.8865634156550858
+  Recall: 0.9421708185053381
+biomedicus-dependencies:
+  Corpus: MiPACQ converted to UD from PTB test set
+  LAS: 0.5413549646988133
+  Process Method Duration: '0:00:00.657716'
+  Remote Call Duration: '0:00:00.659653'
+  UAS: 0.6770917830854739
+biomedicus-modification:
+  F1: 0.7100757788380578
+  Gold Standard: 2010 i2b2-VA
+  Per-Document Mean Process Method Duration: '0:00:00.009222'
+  Per-Document Mean Remote Call Duration: '0:00:00.012080'
+  Precision: 0.9619771863117871
+  Recall: 0.5627224199288257
+biomedicus-negex:
+  F1: 0.8706162076481078
+  Gold Standard: 2010 i2b2-VA
+  Per-Document Mean Process Method Duration: '0:00:00.009098'
+  Per-Document Mean Remote Call Duration: '0:00:00.011020'
+  Precision: 0.7849231868524473
+  Recall: 0.9773131672597865
