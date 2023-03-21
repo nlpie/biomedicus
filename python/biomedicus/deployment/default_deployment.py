@@ -39,6 +39,7 @@ def create_deployment(offline: bool = False,
                       jvm_classpath: Optional[str] = None,
                       rtf: bool = False,
                       host: Optional[str] = None,
+                      startup_timeout: Optional[float] = None,
                       **_) -> ContextManager[Deployment]:
     config = config if config is not None else deployment_config
     log_level = log_level if log_level is not None else 'INFO'
@@ -48,6 +49,8 @@ def create_deployment(offline: bool = False,
     if host is not None:
         deployment.global_settings.host = host
     deployment.global_settings.log_level = log_level
+    if startup_timeout is not None:
+        deployment.shared_processor_config.startup_timeout = startup_timeout
     with attach_biomedicus_jar(
         deployment.shared_processor_config.java_classpath,
         jvm_classpath
@@ -102,6 +105,10 @@ def argument_parser():
     parser.add_argument(
         '--host', default='127.0.0.1',
         help="The hostname/ip to deploy the services on."
+    )
+    parser.add_argument(
+        '--startup-timeout', type=float,
+        help="The timeout (in seconds) for individual processor services to deploy before failure."
     )
     return parser
 

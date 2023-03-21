@@ -22,11 +22,12 @@ import pytest
 
 
 @pytest.fixture(name='deploy_rtf_to_text')
-def fixture_deploy_rtf_to_text():
+def fixture_deploy_rtf_to_text(processor_timeout):
     p = None
     listener = None
     try:
-        p = Popen([sys.executable, '-m', 'biomedicus', 'deploy-rtf-to-text', '--log-level', 'DEBUG'],
+        p = Popen([sys.executable, '-m', 'biomedicus', 'deploy-rtf-to-text', '--log-level', 'DEBUG',
+                   '--startup-timeout', str(processor_timeout)],
                   stdout=PIPE, stderr=STDOUT)
         e = threading.Event()
 

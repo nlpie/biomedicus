@@ -36,7 +36,7 @@ classifiers = [
     'Topic :: Text Processing :: Linguistic'
 ]
 dependencies = [
-    "mtap==1.1.0",
+    "mtap>=1.1.0",
     "tqdm==4.65.0",
     "importlib_resources==5.12.0",
 ]

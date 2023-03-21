@@ -68,7 +68,7 @@ def pytest_collection_modifyitems(config, items):
                 item.add_marker(skip_phi_test_data)
 
 
-@pytest.fixture(name='processor_timeout')
+@pytest.fixture(name='processor_timeout', scope='session')
 def fixture_processor_timeout(request):
     return request.config.getoption("--timeout")
 
