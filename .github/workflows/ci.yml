@@ -13,12 +13,12 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
         java-version: ['11', 'x']
-        python-version: ['3.7', '3.10']
+        python-version: ['3.8', '3.10']
         exclude:
           - java-version: '11'
             python-version: '3.10'
           - java-version: 'x'
-            python-version: '3.7'
+            python-version: '3.8'
     steps:
     - uses: actions/checkout@v3
       with:
