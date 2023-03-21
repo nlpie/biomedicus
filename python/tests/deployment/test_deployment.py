@@ -24,11 +24,12 @@ from mtap.serialization import YamlSerializer
 
 
 @pytest.fixture(name='deploy_all', scope='module')
-def fixture_deploy_all():
+def fixture_deploy_all(processor_timeout):
     p = None
     listener = None
     try:
-        p = Popen([sys.executable, '-m', 'biomedicus', 'deploy', '--rtf', '--noninteractive', '--log-level', 'DEBUG'],
+        p = Popen([sys.executable, '-m', 'biomedicus', 'deploy', '--rtf', '--noninteractive', '--log-level', 'DEBUG',
+                   '--startup-timeout', str(processor_timeout)],
                   stdout=PIPE, stderr=STDOUT)
         e = threading.Event()
 

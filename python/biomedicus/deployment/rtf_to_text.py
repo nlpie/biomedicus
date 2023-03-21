@@ -28,6 +28,7 @@ deployment_config = files('biomedicus.deployment').joinpath('rtf_to_text_deploy_
 def create_deployment(config_file: Optional[str] = None,
                       jvm_classpath: Optional[str] = None,
                       log_level: Optional[str] = None,
+                      startup_timeout: Optional[float] = None,
                       **_) -> ContextManager[Deployment]:
     if config_file is None:
         config_file = deployment_config
@@ -35,6 +36,8 @@ def create_deployment(config_file: Optional[str] = None,
         log_level = 'INFO'
     deployment = Deployment.from_yaml_file(config_file)
     deployment.global_settings.log_level = log_level
+    if startup_timeout is not None:
+        deployment.shared_processor_config.startup_timeout = startup_timeout
     with attach_biomedicus_jar(
         deployment.shared_processor_config.java_classpath,
         jvm_classpath
@@ -62,6 +65,10 @@ def argument_parser() -> ArgumentParser:
     parser.add_argument(
         '--log-level',
         help="The log level for pipeline runners."
+    )
+    parser.add_argument(
+        '--startup-timeout', type=float,
+        help="The timeout (in seconds) for individual processor services to deploy before failure."
     )
     return parser
 
