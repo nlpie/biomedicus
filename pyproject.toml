@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "biomedicus"
 description = "A biomedical and clinical natural language processing engine."
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 license = {file = "LICENSE.txt"}
 authors = [
     {name = "University of Minnesota NLP/IE Group", email = "nlp-ie@umn.edu"},
@@ -24,7 +24,6 @@ classifiers = [
     'Operating System :: POSIX :: Linux',
     'Programming Language :: Java',
     'Programming Language :: Python :: 3 :: Only',
-    'Programming Language :: Python :: 3.7',
     'Programming Language :: Python :: 3.8',
     'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3.10',
