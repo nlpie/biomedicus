@@ -12,10 +12,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 import logging
+from argparse import ArgumentParser
 from typing import Sequence, Dict, Any, TYPE_CHECKING
 
 import mtap
-from mtap import GenericLabel, Location, processor, Document
+from mtap import GenericLabel, Location, processor, Document, processor_parser
 from mtap.processing.descriptions import parameter, labels
 
 if TYPE_CHECKING:
@@ -23,6 +24,7 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger(__name__)
+
 
 def check_cc_and(dep: GenericLabel, upos_tags: 'LabelIndex[GenericLabel]'):
     if dep.deprel == 'conj' and upos_tags.at(dep)[0].tag == 'VERB':
@@ -202,7 +204,22 @@ class DeepenProcessor(mtap.processing.DocumentProcessor):
 
 
 def main(args=None):
-    mtap.run_processor(DeepenProcessor(), args=args, mp=True)
+    parser = ArgumentParser(add_help=True, parents=[processor_parser()])
+    parser.add_argument(
+        '--mp', action='store_true',
+        help="Whether to use the multiprocessing pool based processor server."
+    )
+    parser.add_argument(
+        '--mp-start-method', default='forkserver', choices=['forkserver', 'spawn'],
+        help="The multiprocessing start method to use"
+    )
+    options = parser.parse_args(args)
+    mp_context = None
+    if options.mp:
+        import multiprocessing as mp
+        mp_context = mp.get_context(options.mp_start_method)
+
+    mtap.run_processor(DeepenProcessor(), options=options, mp=options.mp, mp_context=mp_context)
 
 
 if __name__ == '__main__':
