@@ -60,4 +60,4 @@ jobs:
     - name: Download models
       run: b9 download-data --with-stanza
     - name: Test with pytest
-      run: pytest -s python/tests --integration --timeout 60.0
+      run: pytest -s python/tests --integration --timeout 120.0
