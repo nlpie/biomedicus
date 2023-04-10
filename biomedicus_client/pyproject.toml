@@ -44,7 +44,7 @@ dynamic = ["version"]
 
 [project.optional-dependencies]
 test = [
-    "pytest==7.2.2"
+    "pytest==7.3.0"
 ]
 
 [project.scripts]
