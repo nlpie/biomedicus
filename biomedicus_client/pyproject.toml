@@ -60,5 +60,5 @@ include = ["biomedicus_client*"]
 
 [tool.setuptools_scm]
 write_to = "biomedicus_client/src/biomedicus_client/version.py"
-fallback_version = "3.1.0"
+fallback_version = "3.2.0"
 root = ".."
