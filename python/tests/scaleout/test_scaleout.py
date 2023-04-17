@@ -7,7 +7,7 @@ from threading import Event, Thread
 import pytest
 
 
-@pytest.mark.integration
+@pytest.mark.performance
 def test_scaleout(processor_timeout, test_data_dir):
     """Tests the default scaleout configurations"""
     # Copy descriptors to temporary directory
