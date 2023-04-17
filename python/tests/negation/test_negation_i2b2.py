@@ -14,7 +14,6 @@
 import os
 import re
 import sys
-from pathlib import Path
 from subprocess import Popen, PIPE, STDOUT
 
 import pytest
@@ -135,11 +134,8 @@ def is_negated(term: GenericLabel) -> bool:
     return False
 
 
-def run_and_report(name, pipeline, events_service, test_results):
-    try:
-        input_dir = Path(os.environ['BIOMEDICUS_TEST_DATA']) / 'negation' / 'i2b2_2010'
-    except KeyError:
-        pytest.fail("Missing required environment variable BIOMEDICUS_TEST_DATA")
+def run_and_report(name, pipeline, events_service, test_results, test_data_dir):
+    input_dir = test_data_dir / 'negation' / 'i2b2_2010'
     confusion = metrics.FirstTokenConfusion(print_debug='fn', debug_range=120)
     metrics_processor = metrics.Metrics(confusion, tested='negated', target='i2b2concepts',
                                         target_filter=is_negated)
@@ -169,29 +165,29 @@ def run_and_report(name, pipeline, events_service, test_results):
 
 
 @pytest.mark.performance
-def test_negex_performance(events_service, negex_service, test_results):
+def test_negex_performance(events_service, negex_service, test_results, test_data_dir):
     pipeline = Pipeline(
         RemoteProcessor('biomedicus-negation', address=negex_service,
                         params={'terms_index': 'i2b2concepts'}),
         events_address=events_service
     )
-    run_and_report('biomedicus-negex', pipeline, events_service, test_results)
+    run_and_report('biomedicus-negex', pipeline, events_service, test_results, test_data_dir)
 
 
 @pytest.mark.performance
 def test_modification_detector_performance(events_service, modification_detector_service,
-                                           test_results):
+                                           test_results, test_data_dir):
     pipeline = Pipeline(
         RemoteProcessor('biomedicus-negation', address=modification_detector_service,
                         params={'terms_index': 'i2b2concepts'}),
         events_address=events_service
     )
-    run_and_report('biomedicus-modification', pipeline, events_service, test_results)
+    run_and_report('biomedicus-modification', pipeline, events_service, test_results, test_data_dir)
 
 
 @pytest.mark.performance
 def test_deepen_performance(events_service, negex_triggers_service, dependencies_service,
-                            deepen_negation_service, test_results):
+                            deepen_negation_service, test_results, test_data_dir):
     pipeline = Pipeline(
         RemoteProcessor(processor_name='biomedicus-negex-triggers',
                         address=negex_triggers_service),
@@ -202,4 +198,4 @@ def test_deepen_performance(events_service, negex_triggers_service, dependencies
                         params={'terms_index': 'i2b2concepts'}),
         events_address=events_service
     )
-    run_and_report('biomedicus-deepen', pipeline, events_service, test_results)
+    run_and_report('biomedicus-deepen', pipeline, events_service, test_results, test_data_dir)

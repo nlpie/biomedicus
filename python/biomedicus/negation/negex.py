@@ -127,7 +127,7 @@ class NegexTagger:
         """
         if len(terms) == 0:
             return [], []
-        
+
         tokens = self._tokenize(sentence)
 
         term_indices = []

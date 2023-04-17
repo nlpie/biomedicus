@@ -14,7 +14,6 @@
 import os
 import subprocess
 import sys
-from pathlib import Path
 
 import pytest
 from mtap import events_client, Pipeline, RemoteProcessor, LocalProcessor

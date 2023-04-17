@@ -69,7 +69,11 @@ def test_deploy_run(deploy_all, processor_timeout):
     print("testing deployment run", flush=True)
     with TemporaryDirectory() as tmpdir:
         input_folder = os.fspath((Path(__file__).parent / 'in').absolute())
-        cp = run([sys.executable, '-m', 'biomedicus_client', 'run', input_folder, '-o', tmpdir, '--log-level', 'DEBUG'],
+        cp = run([sys.executable,
+                  '-m', 'biomedicus_client',
+                  'run', input_folder,
+                  '-o', tmpdir,
+                  '--log-level', 'DEBUG'],
                  timeout=processor_timeout, stdout=PIPE, stderr=STDOUT)
         print(cp.stdout.decode('utf-8'), end='')
         assert cp.returncode == 0

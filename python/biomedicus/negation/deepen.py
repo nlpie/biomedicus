@@ -15,7 +15,7 @@ import logging
 from typing import Sequence, Dict, Any
 from argparse import ArgumentParser
 
-from mtap import GenericLabel, Location, processor, DocumentProcessor, Document, run_processor
+from mtap import GenericLabel, Location, processor, DocumentProcessor, Document, run_processor, processor_parser
 from mtap.descriptors import parameter, labels
 from mtap.types import LabelIndex
 
@@ -114,8 +114,8 @@ class DeepenTagger:
                 trigger_location = trigger.location
                 trigger_deps = deps.inside(trigger_location)
                 if len(trigger_deps) == 0:
-                  logger.warning("Negation trigger without deps, should not happen.")
-                  continue
+                    logger.warning("Negation trigger without deps, should not happen.")
+                    continue
                 trigger_edge = None
                 for dep in trigger_deps:
                     if dep.head not in trigger_deps:

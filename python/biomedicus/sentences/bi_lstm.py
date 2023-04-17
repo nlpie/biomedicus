@@ -13,7 +13,6 @@
 #  limitations under the License.
 import logging
 import re
-import sys
 from argparse import ArgumentParser
 from datetime import datetime
 from pathlib import Path
@@ -24,8 +23,8 @@ import numpy as np
 import torch
 import yaml
 from mtap import processor_parser, Document, DocumentProcessor, processor, run_processor
-from mtap.processing import Processor
 from mtap.descriptors import labels
+from mtap.processing import Processor
 from torch import nn, optim
 from torch.nn import functional as F
 from torch.nn.utils.rnn import pad_packed_sequence, pack_padded_sequence, \
@@ -438,7 +437,7 @@ def create_processor(conf):
     char_mapping = load_char_mapping(conf.chars_file)
     input_mapping = InputMapping(char_mapping, words, hparams.word_length, device=device)
     model = BiLSTM(hparams, n_chars(char_mapping), vectors)
-    #if sys.version_info < (3, 11):
+    # if sys.version_info < (3, 11):
     #    model = torch.compile(model)
     model.eval()
     model.to(device=device)
