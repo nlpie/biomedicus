@@ -18,64 +18,68 @@ import stanza
 import torch
 from mtap import Document, processor, run_processor, processor_parser
 from mtap.processing import DocumentProcessor
-from mtap.processing.descriptions import labels, label_property
+from mtap.descriptors import labels, label_property
 
 from biomedicus.dependencies.stanza_parser import stanza_deps_and_upos_tags
 
 
-@processor('biomedicus-selective-dependencies',
-           human_name="BioMedICUS Stanza Selective Dependency Parser",
-           entry_point=__name__,
-           description="Calls out to the Stanford Stanza framework for dependency parsing"
-                       "on a appropriate subset of sentences.",
-           inputs=[
-               labels(name='sentences', reference='biomedicus-sentences/sentences'),
-               labels(name='pos_tags', reference='biomedicus-tnt-tagger/pos_tags'),
-               labels(
-                   name='umls_terms',
-                   reference='biomedicus-concepts/umls_terms',
-                   name_from_parameter='terms_index'
-               ),
-               labels(
-                   "negation_triggers",
-                   reference='biomedicus-negex-triggers'
-               )
-           ],
-           outputs=[
-               labels(
-                   name='dependencies',
-                   description="The dependent words.",
-                   properties=[
-                       label_property(
-                           'deprel',
-                           description="The dependency relation",
-                           data_type='str'
-                       ),
-                       label_property(
-                           'head',
-                           description="The head of this label or null if its the root.",
-                           nullable=True,
-                           data_type='ref:dependencies'
-                       ),
-                       label_property(
-                           'dependents',
-                           description="The dependents of ths dependent.",
-                           data_type='list[ref:dependencies]'
-                       )
-                   ]
-               ),
-               labels(
-                   name='upos_tags',
-                   description="Universal Part-of-speech tags",
-                   properties=[
-                       label_property(
-                           'tag',
-                           description="The Universal Part-of-Speech tag",
-                           data_type='str'
-                       )
-                   ]
-               )
-           ])
+@processor(
+    'biomedicus-selective-dependencies',
+    human_name="BioMedICUS Stanza Selective Dependency Parser",
+    description="Calls out to the Stanford Stanza framework for dependency parsing"
+                "on a appropriate subset of sentences.",
+    inputs=[
+        labels(name='sentences', reference='biomedicus-sentences/sentences'),
+        labels(name='pos_tags', reference='biomedicus-tnt-tagger/pos_tags'),
+        labels(
+            name='umls_terms',
+            reference='biomedicus-concepts/umls_terms',
+            name_from_parameter='terms_index'
+        ),
+        labels(
+            "negation_triggers",
+            reference='biomedicus-negex-triggers'
+        )
+    ],
+    outputs=[
+        labels(
+            name='dependencies',
+            description="The dependent words.",
+            properties=[
+                label_property(
+                    'deprel',
+                    description="The dependency relation",
+                    data_type='str'
+                ),
+                label_property(
+                    'head',
+                    description="The head of this label or null if its the root.",
+                    nullable=True,
+                    data_type='ref:dependencies'
+                ),
+                label_property(
+                    'dependents',
+                    description="The dependents of ths dependent.",
+                    data_type='list[ref:dependencies]'
+                )
+            ]
+        ),
+        labels(
+            name='upos_tags',
+            description="Universal Part-of-speech tags",
+            properties=[
+                label_property(
+                    'tag',
+                    description="The Universal Part-of-Speech tag",
+                    data_type='str'
+                )
+            ]
+        )
+    ],
+    additional_data={
+        'entry_point': __name__,
+    }
+)
 class StanzaSelectiveParser(DocumentProcessor):
     def __init__(self):
         self.nlp = stanza.Pipeline('en', processors='tokenize,pos,lemma,depparse',

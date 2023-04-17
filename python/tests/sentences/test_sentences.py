@@ -42,4 +42,4 @@ def fixture_bi_lstm_model():
 def test_sentences_unknown_character(bi_lstm_model):
     document = Document('plaintext', text='• Sentence which contains unknown character.')
     bi_lstm_model.process_document(document, {})
-    assert document.get_label_index('sentences') == [GenericLabel(2, 44)]
+    assert document.labels['sentences'] == [GenericLabel(2, 44)]

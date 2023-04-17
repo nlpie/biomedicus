@@ -19,25 +19,25 @@ from argparse import ArgumentParser
 import sqlite3
 
 from biomedicus_client.pipeline import default_pipeline
-from mtap import Event
-
+from mtap import Event, events_client
 
 if __name__ == '__main__':
     parser = ArgumentParser(add_help=True, parents=[default_pipeline.argument_parser()])
     parser.add_argument('input_file')
     args = parser.parse_args()
-    with default_pipeline.from_args(args) as pipeline:
-        client = pipeline.events_client
+    pipeline = default_pipeline.from_args(args)
+
+    with events_client(pipeline.events_address) as events:
         con = sqlite3.connect(args.input_file)
         cur = con.cursor()
 
         def source():
             for name, text in cur.execute("SELECT NAME, TEXT FROM DOCUMENTS"):
-                with Event(event_id=name, client=client) as e:
+                with Event(event_id=name, client=events) as e:
                     doc = e.create_document('plaintext', text)
                     yield doc
 
         count, = next(cur.execute("SELECT COUNT(*) FROM DOCUMENTS"))
-        pipeline.run_multithread(source(), total=count)
-        pipeline.print_times()
+        times = pipeline.run_multithread(source(), total=count)
+        times.print()
         con.close()

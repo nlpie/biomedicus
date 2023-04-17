@@ -14,7 +14,7 @@
 from argparse import ArgumentParser
 from xml.etree import ElementTree
 
-from mtap import Event, EventsClient, GenericLabel, Document, Pipeline, RemoteProcessor
+from mtap import Event, GenericLabel, Document, Pipeline, RemoteProcessor, events_client
 
 
 class DocumentBuilder:
@@ -67,9 +67,11 @@ def main(args=None):
     args = parser.parse_args(args)
     etree = ElementTree.parse(args.input)
     set = etree.getroot()
-    with EventsClient(address=args.events) as client, Pipeline(
-            RemoteProcessor('biomedicus-tnt-trainer', address=args.tnt_trainer)
-    ) as pipeline:
+    pipeline = Pipeline(
+        RemoteProcessor('biomedicus-tnt-trainer', address=args.tnt_trainer),
+        events_address=args.events
+    )
+    with events_client(address=args.events) as client:
         for article in set.findall('article'):
             id = list(article.find('articleinfo'))[0].text
             with Event(event_id=id, client=client) as event:

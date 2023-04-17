@@ -20,7 +20,7 @@ from importlib_resources import files
 from pathlib import Path
 from typing import Union, Optional, List
 
-from mtap import Pipeline, LocalProcessor, EventProcessor, processor
+from mtap import Pipeline, LocalProcessor, EventProcessor, processor, events_client
 
 from biomedicus_client.cli_tools import Command
 from biomedicus_client.pipeline.sources import rtf_source
@@ -115,12 +115,12 @@ class RunRtfToTextCommand(Command):
                             help="The log level for the pipeline runners.")
 
     def command_fn(self, conf):
-        with from_args(conf) as pipeline:
-            input_directory = Path(conf.input_directory)
+        pipeline = from_args(conf)
+        input_directory = Path(conf.input_directory)
 
-            source = rtf_source(input_directory, conf.extension_glob,
-                                pipeline.events_client)
+        with events_client(pipeline.events_address) as client:
+            source = rtf_source(input_directory, conf.extension_glob, client)
             total = sum(1 for _ in input_directory.rglob(conf.extension_glob))
 
-            pipeline.run_multithread(source, total=total, log_level=conf.log_level)
-            pipeline.print_times()
+            times = pipeline.run_multithread(source, total=total, log_level=conf.log_level)
+        times.print()

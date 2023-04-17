@@ -44,13 +44,13 @@ def create_deployment(offline: bool = False,
     config = config if config is not None else deployment_config
     log_level = log_level if log_level is not None else 'INFO'
     if not offline:
-        check_data(download_data, with_stanza=True, noninteractive=noninteractive)
+        check_data(download_data, noninteractive=noninteractive)
     deployment = Deployment.from_yaml_file(config)
     if host is not None:
         deployment.global_settings.host = host
     deployment.global_settings.log_level = log_level
-    if startup_timeout is not None:
-        deployment.shared_processor_config.startup_timeout = startup_timeout
+    startup_timeout = startup_timeout or 30
+    deployment.shared_processor_config.startup_timeout = startup_timeout
     with attach_biomedicus_jar(
         deployment.shared_processor_config.java_classpath,
         jvm_classpath

@@ -14,7 +14,7 @@
 from argparse import ArgumentParser
 from pathlib import Path
 
-from mtap import Pipeline, RemoteProcessor, LocalProcessor
+from mtap import Pipeline, RemoteProcessor, LocalProcessor, events_client
 from mtap.serialization import get_serializer, SerializationProcessor
 
 
@@ -30,21 +30,24 @@ def main(args=None):
     json_serializer = get_serializer('json')
 
     input_dir = Path(args.input_directory)
-    with Pipeline(
-            RemoteProcessor('biomedicus-sentences', address=args.sentences),
-            RemoteProcessor('biomedicus-tnt-tagger', address=args.tagger),
-            LocalProcessor(SerializationProcessor(get_serializer('json'),
-                                                  output_dir=args.output_directory),
-                           component_id='serialize'),
-            events_address=args.events
-    ) as pipeline:
+    pipeline = Pipeline(
+        RemoteProcessor('biomedicus-sentences', address=args.sentences),
+        RemoteProcessor('biomedicus-tnt-tagger', address=args.tagger),
+        LocalProcessor(SerializationProcessor(get_serializer('json'),
+                                              output_dir=args.output_directory),
+                       component_id='serialize'),
+        events_address=args.events
+    )
+    times = pipeline.create_times()
+    with events_client(args.events) as client:
         for path in input_dir.glob("**/*.json"):
             print("READING FILE:", str(path))
-            with json_serializer.file_to_event(path, client=pipeline.events_client) as event:
+            with json_serializer.file_to_event(path, client=client) as event:
                 document = event['plaintext']
-                pipeline.run(document)
+                result = pipeline.run(document)
+                times.add_result_times(result)
 
-        pipeline.print_times()
+    times.print()
 
 
 if __name__ == '__main__':

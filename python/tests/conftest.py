@@ -13,6 +13,7 @@
 # limitations under the License.
 import os
 import subprocess
+from pathlib import Path
 from threading import Thread
 
 import grpc
@@ -126,3 +127,11 @@ def fixture_test_results():
         from yaml import Dumper
     with open('test_results.yml', 'w') as f:
         yaml.dump(results, f, Dumper=Dumper)
+
+
+@pytest.fixture(name='test_data_dir', scope='session')
+def fixture_test_data_dir():
+    try:
+        return Path(os.environ['BIOMEDICUS_TEST_DATA'])
+    except KeyError:
+        pytest.fail("Missing required environment variable BIOMEDICUS_TEST_DATA")

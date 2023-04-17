@@ -18,7 +18,7 @@ from typing import Dict, Any
 import mtap
 import requests
 from mtap import DocumentProcessor, processor_parser, run_processor
-from mtap.processing.descriptions import labels, processor
+from mtap.descriptors import labels, processor
 
 logger = logging.getLogger("biomedicus.sentences.bi_lstm_torchserve")
 

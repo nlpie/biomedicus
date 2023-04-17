@@ -11,12 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import os
-from pathlib import Path
 from subprocess import Popen, PIPE
 
 import pytest
 from mtap import RemoteProcessor, Pipeline, LocalProcessor
+from mtap._events_client import events_client
 from mtap.metrics import Accuracy, Metrics
 from mtap.serialization import PickleSerializer
 from mtap.utilities import find_free_port
@@ -38,29 +37,29 @@ def fixture_concepts_service(events_service, processor_watcher, processor_timeou
 
 
 @pytest.mark.performance
-def test_concepts_performance(events_service, concepts_service, test_results):
-    try:
-        input_dir = Path(os.environ['BIOMEDICUS_TEST_DATA']) / 'concepts'
-    except KeyError:
-        pytest.fail("Missing required environment variable BIOMEDICUS_TEST_DATA")
+def test_concepts_performance(events_service, concepts_service, test_results, test_data_dir):
+    input_dir = test_data_dir / 'concepts'
     recall = Accuracy(name='recall', mode='any', fields=['cui'])
     precision = Accuracy(name='precision', mode='any', fields=['cui'])
-    with Pipeline(
-            RemoteProcessor(processor_name='biomedicus-concepts', address=concepts_service),
-            LocalProcessor(Metrics(recall, tested='umls_concepts', target='gold_concepts'),
-                           component_id='metrics'),
-            LocalProcessor(Metrics(precision, tested='gold_concepts', target='umls_concepts'),
-                           component_id='metrics_reverse'),
-            events_address=events_service
-    ) as pipeline:
+    pipeline = Pipeline(
+        RemoteProcessor(processor_name='biomedicus-concepts', address=concepts_service),
+        LocalProcessor(Metrics(recall, tested='umls_concepts', target='gold_concepts'),
+                       component_id='metrics'),
+        LocalProcessor(Metrics(precision, tested='gold_concepts', target='umls_concepts'),
+                       component_id='metrics_reverse'),
+        events_address=events_service
+    )
+    times = pipeline.create_times()
+    with events_client(events_service) as client:
         for test_file in input_dir.glob('**/*.pickle'):
-            with PickleSerializer.file_to_event(test_file, client=pipeline.events_client) as event:
+            with PickleSerializer.file_to_event(test_file, client=client) as event:
                 document = event.documents['plaintext']
-                pipeline.run(document)
+                result = pipeline.run(document)
+                times.add_result_times(result)
 
     print('Precision:', precision.value)
     print('Recall:', recall.value)
-    timing_info = pipeline.processor_timer_stats('biomedicus-concepts').timing_info
+    timing_info = times.processor_timer_stats('biomedicus-concepts').timing_info
     test_results['Concepts'] = {
         'Precision': precision.value,
         'Recall': recall.value,

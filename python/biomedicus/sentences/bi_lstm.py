@@ -23,8 +23,8 @@ import numpy as np
 import torch
 import yaml
 from mtap import processor_parser, Document, DocumentProcessor, processor, run_processor
+from mtap.descriptors import labels
 from mtap.processing import Processor
-from mtap.processing.descriptions import labels
 from torch import nn, optim
 from torch.nn import functional as F
 from torch.nn.utils.rnn import pad_packed_sequence, pack_padded_sequence, \
@@ -325,10 +325,12 @@ def predict_text(model: BiLSTM, input_mapper, text, device):
 @processor('biomedicus-sentences',
            human_name="Sentence Detector",
            description="Labels sentences given document text.",
-           entry_point=__name__,
            outputs=[
                labels('sentences')
-           ])
+           ],
+           additional_data={
+               'entry_point': __name__,
+           })
 class SentenceProcessor(DocumentProcessor):
     def __init__(self, input_mapper: InputMapping, model: BiLSTM, device):
         self.input_mapper = input_mapper
@@ -435,6 +437,8 @@ def create_processor(conf):
     char_mapping = load_char_mapping(conf.chars_file)
     input_mapping = InputMapping(char_mapping, words, hparams.word_length, device=device)
     model = BiLSTM(hparams, n_chars(char_mapping), vectors)
+    # if sys.version_info < (3, 11):
+    #    model = torch.compile(model)
     model.eval()
     model.to(device=device)
     logger.info('Loading model weights from: {}'.format(conf.model_file))

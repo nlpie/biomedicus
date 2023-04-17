@@ -16,7 +16,7 @@ from pathlib import Path
 from subprocess import PIPE, STDOUT, Popen
 
 import pytest
-from mtap import Pipeline, RemoteProcessor, LocalProcessor
+from mtap import Pipeline, RemoteProcessor, LocalProcessor, events_client
 from mtap.metrics import Metrics, Accuracy
 from mtap.serialization import PickleSerializer
 from mtap.utilities import find_free_port
@@ -44,23 +44,28 @@ def test_tnt_performance(events_service, pos_tags_service, test_results):
     except KeyError:
         pytest.fail("Missing required environment variable BIOMEDICUS_TEST_DATA")
     accuracy = Accuracy()
-    with Pipeline(
-            RemoteProcessor(processor_name='biomedicus-tnt-tagger', address=pos_tags_service,
-                            params={'token_index': 'gold_tags'}),
-            LocalProcessor(Metrics(accuracy, tested='pos_tags', target='gold_tags'), component_id='metrics'),
-            events_address=events_service
-    ) as pipeline:
+    pipeline = Pipeline(
+        RemoteProcessor(processor_name='biomedicus-tnt-tagger', address=pos_tags_service,
+                        params={'token_index': 'gold_tags'}),
+        LocalProcessor(Metrics(accuracy, tested='pos_tags', target='gold_tags'), component_id='metrics'),
+        events_address=events_service
+    )
+    with events_client(events_service) as client:
+        times = pipeline.create_times()
         for test_file in input_dir.glob('**/*.pickle'):
-            event = PickleSerializer.file_to_event(test_file, client=pipeline.events_client)
-            with event:
-                document = event.documents['gold']
-                results = pipeline.run(document)
-                print('Accuracy for event - ', event.event_id, ':',
-                      results.component_result('metrics').result_dict['accuracy'])
+            with PickleSerializer.file_to_event(test_file, client=client) as e:
+                document = e.documents['gold']
+                result = pipeline.run(document)
+                times.add_result_times(result)
+                print(
+                    'Accuracy for event - ',
+                    document.event.event_id, ':',
+                    result.component_result('metrics').result_dict['accuracy']
+                )
 
         print('Accuracy:', accuracy.value)
-        pipeline.print_times()
-        timing_info = pipeline.processor_timer_stats('biomedicus-tnt-tagger').timing_info
+        times.print()
+        timing_info = times.processor_timer_stats('biomedicus-tnt-tagger').timing_info
         test_results['TnT Pos Tagger'] = {
             'Accuracy': accuracy.value,
             'Remote Call Duration': str(timing_info['remote_call'].mean),

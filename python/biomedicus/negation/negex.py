@@ -50,7 +50,7 @@ from typing import List, Tuple, Dict, Any, Iterable
 
 import mtap
 from mtap import Document, processor
-from mtap.processing.descriptions import labels, parameter
+from mtap.descriptors import labels, parameter
 
 from biomedicus.core.dawg import DAWG
 
@@ -86,6 +86,25 @@ class NegexTagger:
             tags.append(tag)
         self.tokens_range = tokens_range
 
+    def _tokenize(self, sentence):
+        # tokenize the sentence using a anti-whitespace pattern.
+        return [(match.start(), match.end()) for match in _word_pattern.finditer(sentence)]
+
+    def detect_negex_triggers(self, sentence: str) -> List[Tuple[int, int, List[str]]]:
+        tokens = self._tokenize(sentence)
+
+        # use a DAWG matcher to locate all
+        matcher = self.dawg.matcher()
+        triggers = []
+        for i, (begin, end) in enumerate(tokens):
+            word = _not_word.sub('', sentence[begin:end].lower())
+            if len(word) > 0:
+                hits = matcher.advance(word)
+                for length, tags in hits:
+                    first_token_idx = i + 1 - length
+                    triggers.append((tokens[first_token_idx][0], tokens[i][1], tags))
+        return triggers
+
     def check_sentence(
             self,
             sentence: str,
@@ -108,10 +127,8 @@ class NegexTagger:
         """
         if len(terms) == 0:
             return [], []
-        # tokenize the sentence using a anti-whitespace pattern.
-        tokens = []
-        for match in _word_pattern.finditer(sentence):
-            tokens.append((match.start(), match.end()))
+
+        tokens = self._tokenize(sentence)
 
         term_indices = []
         for (term_start, term_end) in terms:
@@ -159,7 +176,6 @@ class NegexTagger:
     name='biomedicus-negex',
     human_name='Negex Negation Detector',
     description='Detects which UMLS terms are negated.',
-    entry_point=__name__,
     parameters=[
         parameter(
             name='terms_index',
@@ -181,7 +197,10 @@ class NegexTagger:
     outputs=[
         labels("negated", description="Spans of negated terms."),
         labels("negation_triggers", description="Spans of phrases that trigger negation.")
-    ]
+    ],
+    additional_data={
+        'entry_point': __name__,
+    }
 )
 class NegexProcessor(mtap.processing.DocumentProcessor):
 
@@ -192,9 +211,9 @@ class NegexProcessor(mtap.processing.DocumentProcessor):
         terms_index_name = params.get('terms_index', 'umls_terms')
         label_negated = document.get_labeler('negated')
         label_trigger = document.get_labeler('negation_trigger')
-        terms = document.get_label_index(terms_index_name)
+        terms = document.labels[terms_index_name]
         with label_negated, label_trigger:
-            for sentence in document.get_label_index('sentences'):
+            for sentence in document.labels['sentences']:
                 sentence_terms = [(t.start_index - sentence.start_index,
                                    t.end_index - sentence.start_index)
                                   for t in terms.inside(sentence)]

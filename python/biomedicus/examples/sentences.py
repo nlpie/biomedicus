@@ -14,23 +14,24 @@
 import sys
 from argparse import ArgumentParser
 
-from mtap import Pipeline, RemoteProcessor, Event
+from mtap import Pipeline, RemoteProcessor, Event, events_client
 
 
 def main(args=None):
     parser = ArgumentParser()
-    parser.add_argument('--events-service', default='localhost:10100')
-    parser.add_argument('--sentences-service', default='localhost:10102')
+    parser.add_argument('--events', default='localhost:50100')
+    parser.add_argument('--sentences', default='localhost:50300')
     conf = parser.parse_args(args)
-    with Pipeline(
-        RemoteProcessor('biomedicus-sentences', address=conf.sentences_service),
-        events_address=conf.events_service
-    ) as pipeline:
+    pipeline = Pipeline(
+        RemoteProcessor('biomedicus-sentences', address=conf.sentences),
+        events_address=conf.events
+    )
+    with events_client(conf.events) as events:
         text = sys.stdin.read()
-        with Event(client=pipeline.events_client) as event:
+        with Event(client=events) as event:
             doc = event.create_document('plaintext', text)
             result = pipeline.run(doc)
-            for sentence in doc.get_label_index('sentences'):
+            for sentence in doc.labels['sentences']:
                 print('S: "', sentence.text, '"')
             for k, v in result[0].timing_info.items():
                 print('{}: {}'.format(k, v))

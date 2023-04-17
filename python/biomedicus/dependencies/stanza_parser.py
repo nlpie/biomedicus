@@ -16,7 +16,7 @@ from typing import Dict, Any
 import numpy as np
 import stanza
 from mtap import Document, DocumentProcessor, processor, run_processor, GenericLabel
-from mtap.processing.descriptions import labels, label_property
+from mtap.descriptors import labels, label_property
 
 MAX_ITER = 5000
 
@@ -60,45 +60,49 @@ def stanza_deps_and_upos_tags(sentence, stanza_sentence):
     return sentence_deps, sentence_upos_tags
 
 
-@processor('biomedicus-dependencies',
-           human_name="BioMedICUS Stanza Dependency Parser",
-           entry_point=__name__,
-           description="Calls out to the Stanford Stanza framework for dependency parsing.",
-           inputs=[
-               labels(name='sentences', reference='biomedicus-sentences/sentences'),
-               labels(name='pos_tags', reference='biomedicus-tnt-tagger/pos_tags'),
-           ],
-           outputs=[
-               labels(name='dependencies',
-                      description="The dependent words.",
-                      properties=[
-                          label_property(
-                              'deprel',
-                              description="The dependency relation",
-                              data_type='str'
-                          ),
-                          label_property(
-                              'head',
-                              description="The head of this label or null if its the root.",
-                              nullable=True,
-                              data_type='ref:dependencies'
-                          ),
-                          label_property(
-                              'dependents',
-                              description="The dependents of ths dependent.",
-                              data_type='list[ref:dependencies]'
-                          )
-                      ]),
-               labels(name='upos_tags',
-                      description="Universal Part-of-speech tags",
-                      properties=[
-                          label_property(
-                              'tag',
-                              description="The Universal Part-of-Speech tag",
-                              data_type='str'
-                          )
-                      ])
-           ])
+@processor(
+    'biomedicus-dependencies',
+    human_name="BioMedICUS Stanza Dependency Parser",
+    description="Calls out to the Stanford Stanza framework for dependency parsing.",
+    inputs=[
+        labels(name='sentences', reference='biomedicus-sentences/sentences'),
+        labels(name='pos_tags', reference='biomedicus-tnt-tagger/pos_tags'),
+    ],
+    outputs=[
+        labels(name='dependencies',
+               description="The dependent words.",
+               properties=[
+                   label_property(
+                       'deprel',
+                       description="The dependency relation",
+                       data_type='str'
+                   ),
+                   label_property(
+                       'head',
+                       description="The head of this label or null if its the root.",
+                       nullable=True,
+                       data_type='ref:dependencies'
+                   ),
+                   label_property(
+                       'dependents',
+                       description="The dependents of ths dependent.",
+                       data_type='list[ref:dependencies]'
+                   )
+               ]),
+        labels(name='upos_tags',
+               description="Universal Part-of-speech tags",
+               properties=[
+                   label_property(
+                       'tag',
+                       description="The Universal Part-of-Speech tag",
+                       data_type='str'
+                   )
+               ])
+    ],
+    additional_data={
+        'entry_point': __name__
+    }
+)
 class StanzaParser(DocumentProcessor):
 
     def __init__(self):

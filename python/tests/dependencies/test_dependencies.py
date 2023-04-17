@@ -14,10 +14,9 @@
 import os
 import subprocess
 import sys
-from pathlib import Path
 
 import pytest
-from mtap import Pipeline, RemoteProcessor, LocalProcessor
+from mtap import events_client, Pipeline, RemoteProcessor, LocalProcessor
 from mtap.metrics import Accuracy, Metrics
 from mtap.serialization import PickleSerializer
 from mtap.utilities import find_free_port
@@ -38,6 +37,7 @@ def fixture_dependencies_service(events_service, processor_watcher, processor_ti
                           '--events', events_service],
                          start_new_session=True, stdin=subprocess.PIPE,
                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
     yield from processor_watcher(address, p, timeout=processor_timeout)
 
 
@@ -54,28 +54,31 @@ def las_equal(x, y):
 
 
 @pytest.mark.performance
-def test_dependencies(events_service, dependencies_service, test_results):
-    test_dir = Path(os.environ['BIOMEDICUS_TEST_DATA']) / 'dependencies'
+def test_dependencies(events_service, dependencies_service, test_results, test_data_dir):
+    test_dir = test_data_dir / 'dependencies'
     uas = Accuracy('UAS', equivalence_test=uas_equal)
     las = Accuracy('LAS', equivalence_test=las_equal)
-    with Pipeline(
-            RemoteProcessor(processor_name='biomedicus-dependencies',
-                            address=dependencies_service),
-            LocalProcessor(Metrics(uas, las, tested='dependencies', target='gold_dependencies'),
-                           component_id='accuracy'),
-            events_address=events_service
-    ) as pipeline:
+    pipeline = Pipeline(
+        RemoteProcessor(processor_name='biomedicus-dependencies',
+                        address=dependencies_service),
+        LocalProcessor(Metrics(uas, las, tested='dependencies', target='gold_dependencies'),
+                       component_id='accuracy'),
+        events_address=events_service
+    )
+    times = pipeline.create_times()
+    with events_client(events_service) as client:
         for test_file in test_dir.glob('**/*.pickle'):
-            with PickleSerializer.file_to_event(test_file, client=pipeline.events_client) as event:
+            with PickleSerializer.file_to_event(test_file, client=client) as event:
                 document = event.documents['plaintext']
-                results = pipeline.run(document)
-                accuracy_dict = results.component_result('accuracy').result_dict
+                result = pipeline.run(document)
+                times.add_result_times(result)
+                accuracy_dict = result.component_result('accuracy').result_dict
                 print('Results for document: UAS: {}. LAS: {}.'.format(accuracy_dict['UAS'],
                                                                        accuracy_dict['LAS']))
 
     print('UAS:', uas.value)
     print('LAS:', las.value)
-    timing_info = pipeline.processor_timer_stats('biomedicus-dependencies').timing_info
+    timing_info = times.processor_timer_stats('biomedicus-dependencies').timing_info
     test_results['biomedicus-dependencies'] = {
         'UAS': uas.value,
         'LAS': las.value,

@@ -15,7 +15,7 @@ from pathlib import Path
 from subprocess import PIPE, Popen
 
 import pytest
-from mtap import Pipeline, RemoteProcessor
+from mtap import Pipeline, RemoteProcessor, events_client
 from mtap.serialization import PickleSerializer
 from mtap.utilities import find_free_port
 
@@ -38,13 +38,17 @@ def fixture_normalization_processor(events_service, processor_watcher, processor
 
 @pytest.mark.integration
 def test_normalization(events_service, normalization_processor):
-    with Pipeline(RemoteProcessor(processor_name='biomedicus_normalizer', address=normalization_processor),
-                  events_address=events_service) as pipeline:
+    pipeline = Pipeline(RemoteProcessor(
+        processor_name='biomedicus_normalizer',
+        address=normalization_processor),
+        events_address=events_service
+    )
+    with events_client(events_service) as client:
         with PickleSerializer.file_to_event(Path(__file__).parent / '97_95.pickle',
-                                            client=pipeline.events_client) as event:
+                                            client=client) as event:
             document = event.documents['plaintext']
             pipeline.run(document)
-            for norm_form in document.get_label_index('norm_forms'):
+            for norm_form in document.labels['norm_forms']:
                 if norm_form.text == "according":
                     assert norm_form.norm == "accord"
                 if norm_form.text == "expressing":

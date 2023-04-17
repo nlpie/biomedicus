@@ -33,13 +33,15 @@ def main(args=None):
     parser.add_argument('--tnt-trainer', metavar='TRAINER', default=None,
                         help='The address of the TnT trainer.')
     args = parser.parse_args(args)
-    with EventsClient(address=args.events) as client, Pipeline(
-            RemoteProcessor('ptb-reader', address=args.ptb_reader,
-                            params={'source_document_name': args.source_name,
-                                    'target_document_name': args.target_name}),
-            RemoteProcessor('biomedicus-tnt-trainer', address=args.tnt_trainer,
-                            params={'document_name': args.target_name})
-    ) as pipeline:
+    pipeline = Pipeline(
+        RemoteProcessor('ptb-reader', address=args.ptb_reader,
+                        params={'source_document_name': args.source_name,
+                                'target_document_name': args.target_name}),
+        RemoteProcessor('biomedicus-tnt-trainer', address=args.tnt_trainer,
+                        params={'document_name': args.target_name}),
+        events_address=args.events
+    )
+    with EventsClient(address=args.events) as client:
         for f in Path(args.input).rglob(args.glob):
             print('Reading:', f)
             with f.open('r') as r:

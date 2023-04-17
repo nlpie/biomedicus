@@ -15,7 +15,7 @@
 from argparse import ArgumentParser
 from pathlib import Path
 
-from mtap import Pipeline, LocalProcessor, Event, RemoteProcessor
+from mtap import Pipeline, LocalProcessor, Event, RemoteProcessor, events_client
 from mtap.serialization import SerializationProcessor, PickleSerializer
 
 
@@ -48,7 +48,7 @@ def main(args=None):
             v.append((start, end, cui))
 
     print('Reading mipacq source files...')
-    with Pipeline(
+    pipeline = Pipeline(
             RemoteProcessor('biomedicus-sentences', address=ns.sentences),
             RemoteProcessor('biomedicus-tnt-tagger', address=ns.tagger),
             RemoteProcessor('biomedicus-acronyms', address=ns.acronyms),
@@ -56,14 +56,15 @@ def main(args=None):
                                                   output_dir=ns.output_directory),
                            component_id='serialize'),
             events_address=ns.events
-    ) as pipeline:
+    )
+    with events_client(ns.events) as events:
         for path in Path(ns.input_directory).glob('**/*.source'):
             identifier = path.stem.split('-')[0]
             try:
                 doc_concepts = concepts[identifier]
             except KeyError:
                 continue
-            with Event(event_id=identifier, client=pipeline.events_client) as event:
+            with Event(event_id=identifier, client=events) as event:
                 with path.open('r') as f:
                     text = f.read()
                 document = event.create_document('plaintext', text)

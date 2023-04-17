@@ -16,7 +16,7 @@ from pathlib import Path
 from subprocess import Popen, PIPE, STDOUT
 
 import pytest
-from mtap import Pipeline, RemoteProcessor, LocalProcessor
+from mtap import Pipeline, RemoteProcessor, LocalProcessor, events_client
 from mtap.metrics import Accuracy, Metrics
 from mtap.serialization import JsonSerializer
 from mtap.utilities import find_free_port
@@ -46,7 +46,7 @@ def test_acronyms_performance(events_service, acronyms_service, test_results):
     detection_recall = Accuracy(name='detection_recall', mode='location', fields=['expansion'])
     detection_precision = Accuracy(name='detection_precision', mode='location',
                                    fields=['expansion'])
-    with Pipeline(
+    pipeline = Pipeline(
             RemoteProcessor(processor_name='biomedicus-acronyms', address=acronyms_service),
             LocalProcessor(Metrics(top_score_accuracy, detection_recall, tested='acronyms',
                                    target='gold_acronyms'),
@@ -56,18 +56,20 @@ def test_acronyms_performance(events_service, acronyms_service, test_results):
             LocalProcessor(Metrics(any_accuracy, tested='all_acronym_senses', target='gold_acronyms'),
                            component_id='all_senses_metrics'),
             events_address=events_service
-    ) as pipeline:
+    )
+    with events_client(events_service) as client:
+        times = pipeline.create_times()
         for test_file in input_dir.glob('**/*.json'):
-            with JsonSerializer.file_to_event(test_file, client=pipeline.events_client) as event:
+            with JsonSerializer.file_to_event(test_file, client=client) as event:
                 document = event.documents['plaintext']
-                pipeline.run(document)
+                result = pipeline.run(document)
+                times.add_result_times(result)
 
         print('Top Sense Accuracy:', top_score_accuracy.value)
         print('Any Sense Accuracy:', any_accuracy.value)
         print('Detection Recall:', detection_recall.value)
         print('Detection Precision:', detection_precision.value)
-        pipeline.print_times()
-        timing_info = pipeline.processor_timer_stats('biomedicus-acronyms').timing_info
+        timing_info = times.processor_timer_stats('biomedicus-acronyms').timing_info
         test_results['acronyms'] = {
             'Top sense accuracy': top_score_accuracy.value,
             'Any sense accuracy': any_accuracy.value,

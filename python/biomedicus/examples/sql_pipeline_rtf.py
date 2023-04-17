@@ -19,8 +19,7 @@ from argparse import ArgumentParser
 import sqlite3
 
 from biomedicus_client.pipeline import default_pipeline
-from mtap import Event
-
+from mtap import Event, events_client
 
 if __name__ == '__main__':
     parser = ArgumentParser(add_help=True, parents=[default_pipeline.argument_parser()])
@@ -28,21 +27,21 @@ if __name__ == '__main__':
     args = parser.parse_args()
     args.rtf = True  # Toggles --rtf flag always on.
     # Can also skip parsing arguments and programmatically create the pipeline, see :func:`default_pipeline.create`.
-    with default_pipeline.from_args(args) as pipeline:
-        client = pipeline.events_client
+    pipeline = default_pipeline.from_args(args)
+    with events_client(pipeline.events_address) as events:
         con = sqlite3.connect(args.input_file)
         cur = con.cursor()
 
         def source():
             # Note I recommended that RTF documents be stored as BLOBs since most databases do not support
             # storing text in the standard Windows-1252 encoding of rtf documents.
-            # (RTF documents can actually use different encodings specified by a keyword like /ansicpg1252
+            # (RTF documents can actually use different encodings specified by a keyword like \ansicpg1252
             # at the beginning of the document, but this is uncommon).
             # If you are storing RTF documents ensure that they are initially read from file using the correct
-            # encoding [i.e. open('file.rtf', 'r', encoding='cp1252')] before storing in the datatbase,
+            # encoding [i.e. open('file.rtf', 'r', encoding='cp1252')] before storing in the database,
             # so that special characters are preserved.
             for name, text in cur.execute("SELECT NAME, TEXT FROM DOCUMENTS"):
-                with Event(event_id=name, client=client) as e:
+                with Event(event_id=name, client=events) as e:
                     e.binaries['rtf'] = text  # or "e.binaries['rtf'] = text.encode('cp1252')" in TEXT column case
                     yield e
 
@@ -50,6 +49,6 @@ if __name__ == '__main__':
         # Here we're adding the params since we're calling the pipeline with a source that provides Events rather
         # than documents. This param will tell DocumentProcessors which document they need to process after the
         # rtf converter creates that document.
-        pipeline.run_multithread(source(), params={'document_name': 'plaintext'}, total=count)
-        pipeline.print_times()
+        times = pipeline.run_multithread(source(), params={'document_name': 'plaintext'}, total=count)
+        times.print()
         con.close()
