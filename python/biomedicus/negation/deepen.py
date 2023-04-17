@@ -13,6 +13,7 @@
 #  limitations under the License.
 import logging
 from typing import Sequence, Dict, Any
+from argparse import ArgumentParser
 
 from mtap import GenericLabel, Location, processor, DocumentProcessor, Document, run_processor
 from mtap.descriptors import parameter, labels
@@ -201,7 +202,22 @@ class DeepenProcessor(DocumentProcessor):
 
 
 def main(args=None):
-    run_processor(DeepenProcessor(), args=args, mp=True)
+    parser = ArgumentParser(add_help=True, parents=[processor_parser()])
+    parser.add_argument(
+        '--mp', action='store_true',
+        help="Whether to use the multiprocessing pool based processor server."
+    )
+    parser.add_argument(
+        '--mp-start-method', default='forkserver', choices=['forkserver', 'spawn'],
+        help="The multiprocessing start method to use"
+    )
+    options = parser.parse_args(args)
+    mp_context = None
+    if options.mp:
+        import multiprocessing as mp
+        mp_context = mp.get_context(options.mp_start_method)
+
+    run_processor(DeepenProcessor(), options=options, mp=options.mp, mp_context=mp_context)
 
 
 if __name__ == '__main__':
