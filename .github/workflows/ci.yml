@@ -19,7 +19,7 @@ jobs:
           - java-version: '17'
             python-version: '3.11'
 
-    name: ${{ matrix.os }}, py${{ matrix.python-version }}, java${{ matrix.os }}
+    name: ${{ matrix.os }}, py${{ matrix.python-version }}, java${{ matrix.java-version }}
 
     steps:
     - uses: actions/checkout@v3
