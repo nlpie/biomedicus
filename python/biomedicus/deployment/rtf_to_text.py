@@ -67,7 +67,7 @@ def argument_parser() -> ArgumentParser:
         help="The log level for pipeline runners."
     )
     parser.add_argument(
-        '--startup-timeout', type=float,
+        '--startup-timeout', type=float, default=10,
         help="The timeout (in seconds) for individual processor services to deploy before failure."
     )
     return parser
