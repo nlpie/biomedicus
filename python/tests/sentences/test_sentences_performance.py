@@ -16,7 +16,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
-from mtap import Pipeline, RemoteProcessor, LocalProcessor
+from mtap import Pipeline, RemoteProcessor, LocalProcessor, events_client
 from mtap import metrics
 from mtap.serialization import JsonSerializer
 from mtap.utilities import find_free_port
@@ -42,26 +42,30 @@ def test_sentence_performance(events_service, sentences_service, test_results):
         pytest.fail('Missing required environment variable BIOMEDICUS_PHI_TEST_DATA')
 
     confusion = metrics.FirstTokenConfusion()
-    with Pipeline(
-            RemoteProcessor(processor_name='biomedicus-sentences', address=sentences_service),
-            LocalProcessor(metrics.Metrics(confusion, tested='sentences', target='Sentence'), component_id='metrics'),
-            events_address=events_service
-    ) as pipeline:
+    pipeline = Pipeline(
+        RemoteProcessor(processor_name='biomedicus-sentences', address=sentences_service),
+        LocalProcessor(metrics.Metrics(confusion, tested='sentences', target='Sentence'), component_id='metrics'),
+        events_address=events_service
+    )
+    with events_client(events_service) as client:
+        times = pipeline.create_times()
         for test_file in input_dir.glob('**/*.json'):
-            with JsonSerializer.file_to_event(test_file, client=pipeline.events_client) as event:
+            with JsonSerializer.file_to_event(test_file, client=client) as event:
                 document = event.documents['plaintext']
-                results = pipeline.run(document)
+
+                result = pipeline.run(document)
+                times.add_result_times(result)
                 print('F1 for event - "{}": {:0.3f} - elapsed: {}'.format(
                     event.event_id,
-                    results.component_result('metrics').result_dict['first_token_confusion']['f1'],
-                    results.component_result('biomedicus-sentences').timing_info['process_method'])
+                    result.component_result('metrics').result_dict['first_token_confusion']['f1'],
+                    result.component_result('biomedicus-sentences').timing_info['process_method'])
                 )
 
         print('Overall Precision:', confusion.precision)
         print('Overall Recall:', confusion.recall)
         print('Overall F1:', confusion.f1)
-        pipeline.print_times()
-        timing_info = pipeline.processor_timer_stats('biomedicus-sentences').timing_info
+        times.print()
+        timing_info = times.processor_timer_stats('biomedicus-sentences').timing_info
         test_results['biomedicus-sentences'] = {
             'Precision': confusion.precision,
             'Recall': confusion.recall,

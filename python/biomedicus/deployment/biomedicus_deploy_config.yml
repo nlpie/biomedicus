@@ -1,7 +1,7 @@
 global:
   host: null
   mtap_config: null
-  logLevel: INFO
+  log_level: INFO
   register: no
 events_service:
   enabled: yes
@@ -23,6 +23,7 @@ processors:
     entry_point: biomedicus.sentences.bi_lstm
     port: 50300
     pre_args: ['processor']
+    workers: 4
   - implementation: java
     entry_point: edu.umn.biomedicus.tagging.tnt.TntPosTaggerProcessor
     port: 50400
@@ -33,15 +34,8 @@ processors:
     entry_point: edu.umn.biomedicus.concepts.DictionaryConceptDetector
     port: 50600
   - implementation: python
-    entry_point: biomedicus.negation.negex_triggers
+    entry_point: biomedicus.negation.negex
     port: 50700
-  - implementation: python
-    entry_point: biomedicus.dependencies.stanza_selective_parser
-    port: 50800
-    additional_args: ['--offline']
-  - implementation: python
-    entry_point: biomedicus.negation.deepen
-    port: 50900
   - implementation: java
     entry_point: edu.umn.biomedicus.sections.RuleBasedSectionHeaderDetector
     port: 51000

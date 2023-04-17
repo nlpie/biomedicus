@@ -20,9 +20,8 @@ from biomedicus_client.pipeline import RunCommand, default_pipeline, rtf_to_text
 
 CLIENT_CONFIGS = {
     'pipeline': default_pipeline.default_pipeline_config,
-    'run': default_pipeline.default_pipeline_config,
-    'scaleout-pipeline': default_pipeline.scaleout_pipeline_config,
-    'rtf-to-text-pipeline': rtf_to_text.default_rtf_to_text_pipeline_config
+    'scaleout_pipeline': default_pipeline.scaleout_pipeline_config,
+    'rtf_only_pipeline': rtf_to_text.default_rtf_to_text_pipeline_config
 }
 
 

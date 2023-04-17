@@ -17,8 +17,9 @@ import fnmatch
 import time
 from pathlib import Path
 
-from mtap import Event, EventsClient
-from mtap.processing import ProcessingSource
+from mtap import Event
+from mtap.pipeline import ProcessingSource
+from mtap.types import EventsClient
 from watchdog.events import FileSystemEventHandler, FileSystemEvent
 
 
@@ -86,7 +87,7 @@ class WatcherSource(ProcessingSource):
     def __init__(self, handler):
         self.handler = handler
 
-    def provide(self, consume):
+    def produce(self, consume):
         from watchdog.observers import Observer
 
         self.handler.consume = consume

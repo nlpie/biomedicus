@@ -19,7 +19,7 @@ from typing import Optional, Union
 
 from importlib_resources import files
 from mtap import Pipeline, LocalProcessor, RemoteProcessor
-from mtap.serialization import get_serializer, SerializationProcessor
+from mtap.serialization import SerializerRegistry, SerializationProcessor
 
 __all__ = ['default_pipeline_config', 'scaleout_pipeline_config', 'create', 'from_args', 'argument_parser']
 
@@ -66,7 +66,7 @@ def create(config: Optional[Union[str, Path]] = None,
 
     serializer = None if serializer == 'None' else serializer
     if serializer is not None:
-        serialization_proc = SerializationProcessor(get_serializer(serializer),
+        serialization_proc = SerializationProcessor(SerializerRegistry.get(serializer),
                                                     output_directory,
                                                     include_label_text=include_label_text)
         ser_comp = LocalProcessor(serialization_proc, component_id='serializer')

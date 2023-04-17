@@ -19,7 +19,7 @@ from typing import List, Dict, Any
 
 import mtap
 from mtap import Location, Document, processor
-from mtap.processing.descriptions import labels
+from mtap.descriptors import labels
 
 _pattern = re.compile(r'^[\s]*(.*?)[\s]*$', re.MULTILINE)
 
@@ -33,10 +33,12 @@ def get_sentences(text: str) -> List[Location]:
     name='biomedicus-sentences-one-per-line',
     human_name='One per Line Sentences',
     description='Labels sentences where each line in the input document is a sentence.',
-    entry_point=__name__,
     outputs=[
         labels(name='sentences')
-    ]
+    ],
+    additional_data={
+        'entry_point': __name__,
+    }
 )
 class OnePerLineSentencesProcessor(mtap.processing.DocumentProcessor):
     def process_document(self, document: Document, params: Dict[str, Any]):

@@ -16,7 +16,8 @@
 from argparse import ArgumentParser
 from typing import List
 
-from mtap.processing import FilesInDirectoryProcessingSource
+from mtap import events_client
+from mtap.pipeline import FilesInDirectoryProcessingSource
 
 from biomedicus_client.cli_tools import Command
 from biomedicus_client.pipeline import default_pipeline
@@ -48,9 +49,9 @@ class RunCommand(Command):
                             help="The log level to use.")
 
     def command_fn(self, conf):
-        with default_pipeline.from_args(conf) as pipeline:
-            input_directory = conf.input_directory
-            client = pipeline.events_client
+        pipeline = default_pipeline.from_args(conf)
+        input_directory = conf.input_directory
+        with events_client(pipeline.events_address) as client:
             if conf.rtf:
                 extension_glob = conf.extension_glob or "**/*.rtf"
                 if conf.watch:
@@ -67,6 +68,6 @@ class RunCommand(Command):
                                                               input_directory,
                                                               extension_glob=extension_glob)
                 params = None
-            pipeline.run_multithread(source, params=params, log_level=conf.log_level)
-            if not conf.no_times:
-                pipeline.print_times()
+            result = pipeline.run_multithread(source, params=params, log_level=conf.log_level)
+        if not conf.no_times:
+            result.print()

@@ -6,19 +6,12 @@ global:
 events_service:
   enabled: yes
   addresses:
-    - localhost:50100
-    - localhost:50101
-    - localhost:50102
-    - localhost:50103
-    - localhost:50104
-    - localhost:50105
-    - localhost:50106
-    - localhost:50107
-  workers: 8
+    - 127.0.0.1:50100
+  workers: 20
 shared_processor_config:
   events_addresses: null
-  workers: 8
-  args: [ ]
+  workers: 16
+  additional_args: [ ]
   jvm_args: [ "-Xms32m", "-Xmx8g" ]
   java_classpath: null
 # Below this is a list of the processors to be deployed and their individual settings.
@@ -30,7 +23,8 @@ processors:
   - implementation: python
     entry_point: biomedicus.sentences.bi_lstm
     port: 50300
-    pre_args: ['processor']
+    pre_args: [ 'processor' ]
+    workers: 4
   - implementation: java
     entry_point: edu.umn.biomedicus.tagging.tnt.TntPosTaggerProcessor
     port: 50400
@@ -41,15 +35,8 @@ processors:
     entry_point: edu.umn.biomedicus.concepts.DictionaryConceptDetector
     port: 50600
   - implementation: python
-    entry_point: biomedicus.negation.negex_triggers
+    entry_point: biomedicus.negation.negex
     port: 50700
-  - implementation: python
-    entry_point: biomedicus.dependencies.stanza_selective_parser
-    port: 50800
-    additional_args: ['--offline']
-  - implementation: python
-    entry_point: biomedicus.negation.deepen
-    port: 50900
   - implementation: java
     entry_point: edu.umn.biomedicus.sections.RuleBasedSectionHeaderDetector
     port: 51000

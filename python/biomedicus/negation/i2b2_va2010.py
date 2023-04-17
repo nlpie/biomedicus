@@ -16,8 +16,8 @@ import re
 from argparse import ArgumentParser
 from pathlib import Path
 
-from mtap import Event, Pipeline, LocalProcessor, RemoteProcessor
-from mtap.serialization import standard_serializers, SerializationProcessor
+from mtap import Event, Pipeline, LocalProcessor, RemoteProcessor, events_client
+from mtap.serialization import SerializationProcessor, SerializerRegistry
 
 from biomedicus.sentences.one_per_line_sentences import OnePerLineSentencesProcessor
 
@@ -75,26 +75,27 @@ def main(args=None):
     parser.add_argument('output_directory', type=Path,
                         help='An output directory to write the serialized mtap events to.')
     parser.add_argument('--target-document', default='plaintext')
-    parser.add_argument('--serializer', default='pickle', choices=standard_serializers.keys(),
+    parser.add_argument('--serializer', default='pickle', choices=SerializerRegistry.REGISTRY.keys(),
                         help='The serializer to use.')
     parser.add_argument('--events', help="Address of the events client.")
     parser.add_argument('--tagger', help="Address of the pos tagger to use.")
 
     conf = parser.parse_args(args)
 
-    serializer = standard_serializers[conf.serializer]
+    serializer = SerializerRegistry.get(conf.serializer)
 
-    with Pipeline(
-            LocalProcessor(OnePerLineSentencesProcessor(), component_id='sentences'),
-            RemoteProcessor('biomedicus-tnt-tagger', address=conf.tagger),
-            LocalProcessor(SerializationProcessor(serializer, output_dir=conf.output_directory),
-                           component_id='serializer'),
-            events_address=conf.events
-    ) as pipeline:
-        pipeline.run_multithread(
-            events(conf.input_directory, conf.target_document, client=pipeline.events_client)
+    pipeline = Pipeline(
+        LocalProcessor(OnePerLineSentencesProcessor(), component_id='sentences'),
+        RemoteProcessor('biomedicus-tnt-tagger', address=conf.tagger),
+        LocalProcessor(SerializationProcessor(serializer, output_dir=conf.output_directory),
+                       component_id='serializer'),
+        events_address=conf.events
+    )
+    with events_client(conf.events) as client:
+        times = pipeline.run_multithread(
+            events(conf.input_directory, conf.target_document, client=client)
         )
-        pipeline.print_times()
+        times.print()
 
 
 if __name__ == '__main__':

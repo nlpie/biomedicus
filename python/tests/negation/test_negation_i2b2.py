@@ -18,7 +18,7 @@ from pathlib import Path
 from subprocess import Popen, PIPE, STDOUT
 
 import pytest
-from mtap import metrics, Pipeline, RemoteProcessor, LocalProcessor, GenericLabel
+from mtap import metrics, Pipeline, RemoteProcessor, LocalProcessor, GenericLabel, events_client
 from mtap.serialization import PickleSerializer
 from mtap.utilities import find_free_port
 
@@ -135,8 +135,7 @@ def is_negated(term: GenericLabel) -> bool:
     return False
 
 
-@pytest.mark.performance
-def test_negex_performance(events_service, negex_service, test_results):
+def run_and_report(name, pipeline, events_service, test_results):
     try:
         input_dir = Path(os.environ['BIOMEDICUS_TEST_DATA']) / 'negation' / 'i2b2_2010'
     except KeyError:
@@ -144,117 +143,63 @@ def test_negex_performance(events_service, negex_service, test_results):
     confusion = metrics.FirstTokenConfusion(print_debug='fn', debug_range=120)
     metrics_processor = metrics.Metrics(confusion, tested='negated', target='i2b2concepts',
                                         target_filter=is_negated)
-    with Pipeline(
-            RemoteProcessor('biomedicus-negation', address=negex_service,
-                            params={'terms_index': 'i2b2concepts'}),
-            LocalProcessor(metrics_processor, component_id='metrics'),
-            events_address=events_service
-    ) as pipeline:
+    pipeline.append(LocalProcessor(metrics_processor))
+    with events_client(events_service) as client:
+        times = pipeline.create_times()
         for test_file in input_dir.glob('**/*.pickle'):
-            with PickleSerializer.file_to_event(test_file, client=pipeline.events_client) as event:
+            with PickleSerializer.file_to_event(test_file, client=client) as event:
                 document = event.documents['plaintext']
-                results = pipeline.run(document)
-                print('F1 for event - "{}": {:0.3f} - elapsed: {}'.format(
-                    event.event_id,
-                    results.component_result('metrics').result_dict['first_token_confusion']['f1'],
-                    results.component_result('biomedicus-negation').timing_info['process_method']
-                ))
+                result = pipeline.run(document)
+                times.add_result_times(result)
+                f1 = result.component_result('mtap-metrics').result_dict['first_token_confusion']['f1']
+                print(f'F1 for event - "{event.event_id}": {f1:0.3f}')
 
         print('Overall Precision:', confusion.precision)
         print('Overall Recall:', confusion.recall)
         print('Overall F1:', confusion.f1)
-        pipeline.print_times()
-        timing_info = pipeline.processor_timer_stats('biomedicus-negation').timing_info
-        test_results['biomedicus-negex'] = {
+        times.print()
+        stats = times.aggregate_timer_stats()
+        test_results[name] = {
             'Gold Standard': "2010 i2b2-VA",
             'Precision': confusion.precision,
             'Recall': confusion.recall,
             'F1': confusion.f1,
-            'Per-Document Mean Remote Call Duration': str(timing_info['remote_call'].mean),
-            'Per-Document Mean Process Method Duration': str(timing_info['process_method'].mean)
+            'Per-Document Mean Pipeline Duration': str(stats.timing_info['total'].mean),
         }
+
+
+@pytest.mark.performance
+def test_negex_performance(events_service, negex_service, test_results):
+    pipeline = Pipeline(
+        RemoteProcessor('biomedicus-negation', address=negex_service,
+                        params={'terms_index': 'i2b2concepts'}),
+        events_address=events_service
+    )
+    run_and_report('biomedicus-negex', pipeline, events_service, test_results)
 
 
 @pytest.mark.performance
 def test_modification_detector_performance(events_service, modification_detector_service,
                                            test_results):
-    input_dir = Path(os.environ['BIOMEDICUS_TEST_DATA']) / 'negation' / 'i2b2_2010'
-    confusion = metrics.FirstTokenConfusion()
-    metrics_processor = metrics.Metrics(confusion, tested='negated', target='i2b2concepts',
-                                        target_filter=is_negated)
-    with Pipeline(
-            RemoteProcessor('biomedicus-negation', address=modification_detector_service,
-                            params={'terms_index': 'i2b2concepts'}),
-            LocalProcessor(metrics_processor, component_id='metrics'),
-            events_address=events_service
-    ) as pipeline:
-        for test_file in input_dir.glob('**/*.pickle'):
-            with PickleSerializer.file_to_event(test_file, client=pipeline.events_client) as event:
-                document = event.documents['plaintext']
-                results = pipeline.run(document)
-                print('F1 for event - "{}": {:0.3f} - elapsed: {}'.format(
-                    event.event_id,
-                    results.component_result('metrics').result_dict['first_token_confusion']['f1'],
-                    results.component_result('biomedicus-negation').timing_info['process_method']
-                ))
-
-        print('Overall Precision:', confusion.precision)
-        print('Overall Recall:', confusion.recall)
-        print('Overall F1:', confusion.f1)
-        pipeline.print_times()
-        timing_info = pipeline.processor_timer_stats('biomedicus-negation').timing_info
-        test_results['biomedicus-modification'] = {
-            'Gold Standard': "2010 i2b2-VA",
-            'Precision': confusion.precision,
-            'Recall': confusion.recall,
-            'F1': confusion.f1,
-            'Per-Document Mean Remote Call Duration': str(timing_info['remote_call'].mean),
-            'Per-Document Mean Process Method Duration': str(timing_info['process_method'].mean)
-        }
+    pipeline = Pipeline(
+        RemoteProcessor('biomedicus-negation', address=modification_detector_service,
+                        params={'terms_index': 'i2b2concepts'}),
+        events_address=events_service
+    )
+    run_and_report('biomedicus-modification', pipeline, events_service, test_results)
 
 
 @pytest.mark.performance
 def test_deepen_performance(events_service, negex_triggers_service, dependencies_service,
                             deepen_negation_service, test_results):
-    input_dir = Path(os.environ['BIOMEDICUS_TEST_DATA']) / 'negation' / 'i2b2_2010'
-    confusion = metrics.FirstTokenConfusion()
-    metrics_processor = metrics.Metrics(confusion, tested='negated', target='i2b2concepts',
-                                        target_filter=is_negated)
-    with Pipeline(
-            RemoteProcessor(processor_name='biomedicus-negex-triggers',
-                            address=negex_triggers_service),
-            RemoteProcessor(processor_name='biomedicus-selective-dependencies',
-                            address=dependencies_service,
-                            params={'terms_index': 'i2b2concepts'}),
-            RemoteProcessor('biomedicus-deepen', address=deepen_negation_service,
-                            params={'terms_index': 'i2b2concepts'}),
-            LocalProcessor(metrics_processor, component_id='metrics'),
-            events_address=events_service
-    ) as pipeline:
-        for test_file in input_dir.glob('**/*.pickle'):
-            with PickleSerializer.file_to_event(test_file, client=pipeline.events_client) as event:
-                document = event.documents['plaintext']
-                results = pipeline.run(document)
-                print('F1 for event - "{}": {:0.3f} - elapsed: {}'.format(
-                    event.event_id,
-                    results.component_result('metrics').result_dict['first_token_confusion']['f1'],
-                    results.component_result('biomedicus-selective-dependencies').timing_info[
-                        'process_method']
-                ))
-
-        print('Overall Precision:', confusion.precision)
-        print('Overall Recall:', confusion.recall)
-        print('Overall F1:', confusion.f1)
-        pipeline.print_times()
-        timing_info = pipeline.processor_timer_stats('biomedicus-deepen').timing_info
-        timing_info_parse = pipeline.processor_timer_stats('biomedicus-selective-dependencies').timing_info
-        test_results['biomedicus-deepen'] = {
-            'Gold Standard': "2010 i2b2-VA",
-            'Precision': confusion.precision,
-            'Recall': confusion.recall,
-            'F1': confusion.f1,
-            'Per-Document Mean Remote Call Duration': str(
-                timing_info['remote_call'].mean + timing_info_parse['remote_call'].mean),
-            'Per-Document Mean Process Method Duration': str(
-                timing_info['process_method'].mean + timing_info_parse['process_method'].mean)
-        }
+    pipeline = Pipeline(
+        RemoteProcessor(processor_name='biomedicus-negex-triggers',
+                        address=negex_triggers_service),
+        RemoteProcessor(processor_name='biomedicus-selective-dependencies',
+                        address=dependencies_service,
+                        params={'terms_index': 'i2b2concepts'}),
+        RemoteProcessor('biomedicus-deepen', address=deepen_negation_service,
+                        params={'terms_index': 'i2b2concepts'}),
+        events_address=events_service
+    )
+    run_and_report('biomedicus-deepen', pipeline, events_service, test_results)

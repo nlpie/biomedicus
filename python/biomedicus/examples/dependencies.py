@@ -14,25 +14,27 @@
 from argparse import ArgumentParser
 from pathlib import Path
 
-from mtap import Pipeline, RemoteProcessor, Event
+from mtap import Pipeline, RemoteProcessor, Event, events_client
 
 
 def main(args=None):
     parser = ArgumentParser()
-    parser.add_argument('--events-service')
+    parser.add_argument('--events')
     parser.add_argument('--sentences-service')
     parser.add_argument('--dependencies-service')
     parser.add_argument('input_file')
     conf = parser.parse_args(args)
 
-    with Pipeline(
+    pipeline = Pipeline(
             RemoteProcessor('biomedicus-sentences', address=conf.sentences_service),
             RemoteProcessor('biomedicus-dependencies', address=conf.dependencies_service),
-            events_address=conf.events_service
-    ) as pipeline:
+            events_address=conf.events
+    )
+
+    with events_client(conf.events) as events:
         with open(conf.input_file, 'r') as in_f:
             txt = in_f.read()
-        with Event(event_id=Path(conf.input_file).name, client=pipeline.events_client) as event:
+        with Event(event_id=Path(conf.input_file).name, client=events) as event:
             document = event.create_document('plaintext', txt)
             pipeline.run(document)
             for sentence in document.labels['sentences']:
