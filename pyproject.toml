@@ -34,7 +34,7 @@ classifiers = [
     'Topic :: Text Processing :: Linguistic'
 ]
 dependencies = [
-    "biomedicus_client>=3.1.0",  # We get mtap, tqdm, and importlib_resources transitively from the client
+    "biomedicus_client==3.2.0",  # We get mtap, tqdm, and importlib_resources transitively from the client
     "numpy==1.24.2",
     "pyyaml==6.0",
     "regex==2023.3.23",
@@ -67,4 +67,4 @@ include = ["biomedicus*"]
 
 [tool.setuptools_scm]
 write_to = "python/biomedicus/version.py"
-fallback_version = "3.1.0"
+fallback_version = "3.2.0"
