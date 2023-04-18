@@ -1,0 +1,6 @@
+name: Deploy Jekyll site to Pages
+
+on:
+  workflow_dispatch:
+  
+# This file purposely left empty. The real deployment logic is in this file on the GitHub pages branch.
