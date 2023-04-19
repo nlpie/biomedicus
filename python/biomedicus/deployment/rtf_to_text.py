@@ -13,7 +13,7 @@
 #  limitations under the License.
 from argparse import ArgumentParser, Namespace
 from contextlib import contextmanager
-from importlib.resources import as_file
+from importlib_resources import as_file
 from typing import Optional, List, ContextManager
 
 from mtap.deployment import Deployment
