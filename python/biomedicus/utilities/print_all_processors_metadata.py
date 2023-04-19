@@ -18,14 +18,14 @@ from argparse import ArgumentParser
 from tempfile import NamedTemporaryFile
 from typing import Optional
 
-from biomedicus.dependencies.stanza_parser import StanzaParser
 from biomedicus.java_support import run_java
-from biomedicus.negation.negex import NegexProcessor
-from biomedicus.sentences.bi_lstm import SentenceProcessor
 from biomedicus_client.cli_tools import Command
 
 
 def print_processor_meta(output_file: Optional[str] = None):
+    from biomedicus.dependencies.stanza_parser import StanzaParser
+    from biomedicus.negation.negex import NegexProcessor
+    from biomedicus.sentences.bi_lstm import SentenceProcessor
     if output_file is None:
         output_file = "processors.yaml"
     if os.path.isdir(output_file):
