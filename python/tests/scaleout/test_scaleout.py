@@ -35,7 +35,7 @@ def test_scaleout(processor_timeout, test_data_dir):
             deploy = Popen([sys.executable, "-m", "biomedicus", "deploy",
                             "--noninteractive",
                             "--log-level", "DEBUG",
-                            "--config", os.path.join(tmpdir, "scaleout_deploy_config.yml"),
+                            "--config", os.path.join(tmpdir, "scaleout_deploy.yml"),
                             "--startup-timeout", str(processor_timeout)],
                            stdout=PIPE, stderr=STDOUT)
             deploy_event = Event()
@@ -49,7 +49,7 @@ def test_scaleout(processor_timeout, test_data_dir):
             output_folder = os.path.join(tmpdir, "output")
             process = run([sys.executable, "-m", "biomedicus_client", "run",
                            "--log-level", "DEBUG",
-                           "--config", os.path.join(tmpdir, "scaleout_pipeline_config.yml"),
+                           "--config", os.path.join(tmpdir, "scaleout_pipeline.yml"),
                            os.fspath(input_folder),
                            "-o", output_folder])
             assert process.returncode == 0

@@ -12,45 +12,48 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import logging
 from argparse import ArgumentParser
 from contextlib import contextmanager
 from typing import List, Optional, ContextManager
 
-from importlib_resources import files
+from importlib_resources import as_file
 from mtap.deployment import Deployment
 
+from biomedicus.deployment import confs
 from biomedicus.deployment._data_downloading import check_data
 from biomedicus.java_support import attach_biomedicus_jar
 from biomedicus_client.cli_tools import Command
 
-logger = logging.getLogger(__name__)
-
-deployment_config = files('biomedicus.deployment').joinpath('biomedicus_deploy_config.yml')
-scaleout_deploy_config = files('biomedicus.deployment').joinpath('scaleout_deploy_config.yml')
-
 
 @contextmanager
-def create_deployment(offline: bool = False,
+def create_deployment(config: Optional[str] = None,
+                      offline: bool = False,
                       download_data: bool = False,
                       noninteractive: bool = False,
-                      config: Optional[str] = None,
                       log_level: Optional[str] = None,
                       jvm_classpath: Optional[str] = None,
                       rtf: bool = False,
                       host: Optional[str] = None,
                       startup_timeout: Optional[float] = None,
                       **_) -> ContextManager[Deployment]:
-    config = config if config is not None else deployment_config
-    log_level = log_level if log_level is not None else 'INFO'
     if not offline:
         check_data(download_data, noninteractive=noninteractive)
-    deployment = Deployment.from_yaml_file(config)
+
+    if config is None:
+        with as_file(confs.DEFAULT) as config:
+            deployment = Deployment.from_yaml_file(config)
+    else:
+        deployment = Deployment.from_yaml_file(config)
+
     if host is not None:
         deployment.global_settings.host = host
+
+    log_level = log_level if log_level is not None else 'INFO'
     deployment.global_settings.log_level = log_level
+
     startup_timeout = startup_timeout or 30
     deployment.shared_processor_config.startup_timeout = startup_timeout
+
     with attach_biomedicus_jar(
         deployment.shared_processor_config.java_classpath,
         jvm_classpath
@@ -72,7 +75,6 @@ def argument_parser():
     parser = ArgumentParser(add_help=False)
     parser.add_argument(
         '--config',
-        default=deployment_config,
         help='A path to a deployment configuration file to use instead of the'
              'default deployment configuration.'
     )

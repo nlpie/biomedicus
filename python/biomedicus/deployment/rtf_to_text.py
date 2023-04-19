@@ -13,31 +13,34 @@
 #  limitations under the License.
 from argparse import ArgumentParser, Namespace
 from contextlib import contextmanager
+from importlib_resources import as_file
 from typing import Optional, List, ContextManager
 
-from importlib_resources import files
 from mtap.deployment import Deployment
 
+from biomedicus.deployment import confs
 from biomedicus.java_support import attach_biomedicus_jar
 from biomedicus_client.cli_tools import Command
 
-deployment_config = files('biomedicus.deployment').joinpath('rtf_to_text_deploy_config.yml')
-
 
 @contextmanager
-def create_deployment(config_file: Optional[str] = None,
+def create_deployment(config: Optional[str] = None,
                       jvm_classpath: Optional[str] = None,
                       log_level: Optional[str] = None,
                       startup_timeout: Optional[float] = None,
                       **_) -> ContextManager[Deployment]:
-    if config_file is None:
-        config_file = deployment_config
-    if log_level is None:
-        log_level = 'INFO'
-    deployment = Deployment.from_yaml_file(config_file)
+    if config is None:
+        with as_file(confs.RTF_TO_TEXT) as config:
+            deployment = Deployment.from_yaml_file(config)
+    else:
+        deployment = Deployment.from_yaml_file(config)
+
+    log_level = 'INFO' if log_level is None else log_level
     deployment.global_settings.log_level = log_level
-    if startup_timeout is not None:
-        deployment.shared_processor_config.startup_timeout = startup_timeout
+
+    startup_timeout = startup_timeout or 30
+    deployment.shared_processor_config.startup_timeout = startup_timeout
+
     with attach_biomedicus_jar(
         deployment.shared_processor_config.java_classpath,
         jvm_classpath
@@ -56,7 +59,6 @@ def argument_parser() -> ArgumentParser:
         '--config',
         help='A path to a deployment configuration file to use instead of the'
              'default deployment configuration.',
-        default=deployment_config
     )
     parser.add_argument(
         '--jvm-classpath',
@@ -67,7 +69,8 @@ def argument_parser() -> ArgumentParser:
         help="The log level for pipeline runners."
     )
     parser.add_argument(
-        '--startup-timeout', type=float, default=10,
+        '--startup-timeout',
+        type=float,
         help="The timeout (in seconds) for individual processor services to deploy before failure."
     )
     return parser
