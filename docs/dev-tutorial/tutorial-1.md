@@ -15,7 +15,7 @@ In this example we will be looking at BioMedICUS-labeled UMLS concepts to find i
 
 Before starting this tutorial, [install BioMedICUS using these instructions.](../installation)
 
-BioMedICUS uses a framework we developed called MTAP as its data model. You can find more about MTAP on [this web site](https://nlpie.github.io/mtap/docs), including short [instructions on creating a generic python processor](https://nlpie.github.io/mtap/docs/tutorials/python.html). We will also be creating a processor in this tutorial, albeit one designed specifically to work with BioMedICUS.
+BioMedICUS uses a framework we developed called MTAP as its data model. You can find more about MTAP on [this web site](https://nlpie.github.io/mtap), including short [instructions on creating a generic python processor](https://nlpie.github.io/mtap/docs/tutorials/python.html). We will also be creating a processor in this tutorial, albeit one designed specifically to work with BioMedICUS.
 
 
 ## Creating the Processor File
@@ -39,18 +39,17 @@ Open this file using the text editor or IDE of your choice.
 The first step is to place the skeleton of what will become our processor. This skeleton is a well-defined entry point and class structure used by MTAP to deploy our code in a way that it can be deployed as a service and called using remote requests.
 
 ```python
-import mtap
+from mtap import DocumentProcessor, run_processor
 
 
-@mtap.processor('biomedicus-medications-tutorial')
-class MedicationsProcessor(mtap.DocumentProcessor):
+class MedicationsProcessor(DocumentProcessor):
     def process_document(self, document, params):
         # Empty for now
         pass
 
 
 if __name__ == '__main__':
-    mtap.run_processor(MedicationsProcessor())
+    run_processor(MedicationsProcessor())
 ```
 
 This is everything we need to deploy the processor and send it documents, although it doesn't do anything yet. The following steps provide an implementation that processes the documents that this processor receives.
@@ -72,11 +71,11 @@ umls_concepts = document.labels['umls_concepts']
 These are both ``LabelIndex`` objects, which represent a collection of all the labels of a specific type that have been added to the document by BioMedICUS before this processor is called.
 
 {: .highlight }
-Curious about the <code class="highligher-rogue">LabelIndex</code> type and its functionality? Learn about them from the <a href="https://nlpie.github.io/mtap-python-api/mtap.html#mtap.data.LabelIndex" class="alert-link">MTAP documentation</a>.
+Curious about the <code class="highligher-rogue">LabelIndex</code> type and its functionality? Learn about them from the <a href="https://mtap.readthedocs.io/en/stable/mtap.html#mtap.types.LabelIndex" class="alert-link">MTAP documentation</a>.
 
 Second, we'll create the ``Labeler`` for our new ``medication_sentences`` index. Beneath the index objects add the following:
 ```python
-with document.get_labeler('medication_sentences') as MedicationSentence:
+with document.labeler('medication_sentences') as MedicationSentence:
     pass
 ```
 
@@ -116,11 +115,10 @@ This creates the label which is automatically stored by the labeler. When the ``
 After all this work the processor should look like the following:
 
 ```python
-import mtap
+from mtap import DocumentProcessor, run_processor
 
 
-@mtap.processor('biomedicus-medications-tutorial')
-class MedicationsProcessor(mtap.DocumentProcessor):
+class MedicationsProcessor(DocumentProcessor):
     def process_document(self, document, params):
         sentences = document.labels['sentences']
         umls_concepts = document.labels['umls_concepts']
@@ -136,7 +134,7 @@ class MedicationsProcessor(mtap.DocumentProcessor):
 
 
 if __name__ == '__main__':
-    mtap.run_processor(MedicationsProcessor())
+    run_processor(MedicationsProcessor())
 ```
 
 

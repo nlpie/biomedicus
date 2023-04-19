@@ -19,7 +19,7 @@ b9 write-config deploy
 {: .note }
 Note this requires the BioMedICUS virtual environment created during installation to be active.
 
-This command will create a file named ``biomedicus_deploy_config.yml`` in the current folder. Open that file in your favorite editor.
+This command will create a file named ``biomedicus_deploy.yml`` in the current folder. Open that file in your favorite editor.
 
 
 ## Adding the processor
@@ -53,13 +53,13 @@ Here we're telling it to use Python, look for a module (file) named ``medication
 Now that we've saved our updated configuration file, we can deploy the entire pipeline, to do so run the following command:
 
 ```bash
-b9 deploy --config biomedicus_deploy_config.yml
+b9 deploy --config biomedicus_deploy.yml
 ```
 
 After you see
 
 ```
-INFO:mtap.processing._service:Started processor server with id: "biomedicus-medications-tutorial"  on address: "127.0.0.1:52000"
+INFO:mtap.processing:Started processor server with id: "biomedicus-medications-tutorial"  on address: "127.0.0.1:52000"
 Done deploying all servers.
 ```
 

@@ -4,7 +4,7 @@ title: Custom Document Input
 ---
 ## About
 
-This guide will teach you how to processing documents using BioMedICUS from a
+This guide will teach you how to process documents using BioMedICUS from a
 database or some other custom source. In this example we will be using a
 sqlite database of documents.
 
@@ -42,27 +42,26 @@ if __name__ == '__main__':
     parser = ArgumentParser(add_help=True, parents=[default_pipeline.argument_parser()])
     parser.add_argument('input_file')
     args = parser.parse_args()
-    with default_pipeline.from_args(args) as pipeline:
+    pipeline = default_pipeline.from_args(args)
+
+    with events_client(pipeline.events_address) as events:
         pass
 ```
 
 ## Creating a sqlite Document Source
 
-Next, we will create a document source. Update the above code starting
-with ``default_pipeline.from_args(args) as pipeline:`` to the following, replacing the ``pass``
-statement:
+Next, we will create a document source. Update the above code starting with ``with events_client(pipeline.events_address) as events:`` to the following, replacing the ``pass`` statement:
 
 ```python
-with default_pipeline.from_args(args) as pipeline:
-  client = pipeline.events_client
-  con = sqlite3.connect(args.input_file)
-  cur = con.cursor()
+with events_client(pipeline.events_address) as events:
+    con = sqlite3.connect(args.input_file)
+    cur = con.cursor()
 
-  def source():
-      for name, text in cur.execute("SELECT NAME, TEXT FROM DOCUMENTS"):
-          with Event(event_id=name, client=client) as e:
-              doc = e.create_document('plaintext', text)
-              yield doc
+    def source():
+        for name, text in cur.execute("SELECT NAME, TEXT FROM DOCUMENTS"):
+            with Event(event_id=name, client=events) as e:
+                doc = e.create_document('plaintext', text)
+                yield doc
 ```
 
 This is a Python generator function which will read a document from the
@@ -84,7 +83,7 @@ use ``print_times`` to print statistics about the different processors run
 times, and will close our sqlite connection using ``con.close()``.
 
 ```python
-with default_pipeline.from_args(args) as pipeline:
+with events_client(pipeline.events_address) as events:
     ...
 
     def source():
@@ -105,32 +104,32 @@ We're done with this file now. Save the changes to the file.
 The script in its final state is shown below:
 
 ```python
-
 from argparse import ArgumentParser
 import sqlite3
 
-from biomedicus_client.pipeline import default_pipeline
-from mtap import Event
+from mtap import Event, events_client
 
+from biomedicus_client import default_pipeline
 
 if __name__ == '__main__':
     parser = ArgumentParser(add_help=True, parents=[default_pipeline.argument_parser()])
     parser.add_argument('input_file')
     args = parser.parse_args()
-    with default_pipeline.from_args(args) as pipeline:
-        client = pipeline.events_client
+    pipeline = default_pipeline.from_args(args)
+
+    with events_client(pipeline.events_address) as events:
         con = sqlite3.connect(args.input_file)
         cur = con.cursor()
 
         def source():
             for name, text in cur.execute("SELECT NAME, TEXT FROM DOCUMENTS"):
-                with Event(event_id=name, client=client) as e:
+                with Event(event_id=name, client=events) as e:
                     doc = e.create_document('plaintext', text)
                     yield doc
 
         count, = next(cur.execute("SELECT COUNT(*) FROM DOCUMENTS"))
-        pipeline.run_multithread(source(), total=count)
-        pipeline.print_times()
+        times = pipeline.run_multithread(source(), total=count)
+        times.print()
         con.close()
 ```
 
@@ -187,40 +186,43 @@ Following are some alternative versions of the sql pipeline:
 from argparse import ArgumentParser
 import sqlite3
 
-from biomedicus_client.pipeline import default_pipeline
-from mtap import Event
+from mtap import Event, events_client
 
+from biomedicus_client import default_pipeline
 
 if __name__ == '__main__':
     parser = ArgumentParser(add_help=True, parents=[default_pipeline.argument_parser()])
     parser.add_argument('input_file')
     args = parser.parse_args()
     args.rtf = True  # Toggles --rtf flag always on.
-    # Can also skip parsing arguments and programmatically create the pipeline, see :func:`default_pipeline.create`.
-    with default_pipeline.from_args(args) as pipeline:
-        client = pipeline.events_client
+    # Can also skip parsing arguments and programmatically create the pipeline,
+    # see :func:`default_pipeline.create`.
+    pipeline = default_pipeline.from_args(args)
+    with events_client(pipeline.events_address) as events:
         con = sqlite3.connect(args.input_file)
         cur = con.cursor()
 
         def source():
-            # Note I recommended that RTF documents be stored as BLOBs since most databases do not support
-            # storing text in the standard Windows-1252 encoding of rtf documents.
-            # (RTF documents can actually use different encodings specified by a keyword like /ansicpg1252
-            # at the beginning of the document, but this is uncommon).
-            # If you are storing RTF documents ensure that they are initially read from file using the correct
-            # encoding [i.e. open('file.rtf', 'r', encoding='cp1252')] before storing in the datatbase,
-            # so that special characters are preserved.
+            # Note I recommended that RTF documents be stored as BLOBs since most
+            # databases do not support storing text in the standard Windows-1252
+            # encoding of rtf documents. (RTF documents can actually use different
+            # encodings specified by a keyword like \ansicpg1252 at the beginning of
+            # the document, but this is uncommon).
+            # If you are storing RTF documents ensure that they are initially read from
+            # file using the correct encoding [i.e. open('file.rtf', 'r', encoding='cp1252')]
+            # before storing in the database, so that special characters are preserved.
             for name, text in cur.execute("SELECT NAME, TEXT FROM DOCUMENTS"):
-                with Event(event_id=name, client=client) as e:
-                    e.binaries['rtf'] = text  # or "e.binaries['rtf'] = text.encode('cp1252')" in TEXT column case
+                with Event(event_id=name, client=events) as e:
+                    e.binaries['rtf'] = text
+                    # or "e.binaries['rtf'] = text.encode('cp1252')" in TEXT column case
                     yield e
 
         count, = next(cur.execute("SELECT COUNT(*) FROM DOCUMENTS"))
-        # Here we're adding the params since we're calling the pipeline with a source that provides Events rather
-        # than documents. This param will tell DocumentProcessors which document they need to process after the
-        # rtf converter creates that document.
-        pipeline.run_multithread(source(), params={'document_name': 'plaintext'}, total=count)
-        pipeline.print_times()
+        # Here we're adding the params since we're calling the pipeline with a source that
+        # provides Events rather than documents. This param will tell DocumentProcessors
+        # which document they need to process after the rtf converter creates that document.
+        times = pipeline.run_multithread(source(), params={'document_name': 'plaintext'}, total=count)
+        times.print()
         con.close()
 ```
 
@@ -230,39 +232,42 @@ if __name__ == '__main__':
 from argparse import ArgumentParser
 import sqlite3
 
-from biomedicus_client.pipeline import rtf_to_text
-from mtap import Event
+from mtap import Event, events_client
 
+from biomedicus_client import rtf_to_text
 
 if __name__ == '__main__':
     parser = ArgumentParser(add_help=True, parents=[rtf_to_text.argument_parser()])
     parser.add_argument('input_file')
     args = parser.parse_args()
     args.rtf = True  # Toggles --rtf flag always on.
-    # Can also skip parsing arguments and programmatically create the pipeline, see :func:`rtf_to_text.create`.
-    with rtf_to_text.from_args(args) as pipeline:
-        client = pipeline.events_client
+    # Can also skip parsing arguments and programmatically create the pipeline,
+    # see :func:`rtf_to_text.create`.
+    pipeline = rtf_to_text.from_args(args)
+    with events_client(pipeline.events_address) as events:
         con = sqlite3.connect(args.input_file)
         cur = con.cursor()
 
         def source():
-            # Note I recommended that RTF documents be stored as BLOBs since most databases do not support
-            # storing text in the standard Windows-1252 encoding of rtf documents.
-            # (RTF documents can actually use different encodings specified by a keyword like /ansicpg1252
-            # at the beginning of the document, but this is uncommon).
-            # If you are storing RTF documents ensure that they are initially read from file using the correct
-            # encoding [i.e. open('file.rtf', 'r', encoding='cp1252')] before storing in the datatbase,
-            # so that special characters are preserved.
+            # Note I recommended that RTF documents be stored as BLOBs since most
+            # databases do not support storing text in the standard Windows-1252
+            # encoding of rtf documents. (RTF documents can actually use different
+            # encodings specified by a keyword like \ansicpg1252 at the beginning of
+            # the document, but this is uncommon).
+            # If you are storing RTF documents ensure that they are initially read from
+            # file using the correct encoding [i.e. open('file.rtf', 'r', encoding='cp1252')]
+            # before storing in the database, so that special characters are preserved.
             for name, text in cur.execute("SELECT NAME, TEXT FROM DOCUMENTS"):
-                with Event(event_id=name, client=client) as e:
-                    e.binaries['rtf'] = text  # or "e.binaries['rtf'] = text.encode('cp1252')" in TEXT column case
+                with Event(event_id=name, client=events) as e:
+                    e.binaries['rtf'] = text
+                    # or "e.binaries['rtf'] = text.encode('cp1252')" in TEXT column case
                     yield e
 
         count, = next(cur.execute("SELECT COUNT(*) FROM DOCUMENTS"))
-        # Here we're adding the params since we're calling the pipeline with a source that provides Events rather
-        # than documents. This param will tell DocumentProcessors which document they need to process after the
-        # rtf converter creates that document.
-        pipeline.run_multithread(source(), params={'document_name': 'plaintext'}, total=count)
-        pipeline.print_times()
+        # Here we're adding the params since we're calling the pipeline with a source that
+        # provides Events rather than documents. This param will tell DocumentProcessors
+        # which document they need to process after the rtf converter creates that document.
+        times = pipeline.run_multithread(source(), params={'document_name': 'plaintext'}, total=count)
+        times.print()
         con.close()
 ```

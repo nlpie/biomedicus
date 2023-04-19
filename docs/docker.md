@@ -13,7 +13,7 @@ We've made available a Docker image containing all the prerequisites and model f
 The following pre-requisites are required for this guide.
 
  - Docker Engine version greater than 17.06
-    - You can get Docker Engine either via installing [Docker Desktop](https://docs.docker.com/get-docker/) or by 
+    - You can get Docker Engine either via installing [Docker Desktop](https://docs.docker.com/get-docker/) or by
       [installing  the engine directly on Linux.](https://docs.docker.com/engine/install/)
     - You can tell your current engine version with the command ``docker version``.
 
@@ -34,7 +34,7 @@ cd b9
 After that we can launch the docker image using the following command:
 
 ```bash
-docker run -it -d -v $(pwd):/b9/ -w /b9/ --name b9 nlpieumn/biomedicus:latest
+docker run -it -d -v $(pwd):/b9/ -w /b9/ --name b9 ghcr.io/nlpie/biomedicus:latest
 ```
 
 {: .highlight }
@@ -90,8 +90,8 @@ Next edit the file ``biomedicus_default_pipeline.yml`` which contains informatio
 ```yaml
   - name: biomedicus-section-headers
     address: localhost:51000
-  - name: biomedicus-medications-tutorial
-    address: localhost:51100
+  - name: medicationsprocessor
+    address: localhost:52000
 ```
 
 Now shutdown and remove the b9 container

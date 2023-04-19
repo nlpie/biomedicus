@@ -35,7 +35,7 @@ components:
 is a list of the processors and their addresses in the order which they will be run. If you remember from our [previous tutorial](tutorial-2), we assigned our new processor the port 52000. Now we will add it to the list of processors at the end of the file:
 
 ```yaml
-  - processor_id: biomedicus-medications-tutorial
+  - processor_id: medicationsprocessor
     address: localhost:52000
 ```
 

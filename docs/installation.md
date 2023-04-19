@@ -35,22 +35,36 @@ pip3 install biomedicus
 
 This will install two packages, ``biomedicus`` and ``biomedicus_client``, with the command line programs ``b9`` and ``b9client`` respectively. The main ``biomedicus`` package contains all of the BioMedICUS processor servers and the ``biomedicus_client`` package contains functionality for connecting to the servers and processing documents.
 
-## Deploy the default BioMedICUS processors
+## Starting the servers
 
 The following command runs a script that will start up all of the BioMedICUS services for processing clinical notes:
 
+#### BASH
 ```bash
 b9 deploy
 ```
 
 It will ask you to download the BioMedICUS model files if you have not already. When you see the following line of output, it is done deploying:
 
-```bash
+```
 Done deploying all servers.
 ```
 
+Press ``Ctrl + Z`` and the terminal will print something like:
+
+```
+[1]+  Stopped                 b9 deploy
+```
+
+Where the number in brackets is the job number. Using the printed job number, execute the following to continue running the servers in the background:
+
+
+```bash
+bg %1
+```
+
 {: .note }
-The servers run in the foreground in your terminal window. When you want to shut down all the servers press Ctrl+C and it will cleanly shut down all processors before exiting.
+Even though the server is running in the background here it is still attached to your terminal. If you want the biomedicus servers to remain running after your terminal has closed use [nohup](https://linux.die.net/man/1/nohup), [screen](https://linux.die.net/man/1/screen), or [tmux](https://linux.die.net/man/1/tmux).
 
 ## Process a directory of text files using BioMedICUS
 
@@ -68,4 +82,12 @@ The default BioMedICUS pipeline and run command will serialize the documents as 
 
 ```bash
 python -m json.tool /path/to/output_file.json
+```
+
+## Stopping servers
+
+To stop the servers you can run the following using the job number from above:
+
+```bash
+kill %1
 ```

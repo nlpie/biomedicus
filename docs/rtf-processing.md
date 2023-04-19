@@ -31,7 +31,7 @@ After deploying BioMedICUS, you can process a directory of documents using the f
 b9client run --rtf --include-label-text /path/to/input_dir -o /path/to/output_dir
 ```
 
-This will processing all documents in the input directory and its child directories with the extension ".rtf" and output serialized
+This will processing all documents in the input directory and its child directories with the extension ".rtf" and output resulting events as json files to the output directory.
 
 ## Converting RTF to Plain Text
 
