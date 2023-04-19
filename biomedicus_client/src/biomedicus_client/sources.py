@@ -16,14 +16,22 @@
 import fnmatch
 import time
 from pathlib import Path
+from typing import Generator, Iterator
 
 from mtap import Event
 from mtap.pipeline import ProcessingSource
 from mtap.types import EventsClient
 from watchdog.events import FileSystemEventHandler, FileSystemEvent
 
+__all__ = [
+    'rtf_source',
+    'RtfHandler',
+    'TxtHandler',
+    'WatcherSource'
+]
 
-def rtf_source(input_directory: Path, extension_glob: str, events_client: EventsClient):
+
+def rtf_source(input_directory: Path, extension_glob: str, events_client: EventsClient) -> Iterator[Event]:
     input_directory = Path(input_directory)
     for path in input_directory.rglob(extension_glob):
         with path.open('rb', errors=None) as f:

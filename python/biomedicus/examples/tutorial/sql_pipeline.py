@@ -18,8 +18,9 @@ Note: This file is in the documentation. Any updates here should be reflected in
 from argparse import ArgumentParser
 import sqlite3
 
-from biomedicus_client.pipeline import default_pipeline
 from mtap import Event, events_client
+
+from biomedicus_client import default_pipeline
 
 if __name__ == '__main__':
     parser = ArgumentParser(add_help=True, parents=[default_pipeline.argument_parser()])
@@ -31,11 +32,13 @@ if __name__ == '__main__':
         con = sqlite3.connect(args.input_file)
         cur = con.cursor()
 
+
         def source():
             for name, text in cur.execute("SELECT NAME, TEXT FROM DOCUMENTS"):
                 with Event(event_id=name, client=events) as e:
                     doc = e.create_document('plaintext', text)
                     yield doc
+
 
         count, = next(cur.execute("SELECT COUNT(*) FROM DOCUMENTS"))
         times = pipeline.run_multithread(source(), total=count)

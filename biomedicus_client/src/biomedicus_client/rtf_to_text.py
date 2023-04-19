@@ -15,16 +15,15 @@
 
 from argparse import ArgumentParser, Namespace
 from os import PathLike
-
-from importlib_resources import files, as_file
 from pathlib import Path
 from typing import Union, Optional, List
 
+from biomedicus_client.sources import rtf_source
+from importlib_resources import as_file
 from mtap import Pipeline, LocalProcessor, EventProcessor, processor, events_client
 
 from biomedicus_client import pipeline_confs
 from biomedicus_client.cli_tools import Command
-from biomedicus_client.pipeline.sources import rtf_source
 
 __all__ = ['create', 'from_args', 'argument_parser', 'RunRtfToTextCommand']
 

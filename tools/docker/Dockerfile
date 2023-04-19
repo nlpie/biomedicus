@@ -22,7 +22,7 @@ RUN useradd -d /biomedicus -ms /bin/bash biomedicus
 USER biomedicus
 WORKDIR /biomedicus
 
-RUN b9 download-data --with-stanza
+RUN b9 download-data
 
 EXPOSE 50000-51000
 ENTRYPOINT ["b9", "deploy", "--host", "0.0.0.0"]

@@ -16,12 +16,12 @@
 from argparse import ArgumentParser
 from typing import List
 
+from biomedicus_client.sources import WatcherSource, rtf_source, RtfHandler, TxtHandler
 from mtap import events_client
 from mtap.pipeline import FilesInDirectoryProcessingSource
 
+from biomedicus_client import default_pipeline
 from biomedicus_client.cli_tools import Command
-from biomedicus_client.pipeline import default_pipeline
-from biomedicus_client.pipeline.sources import WatcherSource, RtfHandler, rtf_source, TxtHandler
 
 
 class RunCommand(Command):
