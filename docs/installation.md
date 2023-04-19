@@ -7,7 +7,7 @@ nav_order: 1
 ## Prerequisites
 
 - Linux or macOS Operating System
-- [Python >=3.7,<3.11](https://www.python.org/). 3.11 is not supported yet as PyTorch does not support.
+- [Python >=3.8](https://www.python.org/).
 - [Java JDK 8.0+](https://adoptium.net). Note, you will need to have the ["java" command on the your "$PATH"](https://www.java.com/en/download/help/path.xml).
 
 {: .warning }
