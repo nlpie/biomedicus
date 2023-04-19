@@ -7,3 +7,8 @@ jobs:
   nothing:
     if: false
     runs-on: ubuntu-latest
+    steps:
+      - name: Fail
+        id: fail
+        run: |
+          exit 1
