@@ -1,3 +1,6 @@
+# This file exists so the pages build can be triggered on the gh-pages branch.
+# On this branch and all other branches it does nothing.
+
 name: Deploy Jekyll site to Pages
 
 on:
