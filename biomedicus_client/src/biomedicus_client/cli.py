@@ -15,13 +15,18 @@
 
 import logging
 
+from biomedicus_client import pipeline_confs
+from biomedicus_client._run import RunCommand
 from biomedicus_client.cli_tools import create_parser, WriteConfigsCommand
-from biomedicus_client.pipeline import RunCommand, default_pipeline, rtf_to_text
+from biomedicus_client.rtf_to_text import RunRtfToTextCommand
+
+__all__ = ('main',)
+
 
 CLIENT_CONFIGS = {
-    'pipeline': default_pipeline.default_pipeline_config,
-    'scaleout_pipeline': default_pipeline.scaleout_pipeline_config,
-    'rtf_only_pipeline': rtf_to_text.default_rtf_to_text_pipeline_config
+    'pipeline': pipeline_confs.DEFAULT,
+    'scaleout_pipeline': pipeline_confs.SCALEOUT,
+    'rtf_only_pipeline': pipeline_confs.RTF_TO_TEXT
 }
 
 
@@ -29,7 +34,7 @@ def main(args=None):
     parser = create_parser(
         WriteConfigsCommand(CLIENT_CONFIGS),
         RunCommand(),
-        rtf_to_text.RunRtfToTextCommand()
+        RunRtfToTextCommand()
     )
     conf = parser.parse_args(args)
     logging.basicConfig(level=conf.log_level)

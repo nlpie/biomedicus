@@ -17,17 +17,16 @@ from argparse import ArgumentParser, Namespace
 from pathlib import Path
 from typing import Optional, Union
 
-from importlib_resources import files
+from importlib_resources import as_file
 from mtap import Pipeline, LocalProcessor, RemoteProcessor
 from mtap.serialization import SerializerRegistry, SerializationProcessor
 
-__all__ = ['default_pipeline_config', 'scaleout_pipeline_config', 'create', 'from_args', 'argument_parser']
+__all__ = ['create', 'from_args', 'argument_parser']
 
-default_pipeline_config = files('biomedicus_client.pipeline').joinpath('biomedicus_default_pipeline.yml')
-scaleout_pipeline_config = files('biomedicus_client.pipeline').joinpath('scaleout_pipeline_config.yml')
+from biomedicus_client import pipeline_confs
 
 
-def create(config: Optional[Union[str, Path]] = None,
+def create(config: Optional[Union[str, bytes, Path]] = None,
            *, events_addresses: Optional[str] = None,
            rtf: bool = False,
            rtf_address: str = "localhost:50200",
@@ -39,27 +38,26 @@ def create(config: Optional[Union[str, Path]] = None,
     """The biomedicus default pipeline for processing clinical documents.
 
     Args
-        config (Optional[Union[str, Path]]): A path to an MTAP pipeline configuration YAML file to
-            use instead of the default.
+        config: A path to an MTAP pipeline configuration YAML file to use instead of the default.
 
     Keyword Args
-        events_addresses (Optional[str]): The address (or addresses, comma separated) for the
-            events service.
-        rtf (bool): Whether to include the rtf processor at the start of the pipeline. The rtf
-            processor will convert RTF data stored in the "rtf" Binary on the event to the
-            "plaintext" Document.
-        rtf_address (str): The address of the remote rtf processor.
-        serializer (Optional[str]): An optional serializer (examples: 'json', 'yml', 'pickle').
-        output_directory (Optional[Path]): Where the serializer should output the serialized files.
-        address (Optional[str]): An optional address to use for all processors.
+        events_addresses: The address (or addresses, comma separated) for the events service.
+        rtf: Whether to include the rtf processor at the start of the pipeline. The rtf processor will convert RTF data
+            stored in the "rtf" Binary on the event to the "plaintext" Document.
+        rtf_address: The address of the remote rtf processor.
+        serializer: An optional serializer (examples: 'json', 'yml', 'pickle').
+        output_directory: Where the serializer should output the serialized files.
+        address: An optional address to use for all processors.
 
     Returns
         Pipeline
 
     """
     if config is None:
-        config = default_pipeline_config
-    pipeline = Pipeline.from_yaml_file(config)
+        with as_file(pipeline_confs.DEFAULT) as config:
+            pipeline = Pipeline.from_yaml_file(config)
+    else:
+        pipeline = Pipeline.from_yaml_file(config)
 
     if events_addresses is not None:
         pipeline.events_address = events_addresses
@@ -73,6 +71,9 @@ def create(config: Optional[Union[str, Path]] = None,
         pipeline.append(ser_comp)
 
     if rtf:
+        if rtf_address is None:
+            rtf_address = 'localhost:50200'
+
         rtf_processor = RemoteProcessor(processor_name='biomedicus-rtf',
                                         address=rtf_address,
                                         params={'output_document_name': 'plaintext'})
@@ -126,7 +127,6 @@ def argument_parser() -> ArgumentParser:
     )
     parser.add_argument(
         '--rtf-address',
-        default="localhost:50200",
         help="The address (or addresses, comma separated) for the rtf to text converter processor."
     )
     parser.add_argument(

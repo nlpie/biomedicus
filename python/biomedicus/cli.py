@@ -16,8 +16,9 @@
 import logging
 
 from biomedicus.deployment import (
-    default_deployment,
     DownloadDataCommand,
+    confs as deployment_confs,
+    default_deployment,
     rtf_to_text
 )
 from biomedicus.java_support import RunJavaCommand
@@ -25,10 +26,13 @@ from biomedicus.utilities.print_all_processors_metadata import PrintProcessorMet
 from biomedicus_client import cli_tools
 from biomedicus_client.cli_tools import WriteConfigsCommand
 
+__all__ = ('main',)
+
+
 SERVER_CONFIGS = {
-    'deploy': default_deployment.deployment_config,
-    'scaleout_deploy': default_deployment.scaleout_deploy_config,
-    'rtf_to_text': rtf_to_text.deployment_config
+    'deploy': deployment_confs.DEFAULT,
+    'scaleout_deploy': deployment_confs.SCALEOUT,
+    'rtf_to_text': deployment_confs.RTF_TO_TEXT
 }
 
 

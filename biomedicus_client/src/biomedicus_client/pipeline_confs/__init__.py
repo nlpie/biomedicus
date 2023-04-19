@@ -1,4 +1,4 @@
-#  Copyright 2022 Regents of the University of Minnesota.
+#  Copyright 2023 Regents of the University of Minnesota.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -11,6 +11,11 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-"""Support for running biomedicus pipelines."""
+"""Provides importlib_resources Traversable objects for built-in pipeline configuration files."""
+from importlib_resources import files
 
-from biomedicus_client.pipeline._run import RunCommand
+__all__ = ('DEFAULT', 'SCALEOUT', 'RTF_TO_TEXT')
+
+DEFAULT = files(__name__).joinpath("biomedicus_default_pipeline.yml")
+SCALEOUT = files(__name__).joinpath("scaleout_pipeline.yml")
+RTF_TO_TEXT = files(__name__).joinpath("rtf_to_text_pipeline.yml")

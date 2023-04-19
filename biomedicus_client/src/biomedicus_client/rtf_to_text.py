@@ -16,18 +16,17 @@
 from argparse import ArgumentParser, Namespace
 from os import PathLike
 
-from importlib_resources import files
+from importlib_resources import files, as_file
 from pathlib import Path
 from typing import Union, Optional, List
 
 from mtap import Pipeline, LocalProcessor, EventProcessor, processor, events_client
 
+from biomedicus_client import pipeline_confs
 from biomedicus_client.cli_tools import Command
 from biomedicus_client.pipeline.sources import rtf_source
 
-__all__ = ['default_rtf_to_text_pipeline_config', 'create', 'from_args', 'argument_parser', 'RunRtfToTextCommand']
-
-default_rtf_to_text_pipeline_config = files('biomedicus_client.pipeline').joinpath('rtf_to_text_pipeline.yml')
+__all__ = ['create', 'from_args', 'argument_parser', 'RunRtfToTextCommand']
 
 
 @processor('write-plaintext')
@@ -57,8 +56,10 @@ def create(config: Optional[Union[str, PathLike]] = None,
 
     """
     if config is None:
-        config = default_rtf_to_text_pipeline_config
-    pipeline = Pipeline.from_yaml_file(config)
+        with as_file(pipeline_confs.RTF_TO_TEXT) as config:
+            pipeline = Pipeline.from_yaml_file(config)
+    else:
+        pipeline = Pipeline.from_yaml_file(config)
 
     if events_addresses is not None:
         pipeline.events_address = events_addresses
@@ -78,18 +79,15 @@ def argument_parser():
 
     """
     parser = ArgumentParser(add_help=False)
-    parser.add_argument('--config', default=None,
-                        help='Path to the pipeline configuration file.')
+    parser.add_argument('--config', default=None, help='Path to the pipeline configuration file.')
     parser.add_argument('--output_directory', '-o', default='output', help="The output directory to write txt out.")
-    parser.add_argument('--events-addresses', default=None,
-                        help="The address for the events service.")
+    parser.add_argument('--events-addresses', default=None, help="The address for the events service.")
     return parser
 
 
 def from_args(args: Namespace) -> Pipeline:
     if not isinstance(args, Namespace):
-        raise ValueError('"args" parameter should be the parsed arguments from '
-                         '"rtf_to_text.argument_parser()"')
+        raise ValueError('"args" parameter should be the parsed arguments from "rtf_to_text.argument_parser()"')
     return create(**vars(args))
 
 
