@@ -4,4 +4,6 @@ on:
   workflow_dispatch:
   
 jobs:
-# This file purposely left empty. The real deployment logic is in this file on the GitHub pages branch.
+  nothing:
+    if: false
+    runs-on: ubuntu-latest
