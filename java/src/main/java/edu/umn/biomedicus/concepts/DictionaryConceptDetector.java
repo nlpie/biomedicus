@@ -124,7 +124,7 @@ public class DictionaryConceptDetector extends DocumentProcessor {
     return Collections.unmodifiableSet(builder);
   }
 
-  private static final Pattern PUNCT = Pattern.compile("[\\p{Punct}]+");
+  private static final Pattern PUNCT = Pattern.compile("\\p{Punct}+");
 
 
   private final ConceptDictionary conceptDictionary;
@@ -368,12 +368,20 @@ public class DictionaryConceptDetector extends DocumentProcessor {
           }
         }
 
-
         for (int from = 0; from < sentenceTokens.size(); from++) {
           int to = Math.min(from + spanSize, sentenceTokens.size());
           List<GenericLabel> window = sentenceTokens.subList(from, to);
 
-          Label first = window.get(0);
+          GenericLabel first = window.get(0);
+          String firstNorm = sentenceNorms.get(from);
+          String firstText = first.getText();
+          if (STOPWORDS.contains(firstNorm) || PUNCT.matcher(firstText).matches()) {
+            continue;
+          }
+          PartOfSpeech firstPos = PartsOfSpeech.forTag(first.getStringValue("tag"));
+          if (TRIVIAL_POS.contains(firstPos)) {
+            continue;
+          }
 
           for (int subsetSize = 1; subsetSize <= window.size(); subsetSize++) {
             List<GenericLabel> windowSubset = window.subList(0, subsetSize);
@@ -503,4 +511,5 @@ public class DictionaryConceptDetector extends DocumentProcessor {
       conceptLabeler.close();
     }
   }
+
 }
