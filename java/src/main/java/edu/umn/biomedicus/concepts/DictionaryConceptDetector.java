@@ -100,7 +100,6 @@ public class DictionaryConceptDetector extends DocumentProcessor {
     Set<PartOfSpeech> builder = new HashSet<>();
     Collections.addAll(builder,
         DT,
-        CD,
         WDT,
         TO,
         CC,
@@ -120,11 +119,11 @@ public class DictionaryConceptDetector extends DocumentProcessor {
 
   private static Set<String> buildStopwords() {
     HashSet<String> builder = new HashSet<>();
-    Collections.addAll(builder, "a", "of", "and", "with", "for", "nos", "to", "in", "by", "on", "the");
+    Collections.addAll(builder, "a", "of", "and", "with", "for", "nos", "to", "in", "by", "on", "the", "was");
     return Collections.unmodifiableSet(builder);
   }
 
-  private static final Pattern PUNCT = Pattern.compile("[\\p{Punct}]+");
+  private static final Pattern PUNCT = Pattern.compile("\\p{Punct}+");
 
 
   private final ConceptDictionary conceptDictionary;
@@ -368,16 +367,35 @@ public class DictionaryConceptDetector extends DocumentProcessor {
           }
         }
 
-
         for (int from = 0; from < sentenceTokens.size(); from++) {
           int to = Math.min(from + spanSize, sentenceTokens.size());
           List<GenericLabel> window = sentenceTokens.subList(from, to);
 
-          Label first = window.get(0);
+          GenericLabel first = window.get(0);
+          String firstNorm = sentenceNorms.get(from);
+          String firstText = first.getText();
+          if (STOPWORDS.contains(firstNorm) || PUNCT.matcher(firstText).matches()) {
+            continue;
+          }
+          PartOfSpeech firstPos = PartsOfSpeech.forTag(first.getStringValue("tag"));
+          if (TRIVIAL_POS.contains(firstPos)) {
+            continue;
+          }
 
           for (int subsetSize = 1; subsetSize <= window.size(); subsetSize++) {
             List<GenericLabel> windowSubset = window.subList(0, subsetSize);
             GenericLabel last = windowSubset.get(subsetSize - 1);
+
+            String lastNorm = sentenceNorms.get(from + subsetSize - 1);
+            String lastText = last.getText();
+            if (STOPWORDS.contains(lastNorm) || PUNCT.matcher(lastText).matches()) {
+              continue;
+            }
+            PartOfSpeech lastPos = PartsOfSpeech.forTag(last.getStringValue("tag"));
+            if (TRIVIAL_POS.contains(lastPos)) {
+              continue;
+            }
+
             GenericLabel entire = GenericLabel.createSpan(first.getStartIndex(), last.getEndIndex());
             entire.setDocument(document);
 
@@ -404,8 +422,7 @@ public class DictionaryConceptDetector extends DocumentProcessor {
               continue;
             }
 
-            String newNorm = sentenceNorms.get(from + subsetSize - 1);
-            if (!STOPWORDS.contains(newNorm) && !PUNCT.matcher(newNorm).matches()) {
+            if (lastPos != PartOfSpeech.CD) {
               List<String> windowNorms = new ArrayList<>(sentenceNorms.subList(from, from + subsetSize));
               windowNorms.sort(Comparator.naturalOrder());
               windowNorms = windowNorms.stream().filter(x -> !STOPWORDS.contains(x))
@@ -503,4 +520,5 @@ public class DictionaryConceptDetector extends DocumentProcessor {
       conceptLabeler.close();
     }
   }
+
 }

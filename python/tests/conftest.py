@@ -74,7 +74,7 @@ def fixture_processor_timeout(request):
     return request.config.getoption("--timeout")
 
 
-@pytest.fixture(name='events_service')
+@pytest.fixture(name='events_service', scope='package')
 def fixture_events_service():
     try:
         address = os.environ['EVENTS_ADDRESS']
@@ -90,7 +90,7 @@ def _listen(process: subprocess.Popen):
     return process.wait()
 
 
-@pytest.fixture(name='processor_watcher')
+@pytest.fixture(name='processor_watcher', scope='session')
 def fixture_processor_watcher():
     def func(address, process, timeout=20):
         listener = Thread(target=_listen, args=(process,))

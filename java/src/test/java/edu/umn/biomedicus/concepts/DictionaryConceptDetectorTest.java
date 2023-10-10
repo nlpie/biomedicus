@@ -58,8 +58,6 @@ public class DictionaryConceptDetectorTest {
         when(conceptDictionary.forPhrase("COVID-19"))
             .thenReturn(Collections.singletonList(new ConceptRow(new SUI("S1960864"),
                 new CUI("C5203670"), new TUI("T047"), 2, "NOCODE")));
-        when(conceptDictionary.forPhrase("COVID-")).thenReturn(null);
-        when(conceptDictionary.forLowercasePhrase("covid-")).thenReturn(null);
         when(conceptDictionary.forPhrase("COVID")).thenReturn(null);
         when(conceptDictionary.forLowercasePhrase("covid")).thenReturn(null);
 
@@ -70,7 +68,7 @@ public class DictionaryConceptDetectorTest {
         document.addLabels("pos_tags",
             Arrays.asList(GenericLabel.withSpan(0, 5).setProperty("tag", "NN").build(),
                 GenericLabel.withSpan(5, 6).setProperty("tag", "HYPH").build(),
-                GenericLabel.withSpan(6, 8).setProperty("tag", "#").build()));
+                GenericLabel.withSpan(6, 8).setProperty("tag", "CD").build()));
         document.addLabels("norm_forms",
             Arrays.asList(GenericLabel.withSpan(0, 5).setProperty("norm", "covid").build(),
                 GenericLabel.withSpan(5, 6).setProperty("norm", "-").build(),
@@ -88,10 +86,6 @@ public class DictionaryConceptDetectorTest {
         Document document = event.createDocument("plaintext", "laceration of the extensor digiti minimi.");
         when(conceptDictionary.forPhrase("laceration")).thenReturn(null);
         when(conceptDictionary.forLowercasePhrase("laceration")).thenReturn(null);
-        when(conceptDictionary.forPhrase("laceration of")).thenReturn(null);
-        when(conceptDictionary.forLowercasePhrase("laceration of")).thenReturn(null);
-        when(conceptDictionary.forPhrase("laceration of the")).thenReturn(null);
-        when(conceptDictionary.forLowercasePhrase("laceration of the")).thenReturn(null);
         when(conceptDictionary.forPhrase("laceration of the extensor")).thenReturn(null);
         when(conceptDictionary.forLowercasePhrase("laceration of the extensor")).thenReturn(null);
         when(conceptDictionary.forPhrase("laceration of the extensor digiti")).thenReturn(null);
