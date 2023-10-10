@@ -40,7 +40,7 @@ dependencies = [
     "grpcio==1.53.0",
     "grpcio-health-checking==1.53.0",
     "grpcio-status==1.53.0",
-    "pyyaml==6.0",
+    "pyyaml==6.0.1",
     "tqdm==4.65.0",
     "importlib_resources==6.1.0",
 ]
