@@ -1,0 +1,1522 @@
+{
+    "event_id": "punctuation_examples.txt",
+    "metadata": {},
+    "documents": {
+        "plaintext": {
+            "text": "Negative for chest pain\nPt states woke this morning with chest pain and throat tightness.\nNegative for abdominal pain, diarrhea and vomiting\nsensory aura \u201cwarm feeling in her trunk\u201d in the past\n26-50% estimated energy/protein need- moderate malnutrition\nAuthor Type: Medical Assistant\nHeight as of this encounter: 1.626 m (5' 4.02\").\nSmith, Jane M, RN (Registered Nurse)\nMild scoliosis, Bilateral R>L SI joint tenderness;\nShe was seen 10/10/19 in WIC and diagnosed with PCN allergy.\nNo signif signs, symptoms or concerns.\nAbdomen and pelvis:\n",
+            "label_indices": {
+                "acronyms": {
+                    "labels": [
+                        {
+                            "start_index": 24,
+                            "end_index": 26,
+                            "identifier": 0,
+                            "fields": {
+                                "expansion": "patient",
+                                "score": 1.0
+                            },
+                            "reference_ids": {},
+                            "_text": "Pt"
+                        },
+                        {
+                            "start_index": 320,
+                            "end_index": 321,
+                            "identifier": 1,
+                            "fields": {
+                                "expansion": "meters",
+                                "score": 1.0
+                            },
+                            "reference_ids": {},
+                            "_text": "m"
+                        },
+                        {
+                            "start_index": 346,
+                            "end_index": 347,
+                            "identifier": 2,
+                            "fields": {
+                                "expansion": "male",
+                                "score": 4.336016817191239
+                            },
+                            "reference_ids": {},
+                            "_text": "M"
+                        },
+                        {
+                            "start_index": 397,
+                            "end_index": 400,
+                            "identifier": 3,
+                            "fields": {
+                                "expansion": "Ringer's lactate",
+                                "score": 0.15989851016015502
+                            },
+                            "reference_ids": {},
+                            "_text": "R>L"
+                        },
+                        {
+                            "start_index": 401,
+                            "end_index": 403,
+                            "identifier": 4,
+                            "fields": {
+                                "expansion": "sacroiliac",
+                                "score": 1.0
+                            },
+                            "reference_ids": {},
+                            "_text": "SI"
+                        },
+                        {
+                            "start_index": 447,
+                            "end_index": 450,
+                            "identifier": 5,
+                            "fields": {
+                                "expansion": "Special Supplemental Nutrition Program for Women, Infants and Children",
+                                "score": 1.0
+                            },
+                            "reference_ids": {},
+                            "_text": "WIC"
+                        },
+                        {
+                            "start_index": 470,
+                            "end_index": 473,
+                            "identifier": 6,
+                            "fields": {
+                                "expansion": "plasmid copy number",
+                                "score": 0.13399059495480092
+                            },
+                            "reference_ids": {},
+                            "_text": "PCN"
+                        }
+                    ],
+                    "distinct": false
+                },
+                "pos_tags": {
+                    "labels": [
+                        {
+                            "start_index": 0,
+                            "end_index": 8,
+                            "identifier": 0,
+                            "fields": {
+                                "tag": "JJ"
+                            },
+                            "reference_ids": {},
+                            "_text": "Negative"
+                        },
+                        {
+                            "start_index": 9,
+                            "end_index": 12,
+                            "identifier": 1,
+                            "fields": {
+                                "tag": "IN"
+                            },
+                            "reference_ids": {},
+                            "_text": "for"
+                        },
+                        {
+                            "start_index": 13,
+                            "end_index": 18,
+                            "identifier": 2,
+                            "fields": {
+                                "tag": "NN"
+                            },
+                            "reference_ids": {},
+                            "_text": "chest"
+                        },
+                        {
+                            "start_index": 19,
+                            "end_index": 23,
+                            "identifier": 3,
+                            "fields": {
+                                "tag": "NN"
+                            },
+                            "reference_ids": {},
+                            "_text": "pain"
+                        },
+                        {
+                            "start_index": 24,
+                            "end_index": 26,
+                            "identifier": 4,
+                            "fields": {
+                                "tag": "NN"
+                            },
+                            "reference_ids": {},
+                            "_text": "Pt"
+                        },
+                        {
+                            "start_index": 27,
+                            "end_index": 33,
+                            "identifier": 5,
+                            "fields": {
+                                "tag": "NNS"
+                            },
+                            "reference_ids": {},
+                            "_text": "states"
+                        },
+                        {
+                            "start_index": 34,
+                            "end_index": 38,
+                            "identifier": 6,
+                            "fields": {
+                                "tag": "VBD"
+                            },
+                            "reference_ids": {},
+                            "_text": "woke"
+                        },
+                        {
+                            "start_index": 39,
+                            "end_index": 43,
+                            "identifier": 7,
+                            "fields": {
+                                "tag": "DT"
+                            },
+                            "reference_ids": {},
+                            "_text": "this"
+                        },
+                        {
+                            "start_index": 44,
+                            "end_index": 51,
+                            "identifier": 8,
+                            "fields": {
+                                "tag": "NN"
+                            },
+                            "reference_ids": {},
+                            "_text": "morning"
+                        },
+                        {
+                            "start_index": 52,
+                            "end_index": 56,
+                            "identifier": 9,
+                            "fields": {
+                                "tag": "IN"
+                            },
+                            "reference_ids": {},
+                            "_text": "with"
+                        },
+                        {
+                            "start_index": 57,
+                            "end_index": 62,
+                            "identifier": 10,
+                            "fields": {
+                                "tag": "NN"
+                            },
+                            "reference_ids": {},
+                            "_text": "chest"
+                        },
+                        {
+                            "start_index": 63,
+                            "end_index": 67,
+                            "identifier": 11,
+                            "fields": {
+                                "tag": "NN"
+                            },
+                            "reference_ids": {},
+                            "_text": "pain"
+                        },
+                        {
+                            "start_index": 68,
+                            "end_index": 71,
+                            "identifier": 12,
+                            "fields": {
+                                "tag": "CC"
+                            },
+                            "reference_ids": {},
+                            "_text": "and"
+                        },
+                        {
+                            "start_index": 72,
+                            "end_index": 78,
+                            "identifier": 13,
+                            "fields": {
+                                "tag": "NN"
+                            },
+                            "reference_ids": {},
+                            "_text": "throat"
+                        },
+                        {
+                            "start_index": 79,
+                            "end_index": 88,
+                            "identifier": 14,
+                            "fields": {
+                                "tag": "NN"
+                            },
+                            "reference_ids": {},
+                            "_text": "tightness"
+                        },
+                        {
+                            "start_index": 88,
+                            "end_index": 89,
+                            "identifier": 15,
+                            "fields": {
+                                "tag": "."
+                            },
+                            "reference_ids": {},
+                            "_text": "."
+                        },
+                        {
+                            "start_index": 90,
+                            "end_index": 98,
+                            "identifier": 16,
+                            "fields": {
+                                "tag": "JJ"
+                            },
+                            "reference_ids": {},
+                            "_text": "Negative"
+                        },
+                        {
+                            "start_index": 99,
+                            "end_index": 102,
+                            "identifier": 17,
+                            "fields": {
+                                "tag": "IN"
+                            },
+                            "reference_ids": {},
+                            "_text": "for"
+                        },
+                        {
+                            "start_index": 103,
+                            "end_index": 112,
+                            "identifier": 18,
+                            "fields": {
+                                "tag": "JJ"
+                            },
+                            "reference_ids": {},
+                            "_text": "abdominal"
+                        },
+                        {
+                            "start_index": 113,
+                            "end_index": 117,
+                            "identifier": 19,
+                            "fields": {
+                                "tag": "NN"
+                            },
+                            "reference_ids": {},
+                            "_text": "pain"
+                        },
+                        {
+                            "start_index": 117,
+                            "end_index": 118,
+                            "identifier": 20,
+                            "fields": {
+                                "tag": ","
+                            },
+                            "reference_ids": {},
+                            "_text": ","
+                        },
+                        {
+                            "start_index": 119,
+                            "end_index": 127,
+                            "identifier": 21,
+                            "fields": {
+                                "tag": "NN"
+                            },
+                            "reference_ids": {},
+                            "_text": "diarrhea"
+                        },
+                        {
+                            "start_index": 128,
+                            "end_index": 131,
+                            "identifier": 22,
+                            "fields": {
+                                "tag": "CC"
+                            },
+                            "reference_ids": {},
+                            "_text": "and"
+                        },
+                        {
+                            "start_index": 132,
+                            "end_index": 140,
+                            "identifier": 23,
+                            "fields": {
+                                "tag": "NN"
+                            },
+                            "reference_ids": {},
+                            "_text": "vomiting"
+                        },
+                        {
+                            "start_index": 141,
+                            "end_index": 148,
+                            "identifier": 24,
+                            "fields": {
+                                "tag": "JJ"
+                            },
+                            "reference_ids": {},
+                            "_text": "sensory"
+                        },
+                        {
+                            "start_index": 149,
+                            "end_index": 153,
+                            "identifier": 25,
+                            "fields": {
+                                "tag": "NN"
+                            },
+                            "reference_ids": {},
+                            "_text": "aura"
+                        },
+                        {
+                            "start_index": 154,
+                            "end_index": 155,
+                            "identifier": 26,
+                            "fields": {
+                                "tag": "XX"
+                            },
+                            "reference_ids": {},
+                            "_text": "\u201c"
+                        },
+                        {
+                            "start_index": 155,
+                            "end_index": 159,
+                            "identifier": 27,
+                            "fields": {
+                                "tag": "JJ"
+                            },
+                            "reference_ids": {},
+                            "_text": "warm"
+                        },
+                        {
+                            "start_index": 160,
+                            "end_index": 167,
+                            "identifier": 28,
+                            "fields": {
+                                "tag": "NN"
+                            },
+                            "reference_ids": {},
+                            "_text": "feeling"
+                        },
+                        {
+                            "start_index": 168,
+                            "end_index": 170,
+                            "identifier": 29,
+                            "fields": {
+                                "tag": "IN"
+                            },
+                            "reference_ids": {},
+                            "_text": "in"
+                        },
+                        {
+                            "start_index": 171,
+                            "end_index": 174,
+                            "identifier": 30,
+                            "fields": {
+                                "tag": "PRP$"
+                            },
+                            "reference_ids": {},
+                            "_text": "her"
+                        },
+                        {
+                            "start_index": 175,
+                            "end_index": 180,
+                            "identifier": 31,
+                            "fields": {
+                                "tag": "NN"
+                            },
+                            "reference_ids": {},
+                            "_text": "trunk"
+                        },
+                        {
+                            "start_index": 180,
+                            "end_index": 181,
+                            "identifier": 32,
+                            "fields": {
+                                "tag": "XX"
+                            },
+                            "reference_ids": {},
+                            "_text": "\u201d"
+                        },
+                        {
+                            "start_index": 182,
+                            "end_index": 184,
+                            "identifier": 33,
+                            "fields": {
+                                "tag": "IN"
+                            },
+                            "reference_ids": {},
+                            "_text": "in"
+                        },
+                        {
+                            "start_index": 185,
+                            "end_index": 188,
+                            "identifier": 34,
+                            "fields": {
+                                "tag": "DT"
+                            },
+                            "reference_ids": {},
+                            "_text": "the"
+                        },
+                        {
+                            "start_index": 189,
+                            "end_index": 193,
+                            "identifier": 35,
+                            "fields": {
+                                "tag": "JJ"
+                            },
+                            "reference_ids": {},
+                            "_text": "past"
+                        },
+                        {
+                            "start_index": 194,
+                            "end_index": 196,
+                            "identifier": 36,
+                            "fields": {
+                                "tag": "CD"
+                            },
+                            "reference_ids": {},
+                            "_text": "26"
+                        },
+                        {
+                            "start_index": 196,
+                            "end_index": 197,
+                            "identifier": 37,
+                            "fields": {
+                                "tag": "HYPH"
+                            },
+                            "reference_ids": {},
+                            "_text": "-"
+                        },
+                        {
+                            "start_index": 197,
+                            "end_index": 199,
+                            "identifier": 38,
+                            "fields": {
+                                "tag": "CD"
+                            },
+                            "reference_ids": {},
+                            "_text": "50"
+                        },
+                        {
+                            "start_index": 199,
+                            "end_index": 200,
+                            "identifier": 39,
+                            "fields": {
+                                "tag": "NN"
+                            },
+                            "reference_ids": {},
+                            "_text": "%"
+                        },
+                        {
+                            "start_index": 201,
+                            "end_index": 210,
+                            "identifier": 40,
+                            "fields": {
+                                "tag": "JJ"
+                            },
+                            "reference_ids": {},
+                            "_text": "estimated"
+                        },
+                        {
+                            "start_index": 211,
+                            "end_index": 217,
+                            "identifier": 41,
+                            "fields": {
+                                "tag": "NN"
+                            },
+                            "reference_ids": {},
+                            "_text": "energy"
+                        },
+                        {
+                            "start_index": 217,
+                            "end_index": 218,
+                            "identifier": 42,
+                            "fields": {
+                                "tag": "HYPH"
+                            },
+                            "reference_ids": {},
+                            "_text": "/"
+                        },
+                        {
+                            "start_index": 218,
+                            "end_index": 225,
+                            "identifier": 43,
+                            "fields": {
+                                "tag": "NN"
+                            },
+                            "reference_ids": {},
+                            "_text": "protein"
+                        },
+                        {
+                            "start_index": 226,
+                            "end_index": 230,
+                            "identifier": 44,
+                            "fields": {
+                                "tag": "NN"
+                            },
+                            "reference_ids": {},
+                            "_text": "need"
+                        },
+                        {
+                            "start_index": 230,
+                            "end_index": 231,
+                            "identifier": 45,
+                            "fields": {
+                                "tag": "HYPH"
+                            },
+                            "reference_ids": {},
+                            "_text": "-"
+                        },
+                        {
+                            "start_index": 232,
+                            "end_index": 240,
+                            "identifier": 46,
+                            "fields": {
+                                "tag": "JJ"
+                            },
+                            "reference_ids": {},
+                            "_text": "moderate"
+                        },
+                        {
+                            "start_index": 241,
+                            "end_index": 253,
+                            "identifier": 47,
+                            "fields": {
+                                "tag": "NN"
+                            },
+                            "reference_ids": {},
+                            "_text": "malnutrition"
+                        },
+                        {
+                            "start_index": 254,
+                            "end_index": 260,
+                            "identifier": 48,
+                            "fields": {
+                                "tag": "NN"
+                            },
+                            "reference_ids": {},
+                            "_text": "Author"
+                        },
+                        {
+                            "start_index": 261,
+                            "end_index": 265,
+                            "identifier": 49,
+                            "fields": {
+                                "tag": "NN"
+                            },
+                            "reference_ids": {},
+                            "_text": "Type"
+                        },
+                        {
+                            "start_index": 265,
+                            "end_index": 266,
+                            "identifier": 50,
+                            "fields": {
+                                "tag": ":"
+                            },
+                            "reference_ids": {},
+                            "_text": ":"
+                        },
+                        {
+                            "start_index": 267,
+                            "end_index": 274,
+                            "identifier": 51,
+                            "fields": {
+                                "tag": "JJ"
+                            },
+                            "reference_ids": {},
+                            "_text": "Medical"
+                        },
+                        {
+                            "start_index": 275,
+                            "end_index": 284,
+                            "identifier": 52,
+                            "fields": {
+                                "tag": "NN"
+                            },
+                            "reference_ids": {},
+                            "_text": "Assistant"
+                        },
+                        {
+                            "start_index": 285,
+                            "end_index": 291,
+                            "identifier": 53,
+                            "fields": {
+                                "tag": "NN"
+                            },
+                            "reference_ids": {},
+                            "_text": "Height"
+                        },
+                        {
+                            "start_index": 292,
+                            "end_index": 294,
+                            "identifier": 54,
+                            "fields": {
+                                "tag": "IN"
+                            },
+                            "reference_ids": {},
+                            "_text": "as"
+                        },
+                        {
+                            "start_index": 295,
+                            "end_index": 297,
+                            "identifier": 55,
+                            "fields": {
+                                "tag": "IN"
+                            },
+                            "reference_ids": {},
+                            "_text": "of"
+                        },
+                        {
+                            "start_index": 298,
+                            "end_index": 302,
+                            "identifier": 56,
+                            "fields": {
+                                "tag": "DT"
+                            },
+                            "reference_ids": {},
+                            "_text": "this"
+                        },
+                        {
+                            "start_index": 303,
+                            "end_index": 312,
+                            "identifier": 57,
+                            "fields": {
+                                "tag": "NN"
+                            },
+                            "reference_ids": {},
+                            "_text": "encounter"
+                        },
+                        {
+                            "start_index": 312,
+                            "end_index": 313,
+                            "identifier": 58,
+                            "fields": {
+                                "tag": ":"
+                            },
+                            "reference_ids": {},
+                            "_text": ":"
+                        },
+                        {
+                            "start_index": 314,
+                            "end_index": 319,
+                            "identifier": 59,
+                            "fields": {
+                                "tag": "CD"
+                            },
+                            "reference_ids": {},
+                            "_text": "1.626"
+                        },
+                        {
+                            "start_index": 320,
+                            "end_index": 321,
+                            "identifier": 60,
+                            "fields": {
+                                "tag": ")"
+                            },
+                            "reference_ids": {},
+                            "_text": "m"
+                        },
+                        {
+                            "start_index": 322,
+                            "end_index": 323,
+                            "identifier": 61,
+                            "fields": {
+                                "tag": "("
+                            },
+                            "reference_ids": {},
+                            "_text": "("
+                        },
+                        {
+                            "start_index": 323,
+                            "end_index": 324,
+                            "identifier": 62,
+                            "fields": {
+                                "tag": "CD"
+                            },
+                            "reference_ids": {},
+                            "_text": "5"
+                        },
+                        {
+                            "start_index": 324,
+                            "end_index": 325,
+                            "identifier": 63,
+                            "fields": {
+                                "tag": "SYM"
+                            },
+                            "reference_ids": {},
+                            "_text": "'"
+                        },
+                        {
+                            "start_index": 326,
+                            "end_index": 330,
+                            "identifier": 64,
+                            "fields": {
+                                "tag": "CD"
+                            },
+                            "reference_ids": {},
+                            "_text": "4.02"
+                        },
+                        {
+                            "start_index": 330,
+                            "end_index": 331,
+                            "identifier": 65,
+                            "fields": {
+                                "tag": "''"
+                            },
+                            "reference_ids": {},
+                            "_text": "\""
+                        },
+                        {
+                            "start_index": 331,
+                            "end_index": 332,
+                            "identifier": 66,
+                            "fields": {
+                                "tag": ")"
+                            },
+                            "reference_ids": {},
+                            "_text": ")"
+                        },
+                        {
+                            "start_index": 334,
+                            "end_index": 339,
+                            "identifier": 67,
+                            "fields": {
+                                "tag": "NNP"
+                            },
+                            "reference_ids": {},
+                            "_text": "Smith"
+                        },
+                        {
+                            "start_index": 339,
+                            "end_index": 340,
+                            "identifier": 68,
+                            "fields": {
+                                "tag": ","
+                            },
+                            "reference_ids": {},
+                            "_text": ","
+                        },
+                        {
+                            "start_index": 341,
+                            "end_index": 345,
+                            "identifier": 69,
+                            "fields": {
+                                "tag": "NNP"
+                            },
+                            "reference_ids": {},
+                            "_text": "Jane"
+                        },
+                        {
+                            "start_index": 346,
+                            "end_index": 347,
+                            "identifier": 70,
+                            "fields": {
+                                "tag": "NN"
+                            },
+                            "reference_ids": {},
+                            "_text": "M"
+                        },
+                        {
+                            "start_index": 347,
+                            "end_index": 348,
+                            "identifier": 71,
+                            "fields": {
+                                "tag": ","
+                            },
+                            "reference_ids": {},
+                            "_text": ","
+                        },
+                        {
+                            "start_index": 349,
+                            "end_index": 351,
+                            "identifier": 72,
+                            "fields": {
+                                "tag": "IN"
+                            },
+                            "reference_ids": {},
+                            "_text": "RN"
+                        },
+                        {
+                            "start_index": 352,
+                            "end_index": 353,
+                            "identifier": 73,
+                            "fields": {
+                                "tag": "("
+                            },
+                            "reference_ids": {},
+                            "_text": "("
+                        },
+                        {
+                            "start_index": 353,
+                            "end_index": 363,
+                            "identifier": 74,
+                            "fields": {
+                                "tag": "JJ"
+                            },
+                            "reference_ids": {},
+                            "_text": "Registered"
+                        },
+                        {
+                            "start_index": 364,
+                            "end_index": 369,
+                            "identifier": 75,
+                            "fields": {
+                                "tag": "NN"
+                            },
+                            "reference_ids": {},
+                            "_text": "Nurse"
+                        },
+                        {
+                            "start_index": 371,
+                            "end_index": 375,
+                            "identifier": 76,
+                            "fields": {
+                                "tag": "JJ"
+                            },
+                            "reference_ids": {},
+                            "_text": "Mild"
+                        },
+                        {
+                            "start_index": 376,
+                            "end_index": 385,
+                            "identifier": 77,
+                            "fields": {
+                                "tag": "NN"
+                            },
+                            "reference_ids": {},
+                            "_text": "scoliosis"
+                        },
+                        {
+                            "start_index": 385,
+                            "end_index": 386,
+                            "identifier": 78,
+                            "fields": {
+                                "tag": ","
+                            },
+                            "reference_ids": {},
+                            "_text": ","
+                        },
+                        {
+                            "start_index": 387,
+                            "end_index": 396,
+                            "identifier": 79,
+                            "fields": {
+                                "tag": "JJ"
+                            },
+                            "reference_ids": {},
+                            "_text": "Bilateral"
+                        },
+                        {
+                            "start_index": 397,
+                            "end_index": 398,
+                            "identifier": 80,
+                            "fields": {
+                                "tag": ","
+                            },
+                            "reference_ids": {},
+                            "_text": "R"
+                        },
+                        {
+                            "start_index": 398,
+                            "end_index": 399,
+                            "identifier": 81,
+                            "fields": {
+                                "tag": "JJR"
+                            },
+                            "reference_ids": {},
+                            "_text": ">"
+                        },
+                        {
+                            "start_index": 399,
+                            "end_index": 400,
+                            "identifier": 82,
+                            "fields": {
+                                "tag": "NN"
+                            },
+                            "reference_ids": {},
+                            "_text": "L"
+                        },
+                        {
+                            "start_index": 401,
+                            "end_index": 403,
+                            "identifier": 83,
+                            "fields": {
+                                "tag": "NNP"
+                            },
+                            "reference_ids": {},
+                            "_text": "SI"
+                        },
+                        {
+                            "start_index": 404,
+                            "end_index": 409,
+                            "identifier": 84,
+                            "fields": {
+                                "tag": "JJ"
+                            },
+                            "reference_ids": {},
+                            "_text": "joint"
+                        },
+                        {
+                            "start_index": 410,
+                            "end_index": 420,
+                            "identifier": 85,
+                            "fields": {
+                                "tag": "NN"
+                            },
+                            "reference_ids": {},
+                            "_text": "tenderness"
+                        },
+                        {
+                            "start_index": 422,
+                            "end_index": 425,
+                            "identifier": 86,
+                            "fields": {
+                                "tag": "PRP"
+                            },
+                            "reference_ids": {},
+                            "_text": "She"
+                        },
+                        {
+                            "start_index": 426,
+                            "end_index": 429,
+                            "identifier": 87,
+                            "fields": {
+                                "tag": "VBD"
+                            },
+                            "reference_ids": {},
+                            "_text": "was"
+                        },
+                        {
+                            "start_index": 430,
+                            "end_index": 434,
+                            "identifier": 88,
+                            "fields": {
+                                "tag": "VBN"
+                            },
+                            "reference_ids": {},
+                            "_text": "seen"
+                        },
+                        {
+                            "start_index": 435,
+                            "end_index": 437,
+                            "identifier": 89,
+                            "fields": {
+                                "tag": "CD"
+                            },
+                            "reference_ids": {},
+                            "_text": "10"
+                        },
+                        {
+                            "start_index": 437,
+                            "end_index": 438,
+                            "identifier": 90,
+                            "fields": {
+                                "tag": "SYM"
+                            },
+                            "reference_ids": {},
+                            "_text": "/"
+                        },
+                        {
+                            "start_index": 438,
+                            "end_index": 440,
+                            "identifier": 91,
+                            "fields": {
+                                "tag": "CD"
+                            },
+                            "reference_ids": {},
+                            "_text": "10"
+                        },
+                        {
+                            "start_index": 440,
+                            "end_index": 441,
+                            "identifier": 92,
+                            "fields": {
+                                "tag": "SYM"
+                            },
+                            "reference_ids": {},
+                            "_text": "/"
+                        },
+                        {
+                            "start_index": 441,
+                            "end_index": 443,
+                            "identifier": 93,
+                            "fields": {
+                                "tag": "CD"
+                            },
+                            "reference_ids": {},
+                            "_text": "19"
+                        },
+                        {
+                            "start_index": 444,
+                            "end_index": 446,
+                            "identifier": 94,
+                            "fields": {
+                                "tag": "IN"
+                            },
+                            "reference_ids": {},
+                            "_text": "in"
+                        },
+                        {
+                            "start_index": 447,
+                            "end_index": 450,
+                            "identifier": 95,
+                            "fields": {
+                                "tag": "NNP"
+                            },
+                            "reference_ids": {},
+                            "_text": "WIC"
+                        },
+                        {
+                            "start_index": 451,
+                            "end_index": 454,
+                            "identifier": 96,
+                            "fields": {
+                                "tag": "CC"
+                            },
+                            "reference_ids": {},
+                            "_text": "and"
+                        },
+                        {
+                            "start_index": 455,
+                            "end_index": 464,
+                            "identifier": 97,
+                            "fields": {
+                                "tag": "VBN"
+                            },
+                            "reference_ids": {},
+                            "_text": "diagnosed"
+                        },
+                        {
+                            "start_index": 465,
+                            "end_index": 469,
+                            "identifier": 98,
+                            "fields": {
+                                "tag": "IN"
+                            },
+                            "reference_ids": {},
+                            "_text": "with"
+                        },
+                        {
+                            "start_index": 470,
+                            "end_index": 473,
+                            "identifier": 99,
+                            "fields": {
+                                "tag": "NNP"
+                            },
+                            "reference_ids": {},
+                            "_text": "PCN"
+                        },
+                        {
+                            "start_index": 474,
+                            "end_index": 481,
+                            "identifier": 100,
+                            "fields": {
+                                "tag": "NN"
+                            },
+                            "reference_ids": {},
+                            "_text": "allergy"
+                        },
+                        {
+                            "start_index": 481,
+                            "end_index": 482,
+                            "identifier": 101,
+                            "fields": {
+                                "tag": "."
+                            },
+                            "reference_ids": {},
+                            "_text": "."
+                        },
+                        {
+                            "start_index": 483,
+                            "end_index": 485,
+                            "identifier": 102,
+                            "fields": {
+                                "tag": "UH"
+                            },
+                            "reference_ids": {},
+                            "_text": "No"
+                        },
+                        {
+                            "start_index": 486,
+                            "end_index": 492,
+                            "identifier": 103,
+                            "fields": {
+                                "tag": "."
+                            },
+                            "reference_ids": {},
+                            "_text": "signif"
+                        },
+                        {
+                            "start_index": 493,
+                            "end_index": 498,
+                            "identifier": 104,
+                            "fields": {
+                                "tag": "NNS"
+                            },
+                            "reference_ids": {},
+                            "_text": "signs"
+                        },
+                        {
+                            "start_index": 498,
+                            "end_index": 499,
+                            "identifier": 105,
+                            "fields": {
+                                "tag": ","
+                            },
+                            "reference_ids": {},
+                            "_text": ","
+                        },
+                        {
+                            "start_index": 500,
+                            "end_index": 508,
+                            "identifier": 106,
+                            "fields": {
+                                "tag": "NNS"
+                            },
+                            "reference_ids": {},
+                            "_text": "symptoms"
+                        },
+                        {
+                            "start_index": 509,
+                            "end_index": 511,
+                            "identifier": 107,
+                            "fields": {
+                                "tag": "CC"
+                            },
+                            "reference_ids": {},
+                            "_text": "or"
+                        },
+                        {
+                            "start_index": 512,
+                            "end_index": 520,
+                            "identifier": 108,
+                            "fields": {
+                                "tag": "NNS"
+                            },
+                            "reference_ids": {},
+                            "_text": "concerns"
+                        },
+                        {
+                            "start_index": 520,
+                            "end_index": 521,
+                            "identifier": 109,
+                            "fields": {
+                                "tag": "."
+                            },
+                            "reference_ids": {},
+                            "_text": "."
+                        },
+                        {
+                            "start_index": 522,
+                            "end_index": 529,
+                            "identifier": 110,
+                            "fields": {
+                                "tag": "NN"
+                            },
+                            "reference_ids": {},
+                            "_text": "Abdomen"
+                        },
+                        {
+                            "start_index": 530,
+                            "end_index": 533,
+                            "identifier": 111,
+                            "fields": {
+                                "tag": "CC"
+                            },
+                            "reference_ids": {},
+                            "_text": "and"
+                        },
+                        {
+                            "start_index": 534,
+                            "end_index": 540,
+                            "identifier": 112,
+                            "fields": {
+                                "tag": "NN"
+                            },
+                            "reference_ids": {},
+                            "_text": "pelvis"
+                        }
+                    ],
+                    "distinct": false
+                },
+                "all_acronym_senses": {
+                    "labels": [
+                        {
+                            "start_index": 24,
+                            "end_index": 26,
+                            "identifier": 0,
+                            "fields": {
+                                "expansion": "patient",
+                                "score": 1.0
+                            },
+                            "reference_ids": {},
+                            "_text": "Pt"
+                        },
+                        {
+                            "start_index": 320,
+                            "end_index": 321,
+                            "identifier": 1,
+                            "fields": {
+                                "expansion": "meters",
+                                "score": 1.0
+                            },
+                            "reference_ids": {},
+                            "_text": "m"
+                        },
+                        {
+                            "start_index": 346,
+                            "end_index": 347,
+                            "identifier": 2,
+                            "fields": {
+                                "expansion": "male",
+                                "score": 4.336016817191239
+                            },
+                            "reference_ids": {},
+                            "_text": "M"
+                        },
+                        {
+                            "start_index": 397,
+                            "end_index": 400,
+                            "identifier": 3,
+                            "fields": {
+                                "expansion": "Ringer's lactate",
+                                "score": 0.15989851016015502
+                            },
+                            "reference_ids": {},
+                            "_text": "R>L"
+                        },
+                        {
+                            "start_index": 397,
+                            "end_index": 400,
+                            "identifier": 4,
+                            "fields": {
+                                "expansion": "right leg",
+                                "score": 0.1584300339186704
+                            },
+                            "reference_ids": {},
+                            "_text": "R>L"
+                        },
+                        {
+                            "start_index": 397,
+                            "end_index": 400,
+                            "identifier": 5,
+                            "fields": {
+                                "expansion": "rat liver",
+                                "score": 0.0053066334884477
+                            },
+                            "reference_ids": {},
+                            "_text": "R>L"
+                        },
+                        {
+                            "start_index": 397,
+                            "end_index": 400,
+                            "identifier": 6,
+                            "fields": {
+                                "expansion": "Ringer's lactate solution",
+                                "score": 0.004543747403530659
+                            },
+                            "reference_ids": {},
+                            "_text": "R>L"
+                        },
+                        {
+                            "start_index": 397,
+                            "end_index": 400,
+                            "identifier": 7,
+                            "fields": {
+                                "expansion": "radiation laboratory",
+                                "score": 0.002660862946288003
+                            },
+                            "reference_ids": {},
+                            "_text": "R>L"
+                        },
+                        {
+                            "start_index": 401,
+                            "end_index": 403,
+                            "identifier": 8,
+                            "fields": {
+                                "expansion": "sacroiliac",
+                                "score": 1.0
+                            },
+                            "reference_ids": {},
+                            "_text": "SI"
+                        },
+                        {
+                            "start_index": 447,
+                            "end_index": 450,
+                            "identifier": 9,
+                            "fields": {
+                                "expansion": "Special Supplemental Nutrition Program for Women, Infants and Children",
+                                "score": 1.0
+                            },
+                            "reference_ids": {},
+                            "_text": "WIC"
+                        },
+                        {
+                            "start_index": 470,
+                            "end_index": 473,
+                            "identifier": 10,
+                            "fields": {
+                                "expansion": "plasmid copy number",
+                                "score": 0.13399059495480092
+                            },
+                            "reference_ids": {},
+                            "_text": "PCN"
+                        },
+                        {
+                            "start_index": 470,
+                            "end_index": 473,
+                            "identifier": 11,
+                            "fields": {
+                                "expansion": "potato cyst nematode",
+                                "score": 0.06583136066284695
+                            },
+                            "reference_ids": {},
+                            "_text": "PCN"
+                        },
+                        {
+                            "start_index": 470,
+                            "end_index": 473,
+                            "identifier": 12,
+                            "fields": {
+                                "expansion": "primary care network",
+                                "score": 0.054579415346462774
+                            },
+                            "reference_ids": {},
+                            "_text": "PCN"
+                        },
+                        {
+                            "start_index": 470,
+                            "end_index": 473,
+                            "identifier": 13,
+                            "fields": {
+                                "expansion": "posterior canal nerve",
+                                "score": 0.0069849135147604805
+                            },
+                            "reference_ids": {},
+                            "_text": "PCN"
+                        },
+                        {
+                            "start_index": 470,
+                            "end_index": 473,
+                            "identifier": 14,
+                            "fields": {
+                                "expansion": "penicillin",
+                                "score": 0.006171470630030929
+                            },
+                            "reference_ids": {},
+                            "_text": "PCN"
+                        },
+                        {
+                            "start_index": 470,
+                            "end_index": 473,
+                            "identifier": 15,
+                            "fields": {
+                                "expansion": "pregnenolone-16alpha-carbonitrile",
+                                "score": 0.0034931352270577438
+                            },
+                            "reference_ids": {},
+                            "_text": "PCN"
+                        }
+                    ],
+                    "distinct": false
+                },
+                "section_headers": {
+                    "labels": [],
+                    "distinct": false
+                },
+                "sentences": {
+                    "labels": [
+                        {
+                            "start_index": 0,
+                            "end_index": 23,
+                            "identifier": 0,
+                            "fields": {},
+                            "reference_ids": {},
+                            "_text": "Negative for chest pain"
+                        },
+                        {
+                            "start_index": 24,
+                            "end_index": 89,
+                            "identifier": 1,
+                            "fields": {},
+                            "reference_ids": {},
+                            "_text": "Pt states woke this morning with chest pain and throat tightness."
+                        },
+                        {
+                            "start_index": 90,
+                            "end_index": 140,
+                            "identifier": 2,
+                            "fields": {},
+                            "reference_ids": {},
+                            "_text": "Negative for abdominal pain, diarrhea and vomiting"
+                        },
+                        {
+                            "start_index": 141,
+                            "end_index": 193,
+                            "identifier": 3,
+                            "fields": {},
+                            "reference_ids": {},
+                            "_text": "sensory aura \u201cwarm feeling in her trunk\u201d in the past"
+                        },
+                        {
+                            "start_index": 194,
+                            "end_index": 253,
+                            "identifier": 4,
+                            "fields": {},
+                            "reference_ids": {},
+                            "_text": "26-50% estimated energy/protein need- moderate malnutrition"
+                        },
+                        {
+                            "start_index": 254,
+                            "end_index": 284,
+                            "identifier": 5,
+                            "fields": {},
+                            "reference_ids": {},
+                            "_text": "Author Type: Medical Assistant"
+                        },
+                        {
+                            "start_index": 285,
+                            "end_index": 333,
+                            "identifier": 6,
+                            "fields": {},
+                            "reference_ids": {},
+                            "_text": "Height as of this encounter: 1.626 m (5' 4.02\")."
+                        },
+                        {
+                            "start_index": 334,
+                            "end_index": 370,
+                            "identifier": 7,
+                            "fields": {},
+                            "reference_ids": {},
+                            "_text": "Smith, Jane M, RN (Registered Nurse)"
+                        },
+                        {
+                            "start_index": 371,
+                            "end_index": 421,
+                            "identifier": 8,
+                            "fields": {},
+                            "reference_ids": {},
+                            "_text": "Mild scoliosis, Bilateral R>L SI joint tenderness;"
+                        },
+                        {
+                            "start_index": 422,
+                            "end_index": 482,
+                            "identifier": 9,
+                            "fields": {},
+                            "reference_ids": {},
+                            "_text": "She was seen 10/10/19 in WIC and diagnosed with PCN allergy."
+                        },
+                        {
+                            "start_index": 483,
+                            "end_index": 521,
+                            "identifier": 10,
+                            "fields": {},
+                            "reference_ids": {},
+                            "_text": "No signif signs, symptoms or concerns."
+                        },
+                        {
+                            "start_index": 522,
+                            "end_index": 541,
+                            "identifier": 11,
+                            "fields": {},
+                            "reference_ids": {},
+                            "_text": "Abdomen and pelvis:"
+                        },
+                        {
+                            "start_index": 542,
+                            "end_index": 542,
+                            "identifier": 12,
+                            "fields": {},
+                            "reference_ids": {},
+                            "_text": ""
+                        }
+                    ],
+                    "distinct": false
+                }
+            }
+        }
+    }
+}
