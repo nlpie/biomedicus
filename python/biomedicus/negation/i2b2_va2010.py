@@ -1,23 +1,10 @@
-#  Copyright 2020 Regents of the University of Minnesota.
-#
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
 """Utility code for reading the i2b2 / VA 2010 dataset"""
 import re
 from argparse import ArgumentParser
 from pathlib import Path
 
 from mtap import Event, Pipeline, LocalProcessor, RemoteProcessor, events_client
-from mtap.serialization import SerializationProcessor, SerializerRegistry
+from mtap.serialization import SerializationProcessor, Serializer
 
 from biomedicus.sentences.one_per_line_sentences import OnePerLineSentencesProcessor
 
@@ -75,14 +62,14 @@ def main(args=None):
     parser.add_argument('output_directory', type=Path,
                         help='An output directory to write the serialized mtap events to.')
     parser.add_argument('--target-document', default='plaintext')
-    parser.add_argument('--serializer', default='pickle', choices=SerializerRegistry.REGISTRY.keys(),
+    parser.add_argument('--serializer', default='pickle', choices=Serializer._REGISTRY.keys(),
                         help='The serializer to use.')
     parser.add_argument('--events', help="Address of the events client.")
     parser.add_argument('--tagger', help="Address of the pos tagger to use.")
 
     conf = parser.parse_args(args)
 
-    serializer = SerializerRegistry.get(conf.serializer)
+    serializer = Serializer.get(conf.serializer)
 
     pipeline = Pipeline(
         LocalProcessor(OnePerLineSentencesProcessor(), component_id='sentences'),
