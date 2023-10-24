@@ -40,7 +40,7 @@ dependencies = [
     "grpcio==1.59.0",
     "grpcio-health-checking==1.59.0",
     "grpcio-status==1.59.0",
-    "tqdm==4.65.0",
+    "tqdm==4.66.1",
     "importlib_resources==6.1.0",
 ]
 dynamic = ["version"]
