@@ -1,16 +1,3 @@
-#  Copyright 2022 Regents of the University of Minnesota.
-#
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
 """Support for creating and running the biomedicus default pipeline."""
 
 from argparse import ArgumentParser, Namespace
@@ -19,7 +6,7 @@ from typing import Optional, Union
 
 from importlib_resources import as_file
 from mtap import Pipeline, LocalProcessor, RemoteProcessor
-from mtap.serialization import SerializerRegistry, SerializationProcessor
+from mtap.serialization import Serializer, SerializationProcessor
 
 __all__ = ['create', 'from_args', 'argument_parser']
 
@@ -64,7 +51,7 @@ def create(config: Optional[Union[str, bytes, Path]] = None,
 
     serializer = None if serializer == 'None' else serializer
     if serializer is not None:
-        serialization_proc = SerializationProcessor(SerializerRegistry.get(serializer),
+        serialization_proc = SerializationProcessor(Serializer.get(serializer),
                                                     output_directory,
                                                     include_label_text=include_label_text)
         ser_comp = LocalProcessor(serialization_proc, component_id='serializer')
@@ -74,7 +61,7 @@ def create(config: Optional[Union[str, bytes, Path]] = None,
         if rtf_address is None:
             rtf_address = 'localhost:50200'
 
-        rtf_processor = RemoteProcessor(processor_name='biomedicus-rtf',
+        rtf_processor = RemoteProcessor(name='biomedicus-rtf',
                                         address=rtf_address,
                                         params={'output_document_name': 'plaintext'})
         pipeline.insert(0, rtf_processor)

@@ -15,7 +15,7 @@ More information about BioMedICUS can be found on our [website](https://nlpie.gi
 
 ## Prerequisites
 
-- [Python >=3.9](https://www.python.org/).
+- [Python >=3.9,<=3.11](https://www.python.org/).
 - [Java JDK 11+](https://adoptium.net). Note, you will need to have the ["java" command on the your "$PATH"](https://www.java.com/en/download/help/path.xml).
 
 ## Installation

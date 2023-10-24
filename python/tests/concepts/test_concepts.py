@@ -5,7 +5,7 @@ from mtap.serialization import JsonSerializer
 
 def test_duplicate_concepts(events_service, concepts_service):
     pipeline = Pipeline(
-        RemoteProcessor(processor_name='biomedicus-concepts', address=concepts_service),
+        RemoteProcessor(name='biomedicus-concepts', address=concepts_service),
         events_address=events_service
     )
     with events_client(events_service) as client:

@@ -10,8 +10,8 @@ This package contains the client code for processing documents using deployed Bi
 
 ## Prerequisites
 
-- [Python 3.7+](https://www.python.org/)
-- [Java JDK 8+](https://adoptium.net). Note, you will need to have the ["java" command on the your "$PATH"](https://www.java.com/en/download/help/path.xml).
+- [Python 3.8+](https://www.python.org/)
+- [Java JDK 11+](https://adoptium.net). Note, you will need to have the ["java" command on the your "$PATH"](https://www.java.com/en/download/help/path.xml).
 
 ## Installation
 
