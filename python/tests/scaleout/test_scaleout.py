@@ -54,7 +54,7 @@ def test_scaleout(processor_timeout, test_data_dir):
                            "-o", output_folder])
             assert process.returncode == 0
             f = os.listdir(output_folder)
-            assert len(f) == 543
+            assert len(f) == sum(1 for _ in filter(lambda x: x.endswith('.txt'), os.listdir(input_folder)))
         finally:
             excs = []
             try:
