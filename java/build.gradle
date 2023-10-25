@@ -79,7 +79,7 @@ dependencies {
     implementation group: 'args4j', name: 'args4j', version: '2.33'
     implementation group: 'org.rocksdb', name: 'rocksdbjni', version: '8.5.4'
     implementation group: 'org.apache.commons', name: 'commons-text', version: '1.10.0'
-    implementation group: 'org.yaml', name: 'snakeyaml', version: '2.0'
+    implementation group: 'org.yaml', name: 'snakeyaml', version: '2.2'
     implementation group: 'jakarta.xml.bind', name: 'jakarta.xml.bind-api', version: '4.0.1'
 
     implementation group: 'io.grpc', name: 'grpc-netty-shaded', version: grpcVersion
