@@ -10,8 +10,9 @@
 name: Create and publish a Docker image
 
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - v*
   workflow_dispatch:
 
 env:
@@ -36,13 +37,6 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Get version number
-        id: version
-        run: |
-          export VERSION=$(git describe)
-          export VERSION=${VERSION#v}
-          echo "patch=${VERSION}" >> $GITHUB_OUTPUT
-          echo "minor=${VERSION%.*}}" >> $GITHUB_OUTPUT
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v5
@@ -52,8 +46,9 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=raw,value=latest
-            type=semver,pattern=${{ steps.version.outputs.patch }}
-            type=semver,pattern=${{ steps.version.outputs.minor }}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
