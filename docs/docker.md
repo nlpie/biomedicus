@@ -124,11 +124,6 @@ From the previous section you may have noticed that you can modify the deploymen
 docker run -it -d -v $(pwd):/b9/ -w /b9/ --name b9 ghcr.io/nlpie/biomedicus:latest --rtf
 ```
 
-Running the RTF-to-text pipeline:
-```bash
-docker exec -it b9 b9client run-rtf-to-text in out
-```
-
 Or even RTF processing with a custom deployment configuration:
 
 ```bash
@@ -139,6 +134,11 @@ To process rtf add the rtf flag to the ``docker exec`` command to run the pipeli
 
 ```bash
 docker exec -it b9 b9client run --rtf --include-label-text in -o out
+```
+
+To just do RTF to text conversion, run the following after deploying using the direct above command:
+```bash
+docker exec -it b9 b9client run-rtf-to-text in out
 ```
 
 ## Appendix A: Exporting the Image for Systems with Restricted Networks
