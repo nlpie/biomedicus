@@ -7,8 +7,8 @@ nav_order: 1
 ## Prerequisites
 
 - Linux or macOS Operating System
-- [Python >=3.8](https://www.python.org/).
-- [Java JDK 8.0+](https://adoptium.net). Note, you will need to have the ["java" command on the your "$PATH"](https://www.java.com/en/download/help/path.xml).
+- [Python >=3.9](https://www.python.org/).
+- [Java JDK 11+](https://adoptium.net). Note, you will need to have the ["java" command on the your "$PATH"](https://www.java.com/en/download/help/path.xml).
 
 {: .warning }
 BioMedICUS is memory-intensive, requiring approximately 10gb of free memory to run.
