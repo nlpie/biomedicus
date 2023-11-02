@@ -3,6 +3,8 @@
     <img src="https://img.shields.io/pypi/v/biomedicus?label=pypi%3A%20biomedicus" /></a>
   <a href="https://pypi.org/project/biomedicus_client/">
     <img src="https://img.shields.io/pypi/v/biomedicus_client?label=pypi%3A%20biomedicus_client" /></a>
+  <a href="https://github.com/nlpie/biomedicus/actions/workflows/ci.yml">
+    <img src="https://github.com/nlpie/biomedicus/actions/workflows/ci.yml/badge.svg" /></a>
 </p>
 
 # BioMedICUS
