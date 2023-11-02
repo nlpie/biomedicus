@@ -42,6 +42,7 @@ dependencies = [
     "grpcio-status==1.59.2",
     "tqdm==4.66.1",
     "importlib_resources==6.1.0",
+    "pyyaml==6.0.1"
 ]
 dynamic = ["version"]
 
