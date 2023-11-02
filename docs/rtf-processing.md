@@ -50,5 +50,5 @@ b9 deploy-rtf-to-text
 After deploying the BioMedICUS RTF conversion processor, you can process a directory of documents using the following command:
 
 ```bash
-b9client run-rtf-to-text /path/to/input_dir /path/to/output_dir
+b9client run-rtf-to-text /path/to/input_dir -o /path/to/output_dir
 ```
