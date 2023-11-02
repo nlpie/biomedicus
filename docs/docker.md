@@ -138,7 +138,7 @@ docker exec -it b9 b9client run --rtf --include-label-text in -o out
 
 To just do RTF to text conversion, run the following after deploying using the direct above command:
 ```bash
-docker exec -it b9 b9client run-rtf-to-text in out
+docker exec -it b9 b9client run-rtf-to-text in -o out
 ```
 
 ## Appendix A: Exporting the Image for Systems with Restricted Networks
