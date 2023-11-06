@@ -1,7 +1,7 @@
 name: b9
 services:
   services:
-    image: nlpieumn/biomedicus:latest
+    image: ghcr.io/nlpie/biomedicus:latest
   reverse-proxy:
     build: ./biomedicus-reverse-proxy
     depends_on:
