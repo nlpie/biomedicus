@@ -51,7 +51,7 @@ docs = [
     "sphinx==7.2.6",
 ]
 stanza = [
-    "stanza==1.6.1",
+    "stanza==1.7.0",
 ]
 
 [project.scripts]
