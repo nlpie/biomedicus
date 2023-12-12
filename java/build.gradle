@@ -66,10 +66,6 @@ repositories {
     mavenLocal()
 }
 
-def junitVersion = '5.9.2'
-def log4jVersion = '2.20.0'
-def grpcVersion = '1.54.0'
-
 dependencies {
     implementation group: 'org.jetbrains', name: 'annotations', version: '24.1.0'
 
@@ -82,18 +78,18 @@ dependencies {
     implementation group: 'org.yaml', name: 'snakeyaml', version: '2.2'
     implementation group: 'jakarta.xml.bind', name: 'jakarta.xml.bind-api', version: '4.0.1'
 
-    implementation group: 'io.grpc', name: 'grpc-netty-shaded', version: grpcVersion
-    implementation group: 'io.grpc', name: 'grpc-protobuf', version: grpcVersion
-    implementation group: 'io.grpc', name: 'grpc-stub', version: grpcVersion
-    implementation group: 'io.grpc', name: 'grpc-services', version: grpcVersion
+    implementation group: 'io.grpc', name: 'grpc-netty-shaded', version: '1.54.0'
+    implementation group: 'io.grpc', name: 'grpc-protobuf', version: '1.54.0'
+    implementation group: 'io.grpc', name: 'grpc-stub', version: '1.54.0'
+    implementation group: 'io.grpc', name: 'grpc-services', version: '1.54.0'
 
     runtimeOnly group: 'org.glassfish.jaxb', name: 'jaxb-runtime', version: '4.0.4'
-    runtimeOnly group: 'org.apache.logging.log4j', name: 'log4j-slf4j2-impl', version: log4jVersion
-    runtimeOnly group: 'org.apache.logging.log4j', name: 'log4j-core', version: log4jVersion
+    runtimeOnly group: 'org.apache.logging.log4j', name: 'log4j-slf4j2-impl', version: '2.20.0'
+    runtimeOnly group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.20.0'
 
-    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: junitVersion
+    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.9.2'
     testImplementation group: 'org.mockito', name: 'mockito-core', version: '5.8.0'
-    testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: junitVersion
+    testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.9.2'
 }
 
 test {
