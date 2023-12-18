@@ -78,10 +78,10 @@ dependencies {
     implementation group: 'org.yaml', name: 'snakeyaml', version: '2.2'
     implementation group: 'jakarta.xml.bind', name: 'jakarta.xml.bind-api', version: '4.0.1'
 
-    implementation group: 'io.grpc', name: 'grpc-netty-shaded', version: '1.54.0'
-    implementation group: 'io.grpc', name: 'grpc-protobuf', version: '1.54.0'
-    implementation group: 'io.grpc', name: 'grpc-stub', version: '1.54.0'
-    implementation group: 'io.grpc', name: 'grpc-services', version: '1.54.0'
+    implementation group: 'io.grpc', name: 'grpc-netty-shaded', version: '1.60.0'
+    implementation group: 'io.grpc', name: 'grpc-protobuf', version: '1.60.0'
+    implementation group: 'io.grpc', name: 'grpc-stub', version: '1.60.0'
+    implementation group: 'io.grpc', name: 'grpc-services', version: '1.60.0'
 
     runtimeOnly group: 'org.glassfish.jaxb', name: 'jaxb-runtime', version: '4.0.4'
     runtimeOnly group: 'org.apache.logging.log4j', name: 'log4j-slf4j2-impl', version: '2.20.0'
