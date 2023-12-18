@@ -85,7 +85,7 @@ dependencies {
 
     runtimeOnly group: 'org.glassfish.jaxb', name: 'jaxb-runtime', version: '4.0.4'
     runtimeOnly group: 'org.apache.logging.log4j', name: 'log4j-slf4j2-impl', version: '2.22.0'
-    runtimeOnly group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.20.0'
+    runtimeOnly group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.22.0'
 
     testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.9.2'
     testImplementation group: 'org.mockito', name: 'mockito-core', version: '5.8.0'
