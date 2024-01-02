@@ -74,7 +74,7 @@ def fixture_processor_timeout(request):
     return request.config.getoption("--timeout")
 
 
-@pytest.fixture(name='events_service', scope='package')
+@pytest.fixture(name='events_service')
 def fixture_events_service():
     try:
         address = os.environ['EVENTS_ADDRESS']

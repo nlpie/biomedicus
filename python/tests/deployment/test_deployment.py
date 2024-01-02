@@ -10,7 +10,7 @@ import pytest
 from mtap.serialization import JsonSerializer
 
 
-@pytest.fixture(name='deploy_all', scope='module')
+@pytest.fixture(name='deploy_all')
 def fixture_deploy_all(processor_timeout):
     p = None
     listener = None

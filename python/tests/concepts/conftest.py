@@ -6,7 +6,7 @@ from mtap.utilities import find_free_port
 from biomedicus.java_support import create_call
 
 
-@pytest.fixture(name='concepts_service', scope='package')
+@pytest.fixture(name='concepts_service')
 def fixture_concepts_service(events_service, processor_watcher, processor_timeout):
     port = str(find_free_port())
     address = '127.0.0.1:' + port
