@@ -46,14 +46,14 @@ jobs:
         python -m pip install --upgrade pip setuptools wheel
         pip install flake8 pytest
         pip install git+https://github.com/nlpie/mtap@main#egg=mtap ./biomedicus_client .[test,stanza] --extra-index-url https://download.pytorch.org/whl/cpu
-        go install github.com/nlpie/mtap/go/mtap-gateway/mtap-gateway.go
+        go install github.com/nlpie/mtap/go/mtap-gateway/mtap-gateway.go@latest
     - name: Install dependencies (release)
       if: ${{ startsWith(github.head_ref, 'release') && success() }}
       run: |
         python -m pip install --upgrade pip setuptools wheel
         pip install flake8 pytest
         SETUPTOOLS_SCM_PRETEND_VERSION=${GITHUB_HEAD_REF##*/} pip install ./biomedicus_client .[test,stanza] --extra-index-url https://download.pytorch.org/whl/cpu
-        go install github.com/nlpie/mtap/go/mtap-gateway/mtap-gateway.go
+        go install github.com/nlpie/mtap/go/mtap-gateway/mtap-gateway.go@latest
     - name: Lint with flake8
       run: |
         pip install flake8
