@@ -1,4 +1,4 @@
-# Copyright 2022 Regents of the University of Minnesota.
+# Copyright (c) Regents of the University of Minnesota.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 """Example SQL pipeline for rtf conversion only.
 
 Note: This file is in the documentation. Any updates here should be reflected in guides/reading-from-db.md"""
@@ -34,7 +35,6 @@ if __name__ == '__main__':
         con = sqlite3.connect(args.input_file)
         cur = con.cursor()
 
-
         def source():
             # Note I recommended that RTF documents be stored as BLOBs since most
             # databases do not support storing text in the standard Windows-1252
@@ -49,7 +49,6 @@ if __name__ == '__main__':
                     e.binaries['rtf'] = text
                     # or "e.binaries['rtf'] = text.encode('cp1252')" in TEXT column case
                     yield e
-
 
         count, = next(cur.execute("SELECT COUNT(*) FROM DOCUMENTS"))
         # Here we're adding the params since we're calling the pipeline with a source that

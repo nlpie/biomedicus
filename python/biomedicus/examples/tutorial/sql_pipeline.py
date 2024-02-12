@@ -1,4 +1,4 @@
-# Copyright 2022 Regents of the University of Minnesota.
+# Copyright (c) Regents of the University of Minnesota.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 """Example SQL pipeline.
 
 Note: This file is in the documentation. Any updates here should be reflected in guides/reading-from-db.md"""
@@ -32,13 +33,11 @@ if __name__ == '__main__':
         con = sqlite3.connect(args.input_file)
         cur = con.cursor()
 
-
         def source():
             for name, text in cur.execute("SELECT NAME, TEXT FROM DOCUMENTS"):
                 with Event(event_id=name, client=events) as e:
                     doc = e.create_document('plaintext', text)
                     yield doc
-
 
         count, = next(cur.execute("SELECT COUNT(*) FROM DOCUMENTS"))
         times = pipeline.run_multithread(source(), total=count)

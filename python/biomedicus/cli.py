@@ -1,4 +1,4 @@
-#  Copyright 2022 Regents of the University of Minnesota.
+#  Copyright (c) Regents of the University of Minnesota.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ from biomedicus.deployment import (
     rtf_to_text
 )
 from biomedicus.java_support import RunJavaCommand
+from biomedicus.pipeline_service import ServePipeline
 from biomedicus.utilities.print_all_processors_metadata import PrintProcessorMetaCommand
 from biomedicus_client import cli_tools
 from biomedicus_client.cli_tools import WriteConfigsCommand
@@ -44,6 +45,7 @@ def main(args=None):
         DownloadDataCommand(),
         PrintProcessorMetaCommand(),
         rtf_to_text.DeployRtfToTextCommand(),
+        ServePipeline()
     )
 
     conf = parser.parse_args(args)

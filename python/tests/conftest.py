@@ -1,4 +1,4 @@
-# Copyright 2019 Regents of the University of Minnesota.
+# Copyright (c) Regents of the University of Minnesota.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,8 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import os
 import subprocess
+from contextlib import suppress
 from pathlib import Path
 from threading import Thread
 
@@ -105,7 +107,8 @@ def fixture_processor_watcher():
         finally:
             try:
                 process.terminate()
-                listener.join(timeout=5.0)
+                with suppress(TimeoutError):
+                    listener.join(timeout=5.0)
                 if listener.is_alive():
                     process.kill()
                     listener.join()
