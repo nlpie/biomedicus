@@ -28,7 +28,7 @@ Wait for the deployment to finish ("Done deploying all servers.") and then Ctrl+
 Next deploy the pipeline service.
 
 ```bash
-b9 serve-pipeline --rtf -p 55000 > serve-pipeline.log &
+b9 serve-pipeline --rtf --include-label-text -p 55000 > serve-pipeline.log &
 ```
 
 Next we need to create a configuration file for the API Gateway. Save the following contents to a file named "gateway.yml".
@@ -59,7 +59,7 @@ BODY=$(jq --null-input --arg doc "$(base64 "97_204.txt")"  \
 '{ "event": { "event_id": "97_204.txt", "binaries": { "rtf": $doc }}, "params": { "document_name": "plaintext" }}')
 curl -X POST http://127.0.0.1:8080/v1/pipeline/biomedicus-default-pipeline/process \
 -H 'Content-Type: application/json' \
--d "${BODY}"
+-d "${BODY}" | python -m json.tool
 ```
 
 ## Conclusion
