@@ -39,7 +39,7 @@ dependencies = [
     "regex==2023.12.25",
     "torch==2.2.0",
     "requests==2.31.0",
-    "watchdog==3.0.0",
+    "watchdog==4.0.0",
 ]
 dynamic = ["version"]
 
