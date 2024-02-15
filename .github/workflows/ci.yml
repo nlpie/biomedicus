@@ -7,11 +7,10 @@ on:
     - cron: 0 8 * * *
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     strategy:
-      max-parallel: 4
+      max-parallel: 2
       matrix:
-        os: [ubuntu-latest, macos-latest]
         python-version: ['3.9', '3.11']
         include:
           - java-version: '11'
@@ -19,7 +18,7 @@ jobs:
           - java-version: '21'
             python-version: '3.11'
 
-    name: ${{ matrix.os }}, py${{ matrix.python-version }}, java${{ matrix.java-version }}
+    name: ubuntu-latest, py${{ matrix.python-version }}, java${{ matrix.java-version }}
 
     steps:
     - uses: actions/checkout@v3
