@@ -76,7 +76,7 @@ dependencies {
     implementation group: 'org.rocksdb', name: 'rocksdbjni', version: '8.11.3'
     implementation group: 'org.apache.commons', name: 'commons-text', version: '1.11.0'
     implementation group: 'org.yaml', name: 'snakeyaml', version: '2.2'
-    implementation group: 'jakarta.xml.bind', name: 'jakarta.xml.bind-api', version: '4.0.1'
+    implementation group: 'jakarta.xml.bind', name: 'jakarta.xml.bind-api', version: '4.0.2'
 
     implementation group: 'io.grpc', name: 'grpc-netty-shaded', version: '1.62.2'
     implementation group: 'io.grpc', name: 'grpc-protobuf', version: '1.62.2'
