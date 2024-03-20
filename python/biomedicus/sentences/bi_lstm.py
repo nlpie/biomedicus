@@ -1,4 +1,4 @@
-#  Copyright 2022 Regents of the University of Minnesota.
+#  Copyright (c) Regents of the University of Minnesota.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -338,7 +338,7 @@ class SentenceProcessor(DocumentProcessor):
         self.device = device
 
     def process_document(self, document: Document, params: Dict[str, Any]):
-        with document.get_labeler('sentences', distinct=True) as add_sentence:
+        with torch.no_grad(), document.get_labeler('sentences', distinct=True) as add_sentence:
             for start, end in predict_text(self.model, self.input_mapper, document.text,
                                            self.device):
                 add_sentence(start, end)
@@ -437,15 +437,14 @@ def create_processor(conf):
     char_mapping = load_char_mapping(conf.chars_file)
     input_mapping = InputMapping(char_mapping, words, hparams.word_length, device=device)
     model = BiLSTM(hparams, n_chars(char_mapping), vectors)
-    # if sys.version_info < (3, 11):
-    #    model = torch.compile(model)
-    model.eval()
     model.to(device=device)
     logger.info('Loading model weights from: {}'.format(conf.model_file))
     with conf.model_file.open('rb') as f:
         state_dict = torch.load(f)
         model.load_state_dict(state_dict)
-    model.share_memory()
+    model.eval()
+    if conf.mp:
+        model.share_memory()
     processor = SentenceProcessor(input_mapping, model, device)
     return processor
 
@@ -455,7 +454,7 @@ def processor(conf):
     mp_context = None
     if conf.mp:
         mp_context = torch.multiprocessing.get_context(conf.mp_start_method)
-    run_processor(processor, options=conf, mp=conf.mp, mp_context=mp_context)
+    run_processor(processor, options=conf, mp_context=mp_context)
 
 
 def main(args=None):
@@ -498,14 +497,6 @@ def main(args=None):
     processor_subparser.add_argument(
         '--torch-device', default=None,
         help="Optional override to manually set the torch device identifier."
-    )
-    processor_subparser.add_argument(
-        '--mp', action='store_true',
-        help="Whether to use the multiprocessing pool based processor server."
-    )
-    processor_subparser.add_argument(
-        '--mp-start-method', default='forkserver', choices=['forkserver', 'spawn'],
-        help="The multiprocessing start method to use"
     )
     processor_subparser.set_defaults(f=processor)
 

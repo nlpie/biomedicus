@@ -32,6 +32,7 @@ def fixture_bi_lstm_model():
         torch_device='cpu',
         download_data=False,
         embeddings=None,
+        mp=False
     )
     proc = bi_lstm.create_processor(conf)
     yield proc
