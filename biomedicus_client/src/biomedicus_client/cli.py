@@ -39,4 +39,7 @@ def main(args=None):
     conf = parser.parse_args(args)
     logging.basicConfig(level=conf.log_level)
     f = conf.f
-    f(conf)
+    try:
+        f(conf)
+    except KeyboardInterrupt:
+        exit(-1)
