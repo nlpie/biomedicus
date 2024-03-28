@@ -37,7 +37,7 @@ dependencies = [
     "biomedicus_client>=3.4.1",  # We get mtap, tqdm, and importlib_resources transitively from the client
     "numpy==1.26.4",
     "regex==2023.12.25",
-    "torch==2.2.1",
+    "torch==2.2.2",
     "requests==2.31.0",
     "watchdog==4.0.0",
 ]
