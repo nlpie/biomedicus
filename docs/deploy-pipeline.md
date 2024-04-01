@@ -62,6 +62,26 @@ curl -X POST http://127.0.0.1:8080/v1/pipeline/biomedicus-default-pipeline/proce
 -d "${BODY}" | python -m json.tool
 ```
 
+## Deploy using the docker image
+
+You can also deploy the end-to-end REST pipeline using the biomedicus docker image:
+
+```bash
+ docker run -it -d --rm -p 8080:8080 --name b9 --entrypoint "./rest_e2e.sh" ghcr.io/nlpie/biomedicus:latest
+```
+
+You can follow the deployment logs using this command:
+
+```bash
+docker logs -f b9
+```
+
+Once you see the following message the server is ready to use on the 8080 port. 
+
+```bash
+Starting new pipeline gateway for service: biomedicus-default-pipeline with address: 127.0.0.1:55000
+```
+
 ## Conclusion
 
 Additional information on the mtap-gateway as well as API specifications can be found in the [MTAP Documentation](https://nlpie.github.io/mtap/docs/api-gateway.html).
