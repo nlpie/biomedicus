@@ -36,7 +36,7 @@ classifiers = [
     'Topic :: Text Processing :: Linguistic'
 ]
 dependencies = [
-    "mtap==1.4.2",
+    "mtap>=1.4.2",
     "grpcio==1.62.1",
     "grpcio-health-checking==1.62.1",
     "grpcio-status==1.62.1",
