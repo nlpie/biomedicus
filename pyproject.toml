@@ -48,7 +48,7 @@ test = [
     "pytest==8.1.1"
 ]
 docs = [
-    "sphinx==7.2.6",
+    "sphinx==7.3.4",
 ]
 stanza = [
     "stanza==1.8.1",
