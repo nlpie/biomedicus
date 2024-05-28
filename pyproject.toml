@@ -38,7 +38,7 @@ dependencies = [
     "numpy==1.26.4",
     "regex==2024.5.15",
     "torch==2.3.0",
-    "requests==2.31.0",
+    "requests==2.32.2",
     "watchdog==4.0.0",
 ]
 dynamic = ["version"]
