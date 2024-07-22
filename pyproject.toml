@@ -35,7 +35,7 @@ classifiers = [
 ]
 dependencies = [
     "biomedicus_client>=3.4.2",  # We get mtap, tqdm, and importlib_resources transitively from the client
-    "numpy==2.0.0",
+    "numpy==2.0.1",
     "regex==2024.5.15",
     "torch==2.3.1",
     "requests==2.32.3",
