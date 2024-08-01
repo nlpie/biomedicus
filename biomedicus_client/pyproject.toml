@@ -37,9 +37,9 @@ classifiers = [
 ]
 dependencies = [
     "mtap>=1.4.2",
-    "grpcio==1.64.1",
-    "grpcio-health-checking==1.64.1",
-    "grpcio-status==1.64.1",
+    "grpcio==1.65.2",
+    "grpcio-health-checking==1.65.2",
+    "grpcio-status==1.65.2",
     "tqdm==4.66.4",
     "importlib_resources==6.4.0",
     "pyyaml==6.0.1"
