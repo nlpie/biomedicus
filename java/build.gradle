@@ -71,7 +71,7 @@ dependencies {
 
     implementation group: 'edu.umn.nlpie', name: 'mtap', version: '1.4.0'
 
-    implementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.13'
+    implementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.15'
     implementation group: 'args4j', name: 'args4j', version: '2.37'
     implementation group: 'org.rocksdb', name: 'rocksdbjni', version: '9.4.0'
     implementation group: 'org.apache.commons', name: 'commons-text', version: '1.12.0'
