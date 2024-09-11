@@ -84,7 +84,7 @@ dependencies {
     implementation group: 'io.grpc', name: 'grpc-services', version: '1.65.1'
 
     runtimeOnly group: 'org.glassfish.jaxb', name: 'jaxb-runtime', version: '4.0.5'
-    runtimeOnly group: 'org.apache.logging.log4j', name: 'log4j-slf4j2-impl', version: '2.23.1'
+    runtimeOnly group: 'org.apache.logging.log4j', name: 'log4j-slf4j2-impl', version: '2.24.0'
     runtimeOnly group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.23.1'
 
     testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.11.0'
