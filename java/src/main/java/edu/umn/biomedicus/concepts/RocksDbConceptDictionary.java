@@ -21,6 +21,8 @@ import org.rocksdb.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import edu.umn.biomedicus.common.utilities.RocksToSLF4JLogger;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -72,7 +74,9 @@ class RocksDbConceptDictionary implements ConceptDictionary, Closeable {
   public static ConceptDictionary loadModel(Path dbPath, boolean inMemory) throws RocksDBException, IOException {
     RocksDB.loadLibrary();
 
-    try (Options options = new Options().setInfoLogLevel(InfoLogLevel.ERROR_LEVEL)) {
+    try (Options options = new Options()) {
+      options.setInfoLogLevel(InfoLogLevel.ERROR_LEVEL);
+      options.setLogger(new RocksToSLF4JLogger(InfoLogLevel.ERROR_LEVEL, LOGGER));
       LOGGER.info("Opening concepts dictionary: {}. inMemory = {}.", dbPath, inMemory);
 
       RocksDB phrasesDB = RocksDB.openReadOnly(options, dbPath.resolve("phrases").toString());

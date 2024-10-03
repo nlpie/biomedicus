@@ -42,7 +42,6 @@ class AlignmentModel {
   private static final Logger LOGGER = LoggerFactory.getLogger(AlignmentModel.class);
   private List<String> longforms;
   private boolean caseSensitive;
-  private Map<String, Double> cachedScores = new HashMap<>();
 
   private AlignmentModel(List<String> longforms, boolean caseSensitive) {
     this.longforms = longforms;

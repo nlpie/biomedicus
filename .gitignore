@@ -385,3 +385,6 @@ gradle-app.setting
 Pipfile
 Pipfile.lock
 test_results.yml
+
+# Visual Studio Code
+.vscode

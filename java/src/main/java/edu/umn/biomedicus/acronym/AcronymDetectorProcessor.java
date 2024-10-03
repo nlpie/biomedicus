@@ -23,7 +23,6 @@ import edu.umn.biomedicus.common.pos.PartsOfSpeech;
 import edu.umn.biomedicus.common.tokenization.WhitespaceTokenizer;
 import edu.umn.biomedicus.common.tuples.Pair;
 import edu.umn.biomedicus.serialization.YamlSerialization;
-import edu.umn.nlpie.mtap.MTAP;
 import edu.umn.nlpie.mtap.common.JsonObject;
 import edu.umn.nlpie.mtap.common.JsonObjectBuilder;
 import edu.umn.nlpie.mtap.model.*;
@@ -277,7 +276,7 @@ public class AcronymDetectorProcessor extends DocumentProcessor {
   protected void process(
       @NotNull Document document,
       @NotNull JsonObject params,
-      @NotNull JsonObjectBuilder result
+      @NotNull JsonObjectBuilder<?, ?> result
   ) {
     LOGGER.debug("Detecting acronyms in a document.");
     Boolean labelOtherSenses = params.getBooleanValue("label_other_senses");
@@ -318,6 +317,15 @@ public class AcronymDetectorProcessor extends DocumentProcessor {
         }
       }
     }
+  }
+
+  @Override
+  public void shutdown() {
+      try {
+        senseVectors.close();
+      } catch (IOException e) {
+        LOGGER.error("Error closing sense vectors dictionary", e);
+      }
   }
 
   private boolean allExcluded(List<GenericLabel> posTags) {
@@ -480,6 +488,7 @@ public class AcronymDetectorProcessor extends DocumentProcessor {
       LOGGER.info("Loading acronym vector space: {}", vectorSpace);
       WordVectorSpace wordVectorSpace = WordVectorSpace.load(vectorSpace);
       LOGGER.info("Loading acronym sense map: {}. inMemory = {}", senseMap, sensesInMemory);
+      @SuppressWarnings("resource")  // This is closed when the processors is shutdown.
       SenseVectors senseVectors = new RocksDBSenseVectors(senseMap, false)
           .inMemory(sensesInMemory);
       AlignmentModel alignment = null;

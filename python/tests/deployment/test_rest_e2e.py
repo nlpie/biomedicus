@@ -31,15 +31,25 @@ except ImportError:
     from yaml import Dumper
 
 
+text = (Path(__file__).parent / 'rtf_in' / '97_204.rtf').read_bytes()
+
+
 @pytest.fixture(name='hosted_pipeline')
 def fixture_hosted_pipeline(deploy_all, processor_watcher):
     port = find_free_port()
     p = Popen([sys.executable, '-m', 'biomedicus', 'serve-pipeline', '--port', str(port), '--rtf'])
     yield from processor_watcher(f'127.0.0.1:{port}', p)
 
+    
+@pytest.fixture(name='rtf_to_text_pipeline')
+def fixture_rtf_to_text_pipeline(deploy_all, processor_watcher):
+    port = find_free_port()
+    p = Popen([sys.executable, '-m', 'biomedicus', 'serve-rtf-to-text', '--port', str(port)])
+    yield from processor_watcher(f'127.0.0.1:{port}', p)
+
 
 @pytest.fixture(name='mtap_gateway')
-def fixture_mtap_gateway(hosted_pipeline):
+def fixture_mtap_gateway(hosted_pipeline, rtf_to_text_pipeline):
     port = find_free_port()
     config = {
         'discovery': 'consul',
@@ -64,6 +74,10 @@ def fixture_mtap_gateway(hosted_pipeline):
                 {
                     'Identifier': 'biomedicus-default-pipeline',
                     'Endpoint': hosted_pipeline
+                },
+                {
+                    'Identifier': 'biomedicus-rtf-to-text',
+                    'Endpoint': rtf_to_text_pipeline
                 }
             ]
         }
@@ -115,8 +129,6 @@ def test_rest_e2e(mtap_gateway):
     session.trust_env = False
     base_url = "http://" + mtap_gateway
 
-    text = (Path(__file__).parent / 'rtf_in' / '97_204.rtf').read_bytes()
-
     body = {
         'event': {
             'event_id': '1.txt',
@@ -137,3 +149,30 @@ def test_rest_e2e(mtap_gateway):
     resp_body = resp.json()
     label_indices = resp_body['event']['documents']['plaintext']['label_indices']
     assert len(label_indices) > 0
+
+
+@pytest.mark.integration
+def test_rest_rtf(mtap_gateway):
+    session = requests.Session()
+    session.trust_env = False
+    base_url = "http://" + mtap_gateway
+
+    body = {
+        'event': {
+            'event_id': '1.txt',
+            'binaries': {
+                'rtf': base64.standard_b64encode(text).decode('utf-8')
+            }
+        },
+        'params': {
+            'document_name': 'plaintext',
+        }
+    }
+    resp = session.post(
+        base_url + '/v1/pipeline/biomedicus-rtf-to-text/process',
+        json=body,
+        timeout=10
+    )
+    assert resp.status_code == 200
+    resp_body = resp.json()
+    assert len(resp_body['event']['documents']['plaintext']['text']) > 0

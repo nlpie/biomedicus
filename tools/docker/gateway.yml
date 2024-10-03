@@ -5,3 +5,5 @@ gateway:
   pipelines:
     - Identifier: biomedicus-default-pipeline
       Endpoint: 127.0.0.1:55000
+    - Identifier: biomedicus-rtf-to-text
+      Endpoint: 127.0.0.1:55001

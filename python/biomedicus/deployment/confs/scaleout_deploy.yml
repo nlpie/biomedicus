@@ -2,7 +2,6 @@ global:
   host: null
   mtap_config: null
   log_level: INFO
-  register: no
 events_service:
   enabled: yes
   addresses:

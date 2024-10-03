@@ -61,7 +61,7 @@ public class TntTrainerProcessor extends DocumentProcessor {
   @Override
   protected void process(@NotNull Document document,
                          @NotNull JsonObject params,
-                         @NotNull JsonObjectBuilder result) {
+                         @NotNull JsonObjectBuilder<?, ?> result) {
     LabelIndex<GenericLabel> sentences = document.getLabelIndex("sentences");
     LabelIndex<GenericLabel> partsOfSpeech = document.getLabelIndex("pos_tags");
     for (GenericLabel sentence : sentences) {

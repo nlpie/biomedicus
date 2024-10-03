@@ -16,22 +16,15 @@
 
 package edu.umn.biomedicus.common.utilities;
 
-import org.rocksdb.DBOptions;
 import org.rocksdb.InfoLogLevel;
 import org.rocksdb.Logger;
-import org.rocksdb.Options;
 
 public class RocksToSLF4JLogger extends Logger {
 
   private final org.slf4j.Logger slf4jLogger;
 
-  public RocksToSLF4JLogger(Options options, org.slf4j.Logger slf4jLogger) {
-    super(options);
-    this.slf4jLogger = slf4jLogger;
-  }
-
-  public RocksToSLF4JLogger(DBOptions dboptions, org.slf4j.Logger slf4jLogger) {
-    super(dboptions);
+  public RocksToSLF4JLogger(InfoLogLevel logLevel, org.slf4j.Logger slf4jLogger) {
+    super(logLevel);
     this.slf4jLogger = slf4jLogger;
   }
 

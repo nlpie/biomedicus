@@ -16,7 +16,6 @@
 
 package edu.umn.biomedicus.rtf.reader;
 
-import edu.umn.biomedicus.rtf.exc.RtfReaderException;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;

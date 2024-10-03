@@ -51,6 +51,7 @@ public class WordVectorSpace {
    * Default weighting function is sigmoid that decreases with distance (to 0.5 at maxDist)
    * Need to cast to Serializable to save it
    */
+  @SuppressWarnings("unchecked")
   private static final BiFunction<Integer, Double, Double> DIST_WEIGHT = (BiFunction<Integer, Double, Double> & Serializable) (dist, maxDist) ->
       1.0 / (1.0 + Math.exp(SLOPE * (Math.abs(dist) - maxDist)));
 

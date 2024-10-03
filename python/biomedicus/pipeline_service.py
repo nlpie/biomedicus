@@ -17,7 +17,7 @@ from typing import List
 
 from mtap.pipeline import pipeline_parser, run_pipeline_server
 
-from biomedicus_client import default_pipeline
+from biomedicus_client import default_pipeline, rtf_to_text
 from biomedicus_client.cli_tools import Command
 
 
@@ -60,4 +60,32 @@ class ServePipeline(Command):
             conf.port = 55000
         conf.serializer = None
         pipeline = default_pipeline.from_args(conf)
+        run_pipeline_server(pipeline, conf)
+
+
+class ServeRtfToText(Command):
+    @property
+    def command(self) -> str:
+        return "serve-rtf-to-text"
+    
+    @property
+    def help(self) -> str:
+        return "Starts the RTF to text BioMedICUS pipeline service."
+    
+    @property
+    def parents(self) -> List[ArgumentParser]:
+        return [pipeline_parser()]
+    
+    def add_arguments(self, parser: ArgumentParser):
+        parser.add_argument(
+            '--config',
+            default=None,
+            help='Path to the pipeline configuration file.'
+        )
+
+    def command_fn(self, conf):
+        if conf.port == 0:
+            conf.port = 55001
+        conf.serializer = None
+        pipeline = rtf_to_text.from_args(conf)
         run_pipeline_server(pipeline, conf)

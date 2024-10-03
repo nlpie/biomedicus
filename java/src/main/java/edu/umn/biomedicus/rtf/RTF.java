@@ -46,7 +46,6 @@ public class RTF {
         .getKeywordActionsAsMap();
     PropertiesDescription propertiesDescription = PropertiesDescription
         .loadFromFile("edu/umn/biomedicus/rtf/PropertiesDescription.xml");
-    return new RtfParserFactory(controlKeywordsDescription, keywordActionMap,
-        propertiesDescription);
+    return new RtfParserFactory(keywordActionMap, propertiesDescription);
   }
 }

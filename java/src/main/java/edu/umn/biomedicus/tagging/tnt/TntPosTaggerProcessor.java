@@ -163,7 +163,7 @@ public class TntPosTaggerProcessor extends DocumentProcessor {
   @Override
   protected void process(@NotNull Document document,
                          @NotNull JsonObject params,
-                         @NotNull JsonObjectBuilder result) {
+                         @NotNull JsonObjectBuilder<?, ?> result) {
     String sentencesIndex = (String) params.getOrDefault("sentences_index", "sentences");
     LabelIndex<GenericLabel> sentenceLabelIndex = document.getLabelIndex(sentencesIndex);
     String targetIndex = (String) params.getOrDefault("target_index", "pos_tags");
