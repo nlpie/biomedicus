@@ -5,9 +5,9 @@ updates:
     schedule:
       interval: daily
     ignore:
-      # Versions newer than 2.0.2 of numpy do not support Python 3.9. Revisit when 3.9 is dropped.
+      # Versions newer than 2.1.0 and newer of numpy do not support Python 3.9. Revisit when 3.9 is dropped.
       - dependency-name: "numpy"
-        versions: [">2.0.2"]
+        versions: [">=2.1.0"]
   - package-ecosystem: gradle
     directory: /java/
     schedule:
