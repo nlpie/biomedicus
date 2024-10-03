@@ -18,7 +18,6 @@ package edu.umn.biomedicus.common.tuples;
 
 import org.jetbrains.annotations.Nullable;
 import java.io.Serializable;
-import java.util.regex.Pattern;
 
 /**
  * Represents a pair of word and isCapitalized.
@@ -32,11 +31,6 @@ public class WordCap implements Comparable<WordCap>, Serializable {
    * Serialization UID.
    */
   private static final long serialVersionUID = -5981094615088473604L;
-
-  /**
-   * Pattern which matches digits.
-   */
-  private static final Pattern DIGITS = Pattern.compile("\\d");
 
   /**
    * The word in the word-capitalization.

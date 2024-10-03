@@ -16,7 +16,6 @@
 
 package edu.umn.biomedicus.concepts;
 
-import edu.umn.biomedicus.common.config.Config;
 import org.jetbrains.annotations.Nullable;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
@@ -33,40 +32,36 @@ import static edu.umn.biomedicus.concepts.CUI.CUI_PATTERN;
  * Utility
  */
 public class ConceptsUtility {
-  @Option(
-      name = "--db-path",
-      metaVar = "PATH_TO",
-      usage = "Optional override path to the concepts dictionary."
-  )
+  @Option(name = "--db-path", metaVar = "PATH_TO", usage = "Optional override path to the concepts dictionary.")
   private @Nullable Path dbPath = null;
 
   public void listenToConsole() throws IOException, RocksDBException {
-    Scanner scanner = new Scanner(System.in);
-    System.out.println("Reading concepts from database");
+    try (Scanner scanner = new Scanner(System.in)) {
+      System.out.println("Reading concepts from database");
 
-    DictionaryConceptDetector.ConceptsOptions conceptsOptions = new DictionaryConceptDetector.ConceptsOptions();
-    conceptsOptions.setDbPath(dbPath);
-    conceptsOptions.setInMemory(true);
-    ConceptDictionary dictionary = DictionaryConceptDetector.loadConceptsDictionary(conceptsOptions);
+      DictionaryConceptDetector.ConceptsOptions conceptsOptions = new DictionaryConceptDetector.ConceptsOptions();
+      conceptsOptions.setDbPath(dbPath);
+      conceptsOptions.setInMemory(true);
+      ConceptDictionary dictionary = DictionaryConceptDetector.loadConceptsDictionary(conceptsOptions);
 
-    while (true) {
-      System.out.print("Q: ");
-      String query = scanner.nextLine();
-      if ("!q".equals(query)) {
-        return;
-      } else if (CUI_PATTERN.matcher(query).matches()) {
-        for (PhraseConcept phraseConcept : dictionary.withCui(new CUI(query))) {
-          System.out.println(phraseConcept.toString());
-        }
-      } else {
-        System.out.println("Searching for " + query);
-        for (PhraseConcept phraseConcept : dictionary.withWord(query)) {
-          System.out.println(phraseConcept.toString());
+      while (true) {
+        System.out.print("Q: ");
+        String query = scanner.nextLine();
+        if ("!q".equals(query)) {
+          return;
+        } else if (CUI_PATTERN.matcher(query).matches()) {
+          for (PhraseConcept phraseConcept : dictionary.withCui(new CUI(query))) {
+            System.out.println(phraseConcept.toString());
+          }
+        } else {
+          System.out.println("Searching for " + query);
+          for (PhraseConcept phraseConcept : dictionary.withWord(query)) {
+            System.out.println(phraseConcept.toString());
+          }
         }
       }
     }
   }
-
 
   public static void main(String[] args) {
     ConceptsUtility conceptsUtility = new ConceptsUtility();

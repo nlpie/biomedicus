@@ -85,7 +85,8 @@ class RocksDbDataStoreFactory implements DataStoreFactory, AutoCloseable {
   @Override
   public SuffixDataStore createSuffixDataStore(int id) {
     RocksDB.loadLibrary();
-    try (Options options = new Options().setCreateIfMissing(true).prepareForBulkLoad()) {
+    try (Options options = new Options()) {
+      options.setCreateIfMissing(true).prepareForBulkLoad();
       Files.createDirectories(dbPath);
       RocksDB rocksDB = RocksDB.open(options, dbPath.resolve(getSuffixesName(id)).toString());
       rocksDBS.add(rocksDB);
@@ -134,7 +135,8 @@ class RocksDbDataStoreFactory implements DataStoreFactory, AutoCloseable {
   @Override
   public KnownWordsDataStore createKnownWordsDataStore(int id) {
     RocksDB.loadLibrary();
-    try (Options options = new Options().setCreateIfMissing(true).prepareForBulkLoad()) {
+    try (Options options = new Options()) {
+      options.setCreateIfMissing(true).prepareForBulkLoad();
       Files.createDirectories(dbPath);
       RocksDB rocksDB = RocksDB.open(options, dbPath.resolve(getWordsName(id)).toString());
       rocksDBS.add(rocksDB);

@@ -112,7 +112,7 @@ final public class NormalizationProcessor extends DocumentProcessor {
   protected void process(
       @NotNull Document document,
       @NotNull JsonObject params,
-      @NotNull JsonObjectBuilder result
+      @NotNull JsonObjectBuilder<?, ?> result
   ) {
     LOGGER.debug("Normalizing tokens in a document.");
     LabelIndex<GenericLabel> posTagIndex = document.getLabelIndex("pos_tags");

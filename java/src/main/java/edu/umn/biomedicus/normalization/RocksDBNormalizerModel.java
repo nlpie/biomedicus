@@ -38,7 +38,8 @@ public class RocksDBNormalizerModel implements NormalizerModel {
   RocksDBNormalizerModel(Path dbPath) {
     RocksDB.loadLibrary();
 
-    try (Options options = new Options().setInfoLogLevel(InfoLogLevel.ERROR_LEVEL)) {
+    try (Options options = new Options()) {
+      options.setInfoLogLevel(InfoLogLevel.ERROR_LEVEL);
       db = RocksDB.openReadOnly(options, dbPath.toString());
     } catch (RocksDBException e) {
       throw new RuntimeException(e);

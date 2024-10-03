@@ -223,7 +223,9 @@ public class ConceptDictionaryBuilder {
             }
           }
         }
-        try (Options options = new Options().setCreateIfMissing(true).prepareForBulkLoad()) {
+        try (Options options = new Options()) {
+          options.setCreateIfMissing(true);
+          options.prepareForBulkLoad();
           try (RocksDB phrases = RocksDB.open(options, dbPath.resolve("phrases").toString());
                RocksDB lowercase = RocksDB.open(options, dbPath.resolve("lowercase").toString())) {
             int wrote = 0;
@@ -306,8 +308,10 @@ public class ConceptDictionaryBuilder {
     }
 
     int wrote = 0;
-    try (Options options = new Options().setCreateIfMissing(true).prepareForBulkLoad();
+    try (Options options = new Options();
          RocksDB normsDb = RocksDB.open(options, dbPath.resolve("norms").toString())) {
+      options.setCreateIfMissing(true);
+      options.prepareForBulkLoad();
       for (Entry<String, List<ConceptRow>> entry : map.entrySet()) {
         List<ConceptRow> suiCuiTuis = entry.getValue();
         byte[] suiCuiTuiBytes = getBytes(suiCuiTuis);

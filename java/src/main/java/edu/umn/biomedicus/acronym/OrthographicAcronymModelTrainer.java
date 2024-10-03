@@ -35,7 +35,6 @@ public class OrthographicAcronymModelTrainer {
   private static final double discounting = .9;
   private final boolean caseSensitive;
   private final int[] symbols;
-  private final int[] chars;
   private final double[][][] longformProbs;
   private final double[][][] abbrevProbs;
   /**
@@ -50,8 +49,6 @@ public class OrthographicAcronymModelTrainer {
     this.caseSensitive = caseSensitive;
     symbols = caseSensitive ? OrthographicAcronymModel.CASE_SENS_SYMBOLS
         : OrthographicAcronymModel.CASE_INSENS_SYMBOLS;
-    chars = caseSensitive ? OrthographicAcronymModel.CASE_SENS_CHARS
-        : OrthographicAcronymModel.CASE_INSENS_CHARS;
     longformProbs = new double[symbols.length][symbols.length][symbols.length];
     abbrevProbs = new double[symbols.length][symbols.length][symbols.length];
     longformsLower = new HashSet<>();

@@ -20,13 +20,10 @@ import edu.umn.biomedicus.common.pos.PartOfSpeech;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
-import org.kohsuke.args4j.Option;
 import org.kohsuke.args4j.spi.PathOptionHandler;
 import org.rocksdb.Options;
 import org.rocksdb.RocksDB;
 import org.rocksdb.RocksDBException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -63,8 +60,6 @@ public final class NormalizerModelBuilder {
    * Index of the base for in the LRAGR table.
    */
   public static final int LRAGR_BASE_FORM = 4;
-
-  private static final Logger LOGGER = LoggerFactory.getLogger(NormalizerModelBuilder.class);
 
   private static final int IGNORE_WHEN_LONGER = 100;
 
@@ -191,7 +186,8 @@ public final class NormalizerModelBuilder {
 
     System.out.println("Creating normalizer db from " + builder.size() + " terms");
 
-    try (Options options = new Options().setCreateIfMissing(true).prepareForBulkLoad()) {
+    try (Options options = new Options()) {
+      options.setCreateIfMissing(true).prepareForBulkLoad();
       try (RocksDB rocksDB = RocksDB.open(options, dbPath.toString())) {
         builder.forEach((tp, ts) -> {
           try {

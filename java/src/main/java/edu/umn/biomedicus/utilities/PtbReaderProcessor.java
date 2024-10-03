@@ -39,7 +39,7 @@ public class PtbReaderProcessor extends EventProcessor {
   @Override
   public void process(@NotNull Event event,
                       @NotNull JsonObject params,
-                      @NotNull JsonObjectBuilder result) {
+                      @NotNull JsonObjectBuilder<?, ?> result) {
     String sourceDocumentName = params.getStringValue("source_document_name");
     if (sourceDocumentName == null) {
       sourceDocumentName = "source";

@@ -221,7 +221,7 @@ public class ModificationDetector extends DocumentProcessor {
   }
 
   @Override
-  protected void process(@NotNull Document document, @NotNull JsonObject params, @NotNull JsonObjectBuilder result) {
+  protected void process(@NotNull Document document, @NotNull JsonObject params, @NotNull JsonObjectBuilder<?, ?> result) {
     String termIndexName = params.getStringValue("terms_index");
     if (termIndexName == null) {
       termIndexName = "umls_terms";
@@ -249,7 +249,7 @@ public class ModificationDetector extends DocumentProcessor {
         Pair<ModificationType, List<GenericLabel>> searchResult = CUES.searchLeft(contextList);
 
         if (searchResult != null) {
-          List<GenericLabel> cues = searchResult.second().stream().map(span -> {
+          searchResult.second().stream().map(span -> {
             GenericLabel cue = GenericLabel.withSpan(span).build();
             cueLabeler.add(cue);
             return cue;
@@ -274,7 +274,7 @@ public class ModificationDetector extends DocumentProcessor {
 
         searchResult = CUES.searchRight(contextList);
         if (searchResult != null) {
-          List<GenericLabel> cues = searchResult.second().stream().map(span -> {
+          searchResult.second().stream().map(span -> {
             GenericLabel cue = GenericLabel.withSpan(span).build();
             cueLabeler.add(cue);
             return cue;

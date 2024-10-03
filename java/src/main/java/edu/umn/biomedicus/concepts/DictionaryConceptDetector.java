@@ -192,7 +192,7 @@ public class DictionaryConceptDetector extends DocumentProcessor {
   protected void process(
       @NotNull Document document,
       @NotNull JsonObject params,
-      @NotNull JsonObjectBuilder result
+      @NotNull JsonObjectBuilder<?, ?> result
   ) {
     LOGGER.debug("Finding concepts in document.");
 
@@ -362,8 +362,10 @@ public class DictionaryConceptDetector extends DocumentProcessor {
             sentenceNorms.add(norm);
           }
         } else {
-          for (GenericLabel genericLabel : norms.inside(sentence)) {
-            sentenceNorms.add(genericLabel.getStringValue("norm"));
+          if (norms != null) {
+            for (GenericLabel genericLabel : norms.inside(sentence)) {
+              sentenceNorms.add(genericLabel.getStringValue("norm"));
+            }
           }
         }
 

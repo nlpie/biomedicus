@@ -242,7 +242,11 @@ public class Tokenizer {
       }
     }
     InputStream is = Tokenizer.class.getResourceAsStream("unitsList.txt");
-    return new BufferedReader(new InputStreamReader(is)).lines().collect(Collectors.toList());
+    try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
+      return reader.lines().collect(Collectors.toList());
+    } catch (IOException e) {
+      throw new IllegalStateException("Failed to load units list.", e);
+    }
   }
 
   /**

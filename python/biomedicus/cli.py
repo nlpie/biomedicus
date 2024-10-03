@@ -22,7 +22,7 @@ from biomedicus.deployment import (
     rtf_to_text
 )
 from biomedicus.java_support import RunJavaCommand
-from biomedicus.pipeline_service import ServePipeline
+from biomedicus.pipeline_service import ServePipeline, ServeRtfToText
 from biomedicus.utilities.print_all_processors_metadata import PrintProcessorMetaCommand
 from biomedicus_client import cli_tools
 from biomedicus_client.cli_tools import WriteConfigsCommand
@@ -45,7 +45,8 @@ def main(args=None):
         DownloadDataCommand(),
         PrintProcessorMetaCommand(),
         rtf_to_text.DeployRtfToTextCommand(),
-        ServePipeline()
+        ServePipeline(),
+        ServeRtfToText()
     )
 
     conf = parser.parse_args(args)

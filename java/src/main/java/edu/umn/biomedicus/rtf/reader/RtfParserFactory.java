@@ -16,20 +16,16 @@
 
 package edu.umn.biomedicus.rtf.reader;
 
-import edu.umn.biomedicus.rtf.beans.keywords.ControlKeywordsDescription;
 import edu.umn.biomedicus.rtf.beans.properties.PropertiesDescription;
 
 import java.util.Map;
 
 public class RtfParserFactory {
-  private final ControlKeywordsDescription controlKeywordsDescription;
   private final Map<String, KeywordAction> keywordActionMap;
   private final PropertiesDescription propertiesDescription;
 
-  public RtfParserFactory(ControlKeywordsDescription controlKeywordsDescription,
-                          Map<String, KeywordAction> keywordActionMap,
+  public RtfParserFactory(Map<String, KeywordAction> keywordActionMap,
                           PropertiesDescription propertiesDescription) {
-    this.controlKeywordsDescription = controlKeywordsDescription;
     this.keywordActionMap = keywordActionMap;
     this.propertiesDescription = propertiesDescription;
   }

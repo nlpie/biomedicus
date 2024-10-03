@@ -87,6 +87,8 @@ def fixture_events_service():
 
 
 def _listen(process: subprocess.Popen):
+    if process.stdout is None:
+        return
     for line in process.stdout:
         print(line.decode(), end='')
     return process.wait()
