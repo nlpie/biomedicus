@@ -4,23 +4,15 @@ updates:
     directory: /
     schedule:
       interval: daily
-    groups:
-      grpc-deps:
-        patterns:
-          - "grpcio*"
+    ignore:
+      # Versions newer than 2.0.2 of numpy do not support Python 3.9. Revisit when 3.9 is dropped.
+      - dependency-name: "numpy"
+        versions: [">2.0.2"]
   - package-ecosystem: gradle
     directory: /java/
     schedule:
       interval: daily
-    groups:
-      grpc-deps:
-        patterns:
-          - "io.grpc*"
   - package-ecosystem: pip
     directory: /biomedicus_client/
     schedule:
       interval: daily
-    groups:
-      grpc-deps:
-        patterns:
-          - "grpcio*"
