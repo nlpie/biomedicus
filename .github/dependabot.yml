@@ -12,6 +12,10 @@ updates:
     directory: /java/
     schedule:
       interval: daily
+    groups:
+      grpc-deps:
+        patterns:
+          - "io.grpc*"
   - package-ecosystem: pip
     directory: /biomedicus_client/
     schedule:
