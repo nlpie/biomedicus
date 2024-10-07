@@ -36,7 +36,7 @@ classifiers = [
     'Topic :: Text Processing :: Linguistic'
 ]
 dependencies = [
-    "mtap>1.4.2",
+    "mtap==1.4.3",
     "tqdm==4.66.5",
     "importlib_resources==6.4.5",
     "pyyaml==6.0.2"
@@ -57,5 +57,5 @@ include = ["biomedicus_client*"]
 
 [tool.setuptools_scm]
 write_to = "biomedicus_client/src/biomedicus_client/version.py"
-fallback_version = "3.4.1"
+fallback_version = "3.4.3"
 root = ".."
