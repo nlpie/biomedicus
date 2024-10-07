@@ -4,8 +4,8 @@ ENV PYTHONBUFFERED TRUE
 
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y \
-    python3-dev \
-    python3-pip \
+    python3.11-dev \
+    python3.11-pip \
     build-essential \
     openjdk-11-jre-headless \
     wget \
