@@ -34,7 +34,7 @@ classifiers = [
     'Topic :: Text Processing :: Linguistic'
 ]
 dependencies = [
-    "biomedicus_client==3.4.3",  # We get mtap, tqdm, and importlib_resources transitively from the client
+    "biomedicus_client>=3.4.3",  # We get mtap, tqdm, and importlib_resources transitively from the client
     "numpy==2.0.2",
     "regex==2024.9.11",
     "torch==2.4.1",
