@@ -62,6 +62,8 @@ curl -X POST http://127.0.0.1:8080/v1/pipeline/biomedicus-default-pipeline/proce
 -d "${BODY}" | python -m json.tool
 ```
 
+This functionality will work with either .txt files or .rtf files using the same command.
+
 ## Deploy using the docker image
 
 You can also deploy the end-to-end REST pipeline using the biomedicus docker image:
@@ -80,6 +82,18 @@ Once you see the following message the server is ready to use on the 8080 port.
 
 ```bash
 Starting new pipeline gateway for service: biomedicus-default-pipeline with address: 127.0.0.1:55000
+```
+
+### RTF to Text Only Processing
+
+The above docker image also contains functionality for RTF-to-Text conversion without the BioMedICUS pipeline. You can test the functionality using either [this file](../resources/97_204.rtf) or one of your own:
+
+```bash
+BODY=$(jq --null-input --arg doc "$(base64 "97_204.rtf")"  \
+'{ "event": { "event_id": "97_204.txt", "binaries": { "rtf": $doc }}, "params": { "document_name": "plaintext" }}')
+curl -X POST http://127.0.0.1:8080/v1/pipeline/biomedicus-rtf-to-text/process \
+-H 'Content-Type: application/json' \
+-d "${BODY}" | python -m json.tool
 ```
 
 ## Conclusion
