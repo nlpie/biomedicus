@@ -13,7 +13,7 @@ authors = [
     {name = "Ben Knoll", email = "benknoll@umn.edu"}
 ]
 classifiers = [
-    'Development Status :: 4 - Beta',
+    'Development Status :: 5 - Production/Stable',
     'Environment :: Console',
     'Intended Audience :: Healthcare Industry',
     'Intended Audience :: Information Technology',
@@ -29,6 +29,7 @@ classifiers = [
     'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
     'Programming Language :: Python :: 3.12',
+    'Programming Language :: Python :: 3.13',
     'Programming Language :: Python :: Implementation :: CPython',
     'Topic :: Scientific/Engineering :: Information Analysis',
     'Topic :: Scientific/Engineering :: Medical Science Apps.',
