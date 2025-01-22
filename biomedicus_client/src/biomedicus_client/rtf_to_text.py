@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Union, Optional, List
 
 from biomedicus_client.sources import rtf_source
-from importlib_resources import as_file
+from importlib.resources import as_file
 from mtap import Pipeline, LocalProcessor, EventProcessor, processor, events_client
 
 from biomedicus_client import pipeline_confs

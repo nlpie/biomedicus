@@ -11,8 +11,8 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-"""Provides importlib_resources Traversable objects for built-in deployment configuration files."""
-from importlib_resources import files
+"""Provides importlib.resources Traversable objects for built-in deployment configuration files."""
+from importlib.resources import files
 
 __all__ = ('DEFAULT', 'SCALEOUT', 'RTF_TO_TEXT')
 

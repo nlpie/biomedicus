@@ -4,7 +4,7 @@ from argparse import ArgumentParser, Namespace
 from pathlib import Path
 from typing import Optional, Union
 
-from importlib_resources import as_file
+from importlib.resources import as_file
 from mtap import Pipeline, LocalProcessor, RemoteProcessor
 from mtap.serialization import Serializer, SerializationProcessor
 

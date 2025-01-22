@@ -1,4 +1,4 @@
-from importlib_resources import files
+from importlib.resources import files
 from mtap import Pipeline, RemoteProcessor, events_client
 from mtap.serialization import JsonSerializer
 

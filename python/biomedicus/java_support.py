@@ -18,11 +18,11 @@ from subprocess import Popen, PIPE, STDOUT
 from threading import Thread
 from typing import Optional, ContextManager, List
 
-import importlib_resources
+from importlib.resources import files, as_file
 
 from biomedicus_client.cli_tools import Command
 
-JAR_RESOURCE = importlib_resources.files('biomedicus').joinpath('biomedicus-all.jar')
+JAR_RESOURCE = files('biomedicus').joinpath('biomedicus-all.jar')
 
 
 class ProcessListener(Thread):
@@ -47,7 +47,7 @@ def get_java():
 
 @contextmanager
 def attach_biomedicus_jar(*jar_strings: Optional[str]) -> str:
-    with importlib_resources.as_file(JAR_RESOURCE) as jar_path:
+    with as_file(JAR_RESOURCE) as jar_path:
         all_jars = [os.fspath(jar_path)]
         for jar_string in jar_strings:
             if jar_string is not None:

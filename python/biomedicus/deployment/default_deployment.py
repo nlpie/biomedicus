@@ -2,7 +2,7 @@ from argparse import ArgumentParser
 from contextlib import contextmanager
 from typing import List, Optional, ContextManager
 
-from importlib_resources import as_file
+from importlib.resources import as_file
 from mtap.deployment import Deployment
 
 from biomedicus.deployment import confs
