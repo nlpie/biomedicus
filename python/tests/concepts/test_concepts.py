@@ -1,6 +1,6 @@
-from importlib.resources import files
 from mtap import Pipeline, RemoteProcessor, events_client
 from mtap.serialization import JsonSerializer
+from pathlib import Path
 
 
 def test_duplicate_concepts(events_service, concepts_service):
@@ -9,7 +9,7 @@ def test_duplicate_concepts(events_service, concepts_service):
         events_address=events_service
     )
     with events_client(events_service) as client:
-        with files().joinpath('concepts_test.json').open('r') as f:
+        with Path(__file__).parent.joinpath('concepts_test.json').open('r') as f:
             event = JsonSerializer.file_to_event(f, client)
         with event:
             doc = event.documents['plaintext']

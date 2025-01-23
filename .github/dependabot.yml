@@ -16,6 +16,9 @@ updates:
       grpc-deps:
         patterns:
           - "io.grpc*"
+      junit:
+        patterns:
+          - "org.junit*"
   - package-ecosystem: pip
     directory: /biomedicus_client/
     schedule:
