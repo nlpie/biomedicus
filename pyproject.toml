@@ -38,19 +38,19 @@ classifiers = [
 dependencies = [
     "biomedicus_client>=3.4.3",  # We get mtap and tqdm transitively from the client
     "numpy==2.0.2",
-    "regex==2024.9.11",
-    "torch==2.4.1",
+    "regex==2024.11.6",
+    "torch==2.5.1",
     "requests==2.32.3",
-    "watchdog==5.0.3",
+    "watchdog==6.0.0",
 ]
 dynamic = ["version"]
 
 [project.optional-dependencies]
 test = [
-    "pytest==8.3.3"
+    "pytest==8.3.4"
 ]
 stanza = [
-    "stanza==1.9.2",
+    "stanza==1.10.1",
 ]
 
 [project.scripts]
