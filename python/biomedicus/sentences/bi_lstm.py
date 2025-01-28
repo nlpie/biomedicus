@@ -440,7 +440,7 @@ def create_processor(conf):
     model.to(device=device)
     logger.info('Loading model weights from: {}'.format(conf.model_file))
     with conf.model_file.open('rb') as f:
-        state_dict = torch.load(f)
+        state_dict = torch.load(f, weights_only=True)
         model.load_state_dict(state_dict)
     model.eval()
     if conf.mp:

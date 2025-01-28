@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Regents of the University of Minnesota.
+ * Copyright (c) Regents of the University of Minnesota.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,8 @@ import java.util.stream.Collectors;
 /**
  * Builds the concepts dictionary.
  * <p>
- * Usage: java edu.umn.biomedicus.concepts.ConceptDictionaryBuilder [umls installation] \
+ * Usage: java edu.umn.biomedicus.concepts.ConceptDictionaryBuilder [umls
+ * installation] \
  * [tuis-of-interest file] [banned-ttys file] [outputPath]
  */
 public class ConceptDictionaryBuilder {
@@ -51,31 +52,25 @@ public class ConceptDictionaryBuilder {
 
   private static final Pattern SPACE_SPLITTER = Pattern.compile(" ");
 
-  @Argument(required = true, metaVar = "PATH/TO/UMLS", handler = PathOptionHandler.class,
-      usage = "Path to UMLS installation")
+  @Argument(required = true, metaVar = "PATH/TO/UMLS", handler = PathOptionHandler.class, usage = "Path to UMLS installation")
   private Path umlsPath;
 
-  @Argument(index = 1, metaVar = "PATH/TO/TUIS", handler = PathOptionHandler.class,
-      usage = "Path to TUIs of interest")
+  @Argument(index = 1, metaVar = "PATH/TO/TUIS", handler = PathOptionHandler.class, usage = "Path to TUIs of interest")
   private Path tuisOfInterestFile;
 
-  @Argument(index = 2, metaVar = "PATH/TO/BANNED_TTYS", handler = PathOptionHandler.class,
-      usage = "Banned TTYs file")
+  @Argument(index = 2, metaVar = "PATH/TO/BANNED_TTYS", handler = PathOptionHandler.class, usage = "Banned TTYs file")
   private Path bannedTtysFile;
 
   @Argument(index = 3, metaVar = "OUTPUT_PATH", usage = "Path to write db out to.")
   private Path dbPath;
 
-  @Option(name = "--filtered-suis", handler = PathOptionHandler.class,
-      usage = "A path to a file containing SUIs to filter out.")
+  @Option(name = "--filtered-suis", handler = PathOptionHandler.class, usage = "A path to a file containing SUIs to filter out.")
   private Path filteredSuisPath = null;
 
-  @Option(name = "--filtered-cuis", handler = PathOptionHandler.class,
-      usage = "A path to a file containing CUIs to filter out.")
+  @Option(name = "--filtered-cuis", handler = PathOptionHandler.class, usage = "A path to a file containing CUIs to filter out.")
   private Path filteredCuisPath = null;
 
-  @Option(name = "--filtered-sui-cuis", handler = PathOptionHandler.class,
-      usage = "A path to a file containing SUI-CUI combinations to filter")
+  @Option(name = "--filtered-sui-cuis", handler = PathOptionHandler.class, usage = "A path to a file containing SUI-CUI combinations to filter")
   private Path filteredSuiCuisPath;
 
   @Option(name = "--filtered-tuis", usage = "A path to a file containing TUIs to filter out.")
@@ -89,7 +84,9 @@ public class ConceptDictionaryBuilder {
       builder.doWork();
     } catch (CmdLineException e) {
       System.err.println(e.getLocalizedMessage());
-      System.err.println("java edu.umn.biomedicus.concepts.ConceptDictionaryBuilder" + parser.printExample(OptionHandlerFilter.ALL) + " PATH/TO/UMLS PATH/TO/TUIS PATH/TO/BANNED_TTYS OUTPUT_PATH");
+      System.err.println(
+          "java edu.umn.biomedicus.concepts.ConceptDictionaryBuilder" + parser.printExample(OptionHandlerFilter.ALL)
+              + " PATH/TO/UMLS PATH/TO/TUIS PATH/TO/BANNED_TTYS OUTPUT_PATH");
       parser.printUsage(System.err);
     } catch (IOException e) {
       e.printStackTrace();
@@ -208,7 +205,7 @@ public class ConceptDictionaryBuilder {
               SuiCui sc = new SuiCui(sui, cui);
               if (filteredCuis.contains(cui) || filteredTuis.contains(tui)
                   || filteredSuiCuis.contains(sc) || filteredSuis
-                  .contains(sui)) {
+                      .contains(sui)) {
                 continue;
               }
 
@@ -227,7 +224,7 @@ public class ConceptDictionaryBuilder {
           options.setCreateIfMissing(true);
           options.prepareForBulkLoad();
           try (RocksDB phrases = RocksDB.open(options, dbPath.resolve("phrases").toString());
-               RocksDB lowercase = RocksDB.open(options, dbPath.resolve("lowercase").toString())) {
+              RocksDB lowercase = RocksDB.open(options, dbPath.resolve("lowercase").toString())) {
             int wrote = 0;
             for (Entry<String, List<ConceptRow>> entry : phrasesMap.entrySet()) {
               List<ConceptRow> suiCuiTuis = entry.getValue();
@@ -308,16 +305,17 @@ public class ConceptDictionaryBuilder {
     }
 
     int wrote = 0;
-    try (Options options = new Options();
-         RocksDB normsDb = RocksDB.open(options, dbPath.resolve("norms").toString())) {
+    try (Options options = new Options()) {
       options.setCreateIfMissing(true);
       options.prepareForBulkLoad();
-      for (Entry<String, List<ConceptRow>> entry : map.entrySet()) {
-        List<ConceptRow> suiCuiTuis = entry.getValue();
-        byte[] suiCuiTuiBytes = getBytes(suiCuiTuis);
-        normsDb.put(entry.getKey().getBytes(), suiCuiTuiBytes);
-        if (++wrote % 10_000 == 0) {
-          System.out.println("Wrote " + wrote + " of " + map.size() + " norm term bags.");
+      try (RocksDB normsDb = RocksDB.open(options, dbPath.resolve("norms").toString())) {
+        for (Entry<String, List<ConceptRow>> entry : map.entrySet()) {
+          List<ConceptRow> suiCuiTuis = entry.getValue();
+          byte[] suiCuiTuiBytes = getBytes(suiCuiTuis);
+          normsDb.put(entry.getKey().getBytes(), suiCuiTuiBytes);
+          if (++wrote % 10_000 == 0) {
+            System.out.println("Wrote " + wrote + " of " + map.size() + " norm term bags.");
+          }
         }
       }
     } catch (RocksDBException e) {
@@ -396,7 +394,8 @@ public class ConceptDictionaryBuilder {
     @Override
     public int compareTo(@NotNull SuiCui o) {
       int compare = Integer.compare(sui.identifier(), o.sui.identifier());
-      if (compare != 0) return compare;
+      if (compare != 0)
+        return compare;
       return Integer.compare(cui.identifier(), o.cui.identifier());
     }
   }
