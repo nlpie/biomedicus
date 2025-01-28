@@ -202,22 +202,7 @@ class DeepenProcessor(DocumentProcessor):
 
 
 def main(args=None):
-    parser = ArgumentParser(add_help=True, parents=[processor_parser()])
-    parser.add_argument(
-        '--mp', action='store_true',
-        help="Whether to use the multiprocessing pool based processor server."
-    )
-    parser.add_argument(
-        '--mp-start-method', default='forkserver', choices=['forkserver', 'spawn'],
-        help="The multiprocessing start method to use"
-    )
-    options = parser.parse_args(args)
-    mp_context = None
-    if options.mp:
-        import multiprocessing as mp
-        mp_context = mp.get_context(options.mp_start_method)
-
-    run_processor(DeepenProcessor(), options=options, mp=options.mp, mp_context=mp_context)
+    run_processor(DeepenProcessor())
 
 
 if __name__ == '__main__':

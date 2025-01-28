@@ -1,4 +1,4 @@
-#  Copyright 2022 Regents of the University of Minnesota.
+#  Copyright (c) Regents of the University of Minnesota.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -13,5 +13,5 @@
 #  limitations under the License.
 """The expected data version and url to download data."""
 
-DATA_VERSION = "2023-10-31"
-DATA_URL = "https://athena.ahc.umn.edu/downloads/open/biomedicus-open-data-2023-10-31.zip"
+DATA_VERSION = "2025-01-27"
+DATA_URL = "https://athena.ahc.umn.edu/downloads/open/biomedicus-open-data-2025-01-27.zip"
