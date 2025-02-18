@@ -69,7 +69,7 @@ repositories {
 dependencies {
     implementation group: 'org.jetbrains', name: 'annotations', version: '26.0.2'
 
-    implementation group: 'edu.umn.nlpie', name: 'mtap', version: '1.5.0'
+    implementation group: 'edu.umn.nlpie', name: 'mtap', version: '1.5.+'
 
     implementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.16'
     implementation group: 'args4j', name: 'args4j', version: '2.37'
