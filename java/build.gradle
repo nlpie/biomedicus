@@ -88,7 +88,7 @@ dependencies {
     runtimeOnly group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.24.3'
 
     testImplementation(platform('org.junit:junit-bom:5.12.1'))
-    testImplementation group: 'org.mockito', name: 'mockito-core', version: '5.16.1'
+    testImplementation group: 'org.mockito', name: 'mockito-core', version: '5.17.0'
     testImplementation('org.junit.jupiter:junit-jupiter')
     testRuntimeOnly('org.junit.platform:junit-platform-launcher')
 }
