@@ -38,7 +38,7 @@ classifiers = [
 dependencies = [
     "biomedicus_client>=3.5.0",  # We get mtap and tqdm transitively from the client
     "numpy==2.0.2",
-    "regex==2024.11.6",
+    "regex==2025.7.34",
     "torch==2.6.0",
     "requests==2.32.3",
     "watchdog==6.0.0",
