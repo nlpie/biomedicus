@@ -12,9 +12,12 @@ def gitVersion = { ->
     if (execOutput.result.get().exitValue != 0) {
         return "0.0.0+development-SNAPSHOT"
     }
-    def stdout = execOutput.standardOutput.asText.get()
-    def pattern = ~/v([0-9]+)(?:.([0-9]+))?(?:.([0-9]+))?(?:-(alpha|beta|pre|rc).([0-9]+))?(?:-([0-9]+)-([a-g0-9]+))?(-dirty)?/
-    def newVersion = stdout.trim().replaceFirst(pattern) { _,major,minor,patch,pre,preVersion,com,hash,dirty ->
+    def stdout = execOutput.standardOutput.asText.get().trim()
+    def pattern = ~/^v([0-9]+)(?:\.([0-9]+))?(?:\.([0-9]+))?(?:-(alpha|beta|pre|rc)\.?([0-9]+))?(?:-([0-9]+)-g([0-9a-f]+))?(-dirty)?$/
+    if (!(stdout ==~ pattern)) {
+        return "0.0.0+development-SNAPSHOT"
+    }
+    def newVersion = stdout.replaceFirst(pattern) { _,major,minor,patch,pre,preVersion,com,hash,dirty ->
         def incremented = false
         def result = ''
         if (com != null || hash != null || dirty != null) {
