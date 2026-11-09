@@ -58,10 +58,6 @@ def gitVersion = { ->
 group = 'edu.umn.biomedicus'
 version = gitVersion()
 
-java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-}
 
 repositories {
     mavenCentral()
@@ -113,6 +109,7 @@ shadowJar {
 }
 
 tasks.withType(JavaCompile).configureEach {
+    options.release = 17
     options.compilerArgs << '-Xlint:unchecked'
     options.deprecation = true
 }
