@@ -23,7 +23,7 @@ Include terminal output from the command, and stack traces if available.
  - OS: [e.g. Ubuntu 18.04, MacOS Catalina, Windows 10]
  - Version [e.g. 3.0]
  - Python Version [e.g. 3.8]
- - Java Version [e.g. OpenJDK 8.0]
+ - Java Version [e.g. OpenJDK 17]
 
 **Additional context**
 Add any other context about the problem here.
