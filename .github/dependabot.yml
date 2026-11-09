@@ -1,28 +1,32 @@
 version: 2
 updates:
   - package-ecosystem: pip
-    directory: /
+    directories:
+      - "/"
+      - "/biomedicus_client/"
     schedule:
-      interval: daily
+      interval: weekly
     ignore:
       # Versions newer than 2.1.0 and newer of numpy do not support Python 3.9. Revisit when 3.9 is dropped.
       - dependency-name: "numpy"
         versions: [">=2.1.0"]
+    groups:
+      all-py:
+        patterns:
+          - "*"
   - package-ecosystem: gradle
     directory: /java/
     schedule:
-      interval: daily
+      interval: weekly
     groups:
-      grpc-deps:
+      all-java:
         patterns:
-          - "io.grpc*"
-      junit:
-        patterns:
-          - "org.junit*"
-      log4j:
-        patterns:
-          - "org.apache.logging*"
-  - package-ecosystem: pip
-    directory: /biomedicus_client/
+          - "*"
+  - package-ecosystem: "github-actions"
+    directory: "/" # Do not change this to /.github/workflows, use "/"
     schedule:
-      interval: daily
+      interval: "weekly"
+    groups:
+      all-actions:
+        patterns:
+          - "*"
