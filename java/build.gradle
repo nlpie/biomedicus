@@ -1,21 +1,20 @@
 plugins {
-    id 'com.github.johnrengelman.shadow' version '8.1.1'
+    id 'com.gradleup.shadow' version '9.6.1'
     id 'java'
 }
 
 
 def gitVersion = { ->
-    def stdout = new ByteArrayOutputStream()
-    def execResult = exec {
+    def execOutput = providers.exec {
         commandLine 'git', 'describe', '--tags', '--dirty'
-        standardOutput = stdout
         ignoreExitValue = true
     }
-    if (execResult.getExitValue() != 0) {
+    if (execOutput.result.get().exitValue != 0) {
         return "0.0.0+development-SNAPSHOT"
     }
+    def stdout = execOutput.standardOutput.asText.get()
     def pattern = ~/v([0-9]+)(?:.([0-9]+))?(?:.([0-9]+))?(?:-(alpha|beta|pre|rc).([0-9]+))?(?:-([0-9]+)-([a-g0-9]+))?(-dirty)?/
-    def newVersion = stdout.toString().trim().replaceFirst(pattern) { _,major,minor,patch,pre,preVersion,com,hash,dirty ->
+    def newVersion = stdout.trim().replaceFirst(pattern) { _,major,minor,patch,pre,preVersion,com,hash,dirty ->
         def incremented = false
         def result = ''
         if (com != null || hash != null || dirty != null) {
@@ -53,8 +52,8 @@ def gitVersion = { ->
     return newVersion
 }
 
-group 'edu.umn.biomedicus'
-version gitVersion()
+group = 'edu.umn.biomedicus'
+version = gitVersion()
 
 java {
     sourceCompatibility = JavaVersion.VERSION_1_8
@@ -106,26 +105,31 @@ shadowJar {
                 'Description': 'A system for large-scale text analysis and processing of biomedical and clinical reports.',
                 'Implementation-Version': archiveVersion
     }
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
     mergeServiceFiles()
 }
 
-tasks.withType(JavaCompile) {
+tasks.withType(JavaCompile).configureEach {
     options.compilerArgs << '-Xlint:unchecked'
     options.deprecation = true
 }
 
-task execute(type: JavaExec) {
+tasks.register('execute', JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
-    main = project.hasProperty('mainClass') ? project.getProperties().get('mainClass') : null
+    if (project.hasProperty('mainClass')) {
+        mainClass = project.property('mainClass') as String
+    }
 }
 
-task conceptsUtility(type: JavaExec) {
+tasks.register('conceptsUtility', JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
-    main 'edu.umn.biomedicus.concepts.ConceptsUtility'
+    mainClass = 'edu.umn.biomedicus.concepts.ConceptsUtility'
 }
 
-task writeVersion() {
+tasks.register('writeVersion') {
+    def versionFile = layout.buildDirectory.file('version.txt')
+    def versionString = version.toString()
     doLast {
-        new File(buildDir, "version.txt").text = "$version\n"
+        versionFile.get().asFile.text = "${versionString}\n"
     }
 }
