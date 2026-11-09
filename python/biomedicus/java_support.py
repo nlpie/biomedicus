@@ -35,7 +35,7 @@ JAR_RESOURCE = files('biomedicus').joinpath('biomedicus-all.jar')
 # deprecated for removal (JEP 471/498) and still warn. Enabling native access is the
 # workaround until grpc-netty-shaded ships a Netty release that no longer uses them.
 # Those Unsafe warnings are left on deliberately: the flag that would silence them
-# (--sun-misc-unsafe-memory-access=allow) aren't accepted by JDK 17. Revisit when JDK 17
+# (--sun-misc-unsafe-memory-access=allow) isn't accepted by JDK 17. Revisit when JDK 17
 # is dropped from the supported versions.
 # The same flag is in the jvm_args of the deployment configs in deployment/confs.
 JVM_ARGS = ['--enable-native-access=ALL-UNNAMED']
