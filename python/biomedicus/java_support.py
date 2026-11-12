@@ -24,6 +24,24 @@ from biomedicus_client.cli_tools import Command
 
 JAR_RESOURCE = files('biomedicus').joinpath('biomedicus-all.jar')
 
+# Arguments passed to every JVM that runs the BioMedICUS jar.
+#
+# RocksDB and the Netty bundled in grpc-netty-shaded load native libraries via
+# System.loadLibrary. Since JDK 24 this prints a warning, and a future JDK will block it
+# unless native access is enabled (JEP 472). Enabling native access for the classpath
+# keeps both working on new JDKs. The flag is accepted by all supported JDKs (17+).
+#
+# Dependencies may also call sun.misc.Unsafe memory-access methods, which are deprecated
+# for removal (JEP 471/498) and print a warning. Current Unsafe callers are protobuf-java
+# and the Netty bundled in grpc-netty-shaded. The JVM warns only for the first caller in
+# each process, so the warning may name either one. Enabling native access is the
+# workaround until any Unsafe callers ship releases that no longer use those methods.
+# Those Unsafe warnings are left on deliberately: the flag that would silence them
+# (--sun-misc-unsafe-memory-access=allow) isn't accepted by JDK 17. Revisit when JDK 17
+# is dropped from the supported versions.
+# The same flag is in the jvm_args of the deployment configs in deployment/confs.
+JVM_ARGS = ['--enable-native-access=ALL-UNNAMED']
+
 
 class ProcessListener(Thread):
     def __init__(self, p: Popen, **kwargs):
@@ -59,7 +77,7 @@ def attach_biomedicus_jar(*jar_strings: Optional[str]) -> str:
 @contextmanager
 def create_call(*args, cp=None) -> ContextManager[List[str]]:
     with attach_biomedicus_jar(cp) as java_cp:
-        yield [get_java(), '-cp', java_cp] + list(args)
+        yield [get_java(), *JVM_ARGS, '-cp', java_cp] + list(args)
 
 
 def run_java(*args, cp=None):

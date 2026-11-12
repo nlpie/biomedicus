@@ -11,7 +11,8 @@ shared_processor_config:
   events_addresses: null
   workers: 16
   additional_args: [ ]
-  jvm_args: [ "-Xms32m", "-Xmx8g" ]
+  # --enable-native-access: see JVM_ARGS in biomedicus/java_support.py.
+  jvm_args: [ "-Xms32m", "-Xmx8g", "--enable-native-access=ALL-UNNAMED" ]
   java_classpath: null
 # Below this is a list of the processors to be deployed and their individual settings.
 processors:
