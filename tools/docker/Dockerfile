@@ -1,4 +1,10 @@
+FROM eclipse-temurin:27-jre AS jre
+
 FROM ubuntu:22.04
+
+ENV JAVA_HOME=/opt/java/openjdk
+COPY --from=jre $JAVA_HOME $JAVA_HOME
+ENV PATH="${JAVA_HOME}/bin:${PATH}"
 
 ENV PYTHONBUFFERED TRUE
 
@@ -7,7 +13,6 @@ RUN apt-get update && \
     python3-dev \
     python3-pip \
     build-essential \
-    openjdk-11-jre-headless \
     wget \
     && rm -rf /var/lib/apt/lists/*
 
