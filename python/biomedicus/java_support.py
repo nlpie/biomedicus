@@ -31,9 +31,11 @@ JAR_RESOURCE = files('biomedicus').joinpath('biomedicus-all.jar')
 # unless native access is enabled (JEP 472). Enabling native access for the classpath
 # keeps both working on new JDKs. The flag is accepted by all supported JDKs (17+).
 #
-# The bundled Netty also still calls sun.misc.Unsafe memory-access methods, which are
-# deprecated for removal (JEP 471/498) and still warn. Enabling native access is the
-# workaround until grpc-netty-shaded ships a Netty release that no longer uses them.
+# Dependencies may also call sun.misc.Unsafe memory-access methods, which are deprecated
+# for removal (JEP 471/498) and print a warning. Current Unsafe callers are protobuf-java
+# and the Netty bundled in grpc-netty-shaded. The JVM warns only for the first caller in
+# each process, so the warning may name either one. Enabling native access is the
+# workaround until any Unsafe callers ship releases that no longer use those methods.
 # Those Unsafe warnings are left on deliberately: the flag that would silence them
 # (--sun-misc-unsafe-memory-access=allow) isn't accepted by JDK 17. Revisit when JDK 17
 # is dropped from the supported versions.
